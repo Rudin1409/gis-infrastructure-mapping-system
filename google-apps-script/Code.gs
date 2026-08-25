@@ -1,6 +1,6 @@
 // ==============================================================================
 // GOOGLE APPS SCRIPT: BACKEND DATABASE & CLOUD FOTO GIS KOTA LUBUKLINGGAU
-// (SEMUA NAMA TABEL & KOLOM DALAM BAHASA INDONESIA)
+// (SEMUA NAMA TABEL & KOLOM 100% BAHASA INDONESIA)
 // ==============================================================================
 
 var FOLDER_NAME = 'FOTO_SURVEI_TIANG_LUBUKLINGGAU';
@@ -89,7 +89,81 @@ var USER_HEADERS = [
   'Waktu_Terdaftar'
 ];
 
-// Mapping helper untuk mengonversi data objek aplikasi ke baris spreadsheet
+// ==============================================================================
+// FUNGSI UTAMA: PERBARUI TABEL LAMA KE BAHASA INDONESIA (1-KLIK RUN)
+// ==============================================================================
+function initialSetup() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1. Rename sheet lama jika ada atau buat baru
+  var poleSheet = ss.getSheetByName('POLES') || ss.getSheetByName(POLE_SHEET_NAME);
+  if (poleSheet) {
+    poleSheet.setName(POLE_SHEET_NAME);
+  } else {
+    poleSheet = ss.insertSheet(POLE_SHEET_NAME);
+  }
+  // Tulis ulang header baris 1 ke Bahasa Indonesia
+  poleSheet.getRange(1, 1, 1, POLE_HEADERS.length).setValues([POLE_HEADERS]);
+  poleSheet.setFrozenRows(1);
+  poleSheet.getRange(1, 1, 1, POLE_HEADERS.length).setFontWeight('bold').setBackground('#dbeafe');
+
+  // 2. Rename PROVIDERS -> DATA_PROVIDER
+  var provSheet = ss.getSheetByName('PROVIDERS') || ss.getSheetByName(PROVIDER_SHEET_NAME);
+  if (provSheet) {
+    provSheet.setName(PROVIDER_SHEET_NAME);
+  } else {
+    provSheet = ss.insertSheet(PROVIDER_SHEET_NAME);
+  }
+  provSheet.getRange(1, 1, 1, PROVIDER_HEADERS.length).setValues([PROVIDER_HEADERS]);
+  provSheet.setFrozenRows(1);
+  provSheet.getRange(1, 1, 1, PROVIDER_HEADERS.length).setFontWeight('bold').setBackground('#dbeafe');
+
+  // 3. Rename NETWORK_SEGMENTS -> JALUR_KABEL_FO
+  var segSheet = ss.getSheetByName('NETWORK_SEGMENTS') || ss.getSheetByName(SEGMENT_SHEET_NAME);
+  if (segSheet) {
+    segSheet.setName(SEGMENT_SHEET_NAME);
+  } else {
+    segSheet = ss.insertSheet(SEGMENT_SHEET_NAME);
+  }
+  segSheet.getRange(1, 1, 1, SEGMENT_HEADERS.length).setValues([SEGMENT_HEADERS]);
+  segSheet.setFrozenRows(1);
+  segSheet.getRange(1, 1, 1, SEGMENT_HEADERS.length).setFontWeight('bold').setBackground('#dbeafe');
+
+  // 4. Rename USERS -> DATA_SURVEYOR
+  var userSheet = ss.getSheetByName('USERS') || ss.getSheetByName(USER_SHEET_NAME);
+  if (userSheet) {
+    userSheet.setName(USER_SHEET_NAME);
+  } else {
+    userSheet = ss.insertSheet(USER_SHEET_NAME);
+  }
+  userSheet.getRange(1, 1, 1, USER_HEADERS.length).setValues([USER_HEADERS]);
+  userSheet.setFrozenRows(1);
+  userSheet.getRange(1, 1, 1, USER_HEADERS.length).setFontWeight('bold').setBackground('#dbeafe');
+
+  // 5. Hapus Sheet1 kosong bawaan jika ada
+  var sheet1 = ss.getSheetByName('Sheet1') || ss.getSheetByName('Sheet 1');
+  if (sheet1 && ss.getSheets().length > 1) {
+    try {
+      ss.deleteSheet(sheet1);
+    } catch(e) {}
+  }
+
+  // 6. Buat folder Drive jika belum ada
+  getOrCreatePhotoFolder();
+
+  Logger.log('SUKSES: Seluruh 4 Tab dan Baris Kolom berhasil diubah ke Bahasa Indonesia!');
+}
+
+function getOrCreatePhotoFolder() {
+  var folders = DriveApp.getFoldersByName(FOLDER_NAME);
+  if (folders.hasNext()) {
+    return folders.next();
+  }
+  var folder = DriveApp.createFolder(FOLDER_NAME);
+  folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return folder;
+}
+
 function poleToRowArray(p) {
   return [
     p.id || '',
@@ -176,44 +250,6 @@ function rowArrayToPole(row) {
   };
 }
 
-// Fungsi Inisialisasi Otomatis (Membuat 4 Sheet Bahasa Indonesia & Folder Foto Drive)
-function initialSetup() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
-  getOrCreateSheet(ss, PROVIDER_SHEET_NAME, PROVIDER_HEADERS);
-  getOrCreateSheet(ss, SEGMENT_SHEET_NAME, SEGMENT_HEADERS);
-  getOrCreateSheet(ss, USER_SHEET_NAME, USER_HEADERS);
-  getOrCreatePhotoFolder();
-  Logger.log('SUKSES: 4 Sheet Bahasa Indonesia dan Folder Foto Google Drive berhasil dibuat!');
-}
-
-function getOrCreateSheet(ss, sheetName, headers) {
-  var sheet = ss.getSheetByName(sheetName);
-  // Cek fallback nama lama jika ada
-  if (!sheet && sheetName === POLE_SHEET_NAME) sheet = ss.getSheetByName('POLES');
-  if (!sheet && sheetName === PROVIDER_SHEET_NAME) sheet = ss.getSheetByName('PROVIDERS');
-  if (!sheet && sheetName === SEGMENT_SHEET_NAME) sheet = ss.getSheetByName('NETWORK_SEGMENTS');
-  if (!sheet && sheetName === USER_SHEET_NAME) sheet = ss.getSheetByName('USERS');
-
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-    sheet.appendRow(headers);
-    sheet.setFrozenRows(1);
-    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#dbeafe');
-  }
-  return sheet;
-}
-
-function getOrCreatePhotoFolder() {
-  var folders = DriveApp.getFoldersByName(FOLDER_NAME);
-  if (folders.hasNext()) {
-    return folders.next();
-  }
-  var folder = DriveApp.createFolder(FOLDER_NAME);
-  folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return folder;
-}
-
 // Endpoint GET: Ambil data
 function doGet(e) {
   try {
@@ -226,7 +262,12 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    var sheet = getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
+    var sheet = ss.getSheetByName(POLE_SHEET_NAME) || ss.getSheetByName('POLES');
+    if (!sheet) {
+      initialSetup();
+      sheet = ss.getSheetByName(POLE_SHEET_NAME);
+    }
+
     var data = sheet.getDataRange().getValues();
     if (data.length <= 1) {
       return ContentService.createTextOutput(JSON.stringify({ success: true, data: [] }))
@@ -280,7 +321,12 @@ function doPost(e) {
 
     // 2. Simpan Data Tiang Baru ke Sheet DATA_TIANG
     if (action === 'savePole') {
-      var poleSheet = getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
+      var poleSheet = ss.getSheetByName(POLE_SHEET_NAME) || ss.getSheetByName('POLES');
+      if (!poleSheet) {
+        initialSetup();
+        poleSheet = ss.getSheetByName(POLE_SHEET_NAME);
+      }
+
       var pole = contents.data;
       var row = poleToRowArray(pole);
 
@@ -292,7 +338,12 @@ function doPost(e) {
 
     // 3. Update Data Tiang yang Sudah Ada di Sheet DATA_TIANG
     if (action === 'updatePole') {
-      var poleSheet = getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
+      var poleSheet = ss.getSheetByName(POLE_SHEET_NAME) || ss.getSheetByName('POLES');
+      if (!poleSheet) {
+        initialSetup();
+        poleSheet = ss.getSheetByName(POLE_SHEET_NAME);
+      }
+
       var pole = contents.data;
       var data = poleSheet.getDataRange().getValues();
 
@@ -318,7 +369,12 @@ function doPost(e) {
 
     // 4. Hapus Data Tiang dari Sheet DATA_TIANG
     if (action === 'deletePole') {
-      var poleSheet = getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
+      var poleSheet = ss.getSheetByName(POLE_SHEET_NAME) || ss.getSheetByName('POLES');
+      if (!poleSheet) {
+        initialSetup();
+        poleSheet = ss.getSheetByName(POLE_SHEET_NAME);
+      }
+
       var poleId = contents.id;
       var data = poleSheet.getDataRange().getValues();
 
