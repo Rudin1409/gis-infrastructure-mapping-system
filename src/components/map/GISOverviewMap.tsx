@@ -882,6 +882,9 @@ export default function GISOverviewMap({
                 }`}
               />
               <span className="font-black text-sm text-slate-900 font-mono">
+                {selectedPole.poleCode || selectedPole.id}
+              </span>
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[9px] font-mono font-bold">
                 {selectedPole.id}
               </span>
               <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-[9px] font-bold uppercase">

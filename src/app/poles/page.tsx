@@ -148,10 +148,13 @@ export default async function PolesListPage({
               href={`/poles/${pole.id}`}
               className="block bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(15,23,42,0.04)] border border-slate-100 active:scale-[0.99] hover:shadow-md transition-all group space-y-2.5"
             >
-              {/* Card Top */}
+              {/* Card Top: Prominent Smart GIS Municipal Code */}
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-black text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-mono font-black text-xs text-blue-700 bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-200 shadow-2xs">
+                    {pole.poleCode || pole.id}
+                  </span>
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[9px] font-mono font-bold">
                     {pole.id}
                   </span>
                   <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[9px] font-bold uppercase">
@@ -160,7 +163,7 @@ export default async function PolesListPage({
                 </div>
 
                 <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold flex-shrink-0 ${
                     pole.condition === 'GOOD'
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : pole.condition === 'NEEDS_REPAIR'
@@ -189,10 +192,7 @@ export default async function PolesListPage({
               <div className="space-y-1">
                 <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                  <span>{pole.providerName || pole.providerId}</span>
-                  {pole.poleCode && (
-                    <span className="text-[10px] text-slate-400 font-mono">({pole.poleCode})</span>
-                  )}
+                  <span className="truncate">{pole.providerName || pole.providerId}</span>
                 </div>
                 <div className="text-xs text-slate-600 flex items-start gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />

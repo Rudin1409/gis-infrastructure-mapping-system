@@ -454,11 +454,11 @@ export default async function HomePage() {
                     </div>
 
                     <div className="min-w-0">
-                      <span className="text-xs font-bold text-slate-900 block truncate group-hover:text-blue-600 transition-colors">
-                        {pole.road}
+                      <span className="text-xs font-black font-mono text-slate-900 block truncate group-hover:text-blue-600 transition-colors">
+                        {pole.poleCode || pole.id}
                       </span>
-                      <span className="text-[10px] text-slate-400 block truncate">
-                        {pole.providerName || pole.providerId} &bull; Kel. {pole.kelurahan}
+                      <span className="text-[10px] text-slate-500 block truncate">
+                        {pole.road} &bull; {pole.providerName || pole.providerId}
                       </span>
                     </div>
                   </div>

@@ -101,15 +101,13 @@ export default async function PoleDetailPage({
             <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block">
               Detail Tiang Utilitas GIS
             </span>
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <h1 className="text-base font-black text-slate-900 font-mono tracking-tight">
-                {pole.id}
+                {pole.poleCode || pole.id}
               </h1>
-              {pole.poleCode && (
-                <span className="text-xs text-slate-400 font-mono font-medium">
-                  ({pole.poleCode})
-                </span>
-              )}
+              <span className="text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 font-mono font-bold">
+                ID: {pole.id}
+              </span>
             </div>
           </div>
 
