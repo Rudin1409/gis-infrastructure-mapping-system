@@ -614,7 +614,7 @@ export default function GISOverviewMap({
                 {measuredPoles.length === 0
                   ? 'Ketuk Tiang Pertama (Titik Awal)'
                   : measuredPoles.length === 1
-                  ? `Titik Awal: ${measuredPoles[0].id} ➔ Ketuk Tiang Tujuan`
+                  ? `Titik Awal: ${measuredPoles[0].poleCode || measuredPoles[0].id} ➔ Ketuk Tiang Tujuan`
                   : `Jalur ${measuredPoles.length} Tiang: Total ${formatDistance(totalMeasuredDistance)}`}
               </p>
               <p className="text-[10px] text-slate-300 leading-none mt-0.5 truncate">
@@ -843,8 +843,8 @@ export default function GISOverviewMap({
                   <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-800 font-mono font-bold text-[9px] flex items-center justify-center flex-shrink-0">
                     {span.spanIndex}
                   </span>
-                  <span className="font-mono font-bold text-slate-800 text-[11px] truncate">
-                    {span.from.id} ➔ {span.to.id}
+                  <span className="font-mono font-bold text-slate-900 text-[11px] truncate">
+                    {span.from.poleCode || span.from.id} ➔ {span.to.poleCode || span.to.id}
                   </span>
                 </div>
 
