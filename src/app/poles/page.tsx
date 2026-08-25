@@ -14,6 +14,7 @@ import {
   Layers,
   Sparkles,
 } from 'lucide-react';
+import { formatIndonesianDate } from '@/lib/utils/formatDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -246,7 +247,7 @@ export default async function PolesListPage({
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-slate-400" />
-                  <span>{pole.surveyDate}</span>
+                  <span>{formatIndonesianDate(pole.createdAt || pole.surveyDate, pole.surveyTime)}</span>
                 </span>
 
                 <span className="text-blue-600 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">

@@ -179,7 +179,16 @@ function initialSetup() {
     userSheet.getRange(2, 1, defaultUsers.length, USER_HEADERS.length).setValues(defaultUsers);
   }
 
-  // 5. Hapus Sheet1 kosong bawaan jika ada
+  // 5. Update data tiang yang ada saat ini agar tercatat resmi atas nama Admin DISKOMINFO
+  if (poleSheet.getLastRow() > 1) {
+    var poleData = poleSheet.getDataRange().getValues();
+    for (var r = 1; r < poleData.length; r++) {
+      poleSheet.getRange(r + 1, 31).setValue('USR-KOMINFO-ADMIN');
+      poleSheet.getRange(r + 1, 32).setValue('Admin DISKOMINFO (Admin Teknis & Jaringan)');
+    }
+  }
+
+  // 6. Hapus Sheet1 kosong bawaan jika ada
   var sheet1 = ss.getSheetByName('Sheet1') || ss.getSheetByName('Sheet 1');
   if (sheet1 && ss.getSheets().length > 1) {
     try {
@@ -187,10 +196,10 @@ function initialSetup() {
     } catch(e) {}
   }
 
-  // 6. Buat folder Drive jika belum ada
+  // 7. Buat folder Drive jika belum ada
   getOrCreatePhotoFolder();
 
-  Logger.log('SUKSES: Seluruh 4 Tab dan Baris Kolom berhasil diubah ke Bahasa Indonesia!');
+  Logger.log('SUKSES: Seluruh Data Master 20 Provider dan 4 Akun Dinas berhasil masuk ke Google Spreadsheet!');
 }
 
 function getOrCreatePhotoFolder() {
@@ -216,7 +225,7 @@ function poleToRowArray(p) {
     p.locationMethod || 'MANUAL_MAP_PIN',
     p.providerId || '',
     p.providerName || '',
-    p.poleType || 'BETON',
+    p.poleType || 'BESI',
     p.condition || 'GOOD',
     p.road || '',
     p.kelurahan || '',
@@ -235,10 +244,10 @@ function poleToRowArray(p) {
     p.description || '',
     p.photoFileId || '',
     p.photoUrl || '',
-    p.surveyorId || '',
-    p.surveyorName || 'Surveyor 1',
-    p.surveyDate || new Date().toISOString().split('T')[0],
-    p.surveyTime || '',
+    p.surveyorId || 'USR-KOMINFO-ADMIN',
+    p.surveyorName || 'Admin DISKOMINFO (Admin Teknis & Jaringan)',
+    p.surveyDate || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd'),
+    p.surveyTime || Utilities.formatDate(new Date(), 'Asia/Jakarta', 'HH:mm'),
     p.validationStatus || 'SUBMITTED',
     p.validationNote || '',
     p.createdAt || new Date().toISOString(),
@@ -247,6 +256,22 @@ function poleToRowArray(p) {
 }
 
 function rowArrayToPole(row) {
+  var rawDate = row[32];
+  var surveyDateStr = '';
+  if (rawDate instanceof Date) {
+    surveyDateStr = Utilities.formatDate(rawDate, 'Asia/Jakarta', 'yyyy-MM-dd');
+  } else {
+    surveyDateStr = String(rawDate || '');
+  }
+
+  var rawTime = row[33];
+  var surveyTimeStr = '';
+  if (rawTime instanceof Date) {
+    surveyTimeStr = Utilities.formatDate(rawTime, 'Asia/Jakarta', 'HH:mm');
+  } else {
+    surveyTimeStr = String(rawTime || '');
+  }
+
   return {
     id: String(row[0] || ''),
     poleCode: row[1] ? String(row[1]) : '',
@@ -259,7 +284,7 @@ function rowArrayToPole(row) {
     locationMethod: row[8] || 'MANUAL_MAP_PIN',
     providerId: String(row[9] || 'UNKNOWN'),
     providerName: row[10] ? String(row[10]) : '',
-    poleType: row[11] || 'BETON',
+    poleType: row[11] || 'BESI',
     condition: row[12] || 'GOOD',
     road: String(row[13] || ''),
     kelurahan: String(row[14] || ''),
@@ -278,10 +303,10 @@ function rowArrayToPole(row) {
     description: row[27] ? String(row[27]) : '',
     photoFileId: row[28] ? String(row[28]) : '',
     photoUrl: row[29] ? String(row[29]) : '',
-    surveyorId: row[30] ? String(row[30]) : '',
-    surveyorName: row[31] ? String(row[31]) : '',
-    surveyDate: String(row[32] || ''),
-    surveyTime: row[33] ? String(row[33]) : '',
+    surveyorId: row[30] ? String(row[30]) : 'USR-KOMINFO-ADMIN',
+    surveyorName: row[31] ? String(row[31]) : 'Admin DISKOMINFO (Admin Teknis & Jaringan)',
+    surveyDate: surveyDateStr,
+    surveyTime: surveyTimeStr,
     validationStatus: row[34] || 'SUBMITTED',
     validationNote: row[35] ? String(row[35]) : '',
     createdAt: String(row[36] || ''),

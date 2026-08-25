@@ -198,8 +198,11 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
         description: description.trim() || undefined,
         photoUrl: finalPhotoUrl,
         photoFileId: finalPhotoFileId,
-        surveyorId: user?.id || pole.surveyorId,
-        surveyorName: user ? `${user.name} (${user.roleLabel})` : pole.surveyorName,
+        // Tetap pertahankan identitas petugas pembuat awal
+        surveyorId: pole.surveyorId || user?.id,
+        surveyorName: pole.surveyorName || user?.name,
+        surveyDate: pole.surveyDate,
+        surveyTime: pole.surveyTime,
       };
 
       const res = await fetch(`/api/poles/${pole.id}`, {

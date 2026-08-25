@@ -7,6 +7,7 @@ import MiniMap from '@/components/map/MiniMap';
 import { formatDistance } from '@/lib/gis/haversine';
 import { PoleMiniGraphic } from '@/components/survey/PoleVisualGuideModal';
 import { formatGoogleDriveImageUrl, getGoogleDriveThumbnailUrl } from '@/lib/utils/driveImage';
+import { formatIndonesianDate } from '@/lib/utils/formatDate';
 import {
   ChevronLeft,
   MapPin,
@@ -328,17 +329,17 @@ export default async function PoleDetailPage({
         </h2>
 
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
             <span className="text-slate-400 text-[9px] block uppercase font-bold">Petugas Surveyor</span>
-            <span className="font-bold text-blue-600 truncate block mt-0.5">
-              {pole.surveyorName || 'Surveyor 1'}
+            <span className="font-bold text-blue-600 truncate block mt-0.5" title={pole.surveyorName}>
+              {pole.surveyorName || 'Admin DISKOMINFO'}
             </span>
           </div>
 
-          <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
             <span className="text-slate-400 text-[9px] block uppercase font-bold">Waktu Input</span>
             <span className="font-bold text-slate-900 truncate block mt-0.5">
-              {pole.surveyDate} {pole.surveyTime || ''}
+              {formatIndonesianDate(pole.createdAt || pole.surveyDate, pole.surveyTime)}
             </span>
           </div>
         </div>
