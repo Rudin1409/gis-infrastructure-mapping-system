@@ -71,10 +71,104 @@ body {
     transform: translateY(0px) scale(1);
   }
   50% {
-    transform: translateY(-6px) scale(1.02);
+    transform: translateY(-8px) scale(1.03);
   }
 }
 
 .animate-bounce-subtle {
-  animation: float-subtle 3s ease-in-out infinite;
+  animation: float-subtle 3.5s ease-in-out infinite;
+}
+
+/* Cinematic Logo Intro Animation */
+@keyframes logo-cinematic-intro {
+  0% {
+    opacity: 0;
+    transform: scale(0.15) rotate(-25deg);
+    filter: blur(8px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(6deg);
+    filter: blur(0px);
+  }
+  75% {
+    transform: scale(0.95) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0px);
+  }
+}
+
+.animate-logo-intro {
+  animation: logo-cinematic-intro 1.1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Radar Sonar GIS Waves */
+@keyframes radar-wave {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.animate-radar-1 {
+  animation: radar-wave 2.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+.animate-radar-2 {
+  animation: radar-wave 2.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite 0.85s;
+}
+
+.animate-radar-3 {
+  animation: radar-wave 2.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite 1.7s;
+}
+
+/* Shimmer Light Reflection */
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer-sweep 2.5s infinite;
+}
+
+/* Slide Up Stagger */
+@keyframes slide-up-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up-1 {
+  animation: slide-up-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+  opacity: 0;
+}
+
+.animate-slide-up-2 {
+  animation: slide-up-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+  opacity: 0;
+}
+
+.animate-slide-up-3 {
+  animation: slide-up-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
+  opacity: 0;
 }

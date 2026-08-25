@@ -60,37 +60,43 @@ export default function LoginPage() {
       <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-teal-100/50 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Brand Header */}
-      <div className="pt-2 sm:pt-4 space-y-3 text-center relative z-10">
-        {/* Animated App Logo Emblem */}
-        <div className="relative inline-block mx-auto">
-          <div className="absolute inset-0 bg-blue-500/15 rounded-3xl blur-xl animate-pulse" />
-          <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-white border border-slate-100 shadow-[0_8px_30px_rgba(37,99,235,0.12)] p-2.5 flex items-center justify-center mx-auto transition-transform hover:scale-105">
-            <img
-              src="/images/app-logo.png"
-              alt="Logo InfraMap GIS Kota Lubuklinggau"
-              className="w-full h-full object-contain drop-shadow-sm"
-            />
+      <div className="pt-2 sm:pt-6 space-y-4 text-center relative z-10">
+        {/* Animated App Logo Emblem with Radar Rings */}
+        <div className="relative flex items-center justify-center mx-auto">
+          <div className="absolute w-28 h-28 rounded-full border border-blue-400/30 animate-radar-1 pointer-events-none" />
+          <div className="absolute w-28 h-28 rounded-full border border-teal-400/20 animate-radar-2 pointer-events-none" />
+
+          <div className="relative z-10 animate-logo-intro">
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white/95 backdrop-blur-xl border border-slate-100 shadow-[0_12px_40px_rgba(37,99,235,0.15)] p-3 flex items-center justify-center mx-auto overflow-hidden animate-bounce-subtle cursor-pointer hover:rotate-2 transition-transform">
+              {/* Shimmer Light Reflection */}
+              <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent animate-shimmer pointer-events-none" />
+              <img
+                src="/images/app-logo.png"
+                alt="Logo InfraMap GIS Kota Lubuklinggau"
+                className="w-full h-full object-contain drop-shadow-sm relative z-10"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1.5 animate-slide-up-1">
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 uppercase font-mono">
             INFRA-MAP GIS
           </h1>
           <p className="text-xs text-slate-600 font-medium max-w-xs mx-auto">
-            Sistem Pemetaan Utilitas &amp; Retribusi Infrastruktur
+            Sistem Inventarisasi, Pemetaan &amp; Audit Infrastruktur Spasial
           </p>
           <div className="pt-0.5">
-            <span className="inline-block text-[10px] font-bold text-blue-700 bg-blue-50 px-3 py-0.5 rounded-full border border-blue-200 shadow-2xs">
-              Pemerintah Kota Lubuklinggau
+            <span className="inline-block text-[10px] font-bold text-blue-700 bg-blue-50/90 px-3.5 py-1 rounded-full border border-blue-200/90 shadow-2xs">
+              🏛️ Pemerintah Kota Lubuklinggau
             </span>
           </div>
         </div>
       </div>
 
       {/* Main Login Card */}
-      <div className="w-full max-w-sm mx-auto my-auto relative z-10">
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)] space-y-4">
+      <div className="w-full max-w-sm mx-auto my-auto relative z-10 animate-slide-up-2">
+        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-[0_16px_45px_rgba(15,23,42,0.07)] space-y-4">
           {/* Card Title */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
@@ -98,7 +104,7 @@ export default function LoginPage() {
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <span className="text-xs font-black uppercase tracking-wider text-slate-900">
-                Masuk Petugas
+                Masuk Akses Petugas
               </span>
             </div>
             <span className="text-[10px] text-blue-600 font-mono font-bold bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">

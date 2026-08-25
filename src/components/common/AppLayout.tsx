@@ -12,45 +12,58 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoaded } = useAuth();
   const isLoginPage = pathname === '/login';
 
-  // Splash loader while checking session (Modern Bright White Theme with Animated Logo)
+  // Splash loader while checking session (Cinematic Bright White Theme with Animated Logo)
   if (!isLoaded) {
     return (
-      <div className="w-full h-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white via-slate-50 to-blue-50/40 text-slate-800 p-6 text-center select-none relative overflow-hidden">
+      <div className="w-full h-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white via-sky-50/40 to-blue-50/60 text-slate-800 p-6 text-center select-none relative overflow-hidden">
         {/* Subtle decorative background circles */}
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-blue-100/60 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-teal-100/60 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-200/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-teal-200/40 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Animated App Logo Card */}
-        <div className="relative z-10 mb-5">
-          <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-2xl animate-pulse" />
-          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white p-3 shadow-[0_12px_40px_rgba(37,99,235,0.12)] border border-slate-100 flex items-center justify-center animate-bounce-subtle">
-            <img
-              src="/images/app-logo.png"
-              alt="Logo InfraMap GIS Kota Lubuklinggau"
-              className="w-full h-full object-contain drop-shadow-md transform transition-transform hover:scale-105"
-            />
+        {/* GIS Radar Sonar Wave Rings */}
+        <div className="relative flex items-center justify-center mb-6">
+          <div className="absolute w-36 h-36 rounded-full border-2 border-blue-400/30 animate-radar-1 pointer-events-none" />
+          <div className="absolute w-36 h-36 rounded-full border border-teal-400/25 animate-radar-2 pointer-events-none" />
+          <div className="absolute w-36 h-36 rounded-full border border-indigo-400/20 animate-radar-3 pointer-events-none" />
+
+          {/* Cinematic Animated App Logo Card */}
+          <div className="relative z-10 animate-logo-intro">
+            <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-white/95 backdrop-blur-xl p-3.5 shadow-[0_16px_50px_rgba(37,99,235,0.18)] border border-white/80 ring-1 ring-blue-100 flex items-center justify-center overflow-hidden animate-bounce-subtle">
+              {/* Shimmer Light Reflection */}
+              <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/70 to-transparent animate-shimmer pointer-events-none" />
+
+              <img
+                src="/images/app-logo.png"
+                alt="Logo InfraMap GIS Kota Lubuklinggau"
+                className="w-full h-full object-contain drop-shadow-md relative z-10"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Brand Typography */}
-        <div className="relative z-10 space-y-1.5 max-w-xs">
-          <h2 className="text-base sm:text-lg font-black uppercase tracking-wider font-mono text-slate-900 leading-tight">
-            INFRA-MAP GIS
-          </h2>
-          <p className="text-xs text-slate-600 font-medium leading-relaxed">
-            Sistem Inventarisasi &amp; Pemetaan Infrastruktur Spasial
-          </p>
-          <div className="pt-1">
-            <span className="inline-block text-[10px] font-bold text-blue-700 bg-blue-50 px-3 py-0.5 rounded-full border border-blue-200 shadow-2xs">
-              Pemerintah Kota Lubuklinggau
+        {/* Brand Typography with Staggered Entrance */}
+        <div className="relative z-10 space-y-2 max-w-xs">
+          <div className="animate-slide-up-1">
+            <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider font-mono text-slate-900 leading-tight">
+              INFRA-MAP GIS
+            </h2>
+          </div>
+          <div className="animate-slide-up-2">
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              Sistem Pemetaan Infrastruktur &amp; Utilitas Jaringan
+            </p>
+          </div>
+          <div className="pt-0.5 animate-slide-up-3">
+            <span className="inline-block text-[10px] font-bold text-blue-700 bg-blue-50/90 px-3.5 py-1 rounded-full border border-blue-200/90 shadow-2xs">
+              🏛️ Pemerintah Kota Lubuklinggau
             </span>
           </div>
         </div>
 
         {/* Loading Indicator */}
-        <div className="relative z-10 mt-6 flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-slate-200/80 shadow-xs">
+        <div className="relative z-10 mt-7 flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white/90 backdrop-blur-md px-4 py-1.5 rounded-full border border-slate-200/80 shadow-xs animate-slide-up-3">
           <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
-          <span>Memuat Sistem...</span>
+          <span>Memuat Sistem GIS...</span>
         </div>
       </div>
     );
