@@ -106,6 +106,7 @@ export class AppsScriptPoleRepository implements IPoleRepository {
         pjuLampPower: row.pjuLampPower || row.Daya_Lampu_Watt || undefined,
         pjuLampCondition: row.pjuLampCondition || row.Kondisi_Lampu_PJU || undefined,
         hasKwhMeter: parseBoolean(row.hasKwhMeter ?? row.Ada_Kwh_Meter),
+        cableInstallationType: row.cableInstallationType || row.Tipe_Pemasangan_Kabel || undefined,
       }));
 
       // Filter based on options
