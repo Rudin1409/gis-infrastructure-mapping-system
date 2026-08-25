@@ -155,6 +155,20 @@ export default async function PoleDetailPage({
 
         {/* Data Summary Grid */}
         <div className="grid grid-cols-2 gap-2 text-[11px]">
+          {/* Category Card */}
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
+            <span className="text-slate-400 block text-[9px] uppercase font-bold">Kategori Infrastruktur</span>
+            <span className="font-bold text-slate-900 block mt-0.5 text-xs">
+              {pole.infrastructureCategory === 'PJU_MANDIRI'
+                ? '💡 Tiang Penerangan Jalan Umum (PJU Mandiri Pemkot)'
+                : pole.infrastructureCategory === 'GABUNG_PLN_PJU'
+                ? '⚡💡 Tiang Gabungan (PLN Distribusi + Lampu PJU)'
+                : pole.infrastructureCategory === 'PLN_MURNI'
+                ? '⚡ Tiang Distribusi Jaringan Listrik PLN'
+                : '🌐 Tiang Fiber Optik / Provider WiFi Internet'}
+            </span>
+          </div>
+
           {/* Provider Card */}
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex items-center gap-2">
             {selectedProviderObj && (
@@ -163,7 +177,7 @@ export default async function PoleDetailPage({
               </div>
             )}
             <div className="min-w-0">
-              <span className="text-slate-400 block text-[9px] uppercase font-bold">Provider</span>
+              <span className="text-slate-400 block text-[9px] uppercase font-bold">Instansi / Pemilik</span>
               <span className="font-bold text-slate-800 truncate block mt-0.5">
                 {pole.providerName || selectedProviderObj?.name || pole.providerId}
               </span>
@@ -235,6 +249,48 @@ export default async function PoleDetailPage({
             </span>
           </div>
         </div>
+
+        {/* PJU Technical Card (If PJU) */}
+        {(pole.infrastructureCategory === 'PJU_MANDIRI' || pole.infrastructureCategory === 'GABUNG_PLN_PJU' || pole.pjuLampType) && (
+          <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                <span>💡</span>
+                <span>Spesifikasi Penerangan Jalan (PJU)</span>
+              </span>
+              <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-200 text-amber-950 rounded-full">
+                {pole.pjuLampCondition === 'MENYALA_NORMAL'
+                  ? '🟢 Menyala'
+                  : pole.pjuLampCondition === 'REDUP'
+                  ? '🟡 Redup'
+                  : pole.pjuLampCondition === 'MATI_TOTAL'
+                  ? '🔴 Mati'
+                  : '💥 Pecah/Rusak'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+              <div className="bg-white p-2 rounded-xl border border-amber-200">
+                <span className="text-slate-400 block text-[8px] font-bold uppercase">Tipe Lampu</span>
+                <span className="font-bold text-slate-800 block mt-0.5">
+                  {pole.pjuLampType || 'LED'}
+                </span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-amber-200">
+                <span className="text-slate-400 block text-[8px] font-bold uppercase">Daya Lampu</span>
+                <span className="font-bold text-slate-800 block mt-0.5">
+                  {pole.pjuLampPower || '90 Watt'}
+                </span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-amber-200">
+                <span className="text-slate-400 block text-[8px] font-bold uppercase">KWh Meter</span>
+                <span className="font-bold text-slate-800 block mt-0.5">
+                  {pole.hasKwhMeter ? 'Ada Meter' : 'Non-Meter'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Temuan Masalah di Lapangan */}
         <div className="pt-2 border-t border-slate-100">

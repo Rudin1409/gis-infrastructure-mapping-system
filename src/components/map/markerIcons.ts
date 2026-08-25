@@ -1,4 +1,5 @@
 import type L from 'leaflet';
+import { InfrastructureCategory } from '@/types/pole';
 
 /**
  * Generates custom HTML/SVG DivIcons for Leaflet
@@ -61,29 +62,54 @@ export function createProviderPoleMarkerIcon(
     condition: 'GOOD' | 'NEEDS_REPAIR' | 'DAMAGED' | 'UNKNOWN';
     label?: string;
     providerCode?: string;
+    category?: InfrastructureCategory;
   }
 ) {
-  const color = options.colorHex || '#2563eb';
+  const category = options.category;
+  let color = options.colorHex || '#2563eb';
   const condition = options.condition;
   const label = options.label;
+
+  // Custom coloring for PJU & PLN categories
+  if (category === 'PJU_MANDIRI') {
+    color = '#f59e0b'; // Amber
+  } else if (category === 'GABUNG_PLN_PJU') {
+    color = '#0284c7'; // PLN Cyan
+  } else if (category === 'PLN_MURNI') {
+    color = '#0369a1'; // Deep Electric Blue
+  }
 
   let conditionRing = '#10b981'; // Green
   if (condition === 'NEEDS_REPAIR') conditionRing = '#f59e0b'; // Amber
   else if (condition === 'DAMAGED') conditionRing = '#ef4444'; // Red
   else if (condition === 'UNKNOWN') conditionRing = '#64748b'; // Slate
 
+  // Center Emblem SVG according to Category
+  let iconSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current opacity-95" viewBox="0 0 24 24">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+    </svg>
+  `;
+
+  if (category === 'PJU_MANDIRI') {
+    iconSvg = `<span class="text-[11px] leading-none select-none">💡</span>`;
+  } else if (category === 'GABUNG_PLN_PJU') {
+    iconSvg = `<span class="text-[10px] leading-none select-none">⚡💡</span>`;
+  } else if (category === 'PLN_MURNI') {
+    iconSvg = `<span class="text-[11px] leading-none select-none">⚡</span>`;
+  }
+
   const html = `
     <div class="relative flex flex-col items-center group cursor-pointer select-none">
       <div class="relative flex items-center justify-center">
-        <!-- Pin Head with Provider Color -->
+        <!-- Pin Head with Category/Provider Color -->
         <div
-          class="w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white font-black text-[9px] transform transition-transform group-hover:scale-125"
+          class="w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white font-black text-[9px] transform transition-transform group-hover:scale-125 ${
+            category === 'PJU_MANDIRI' ? 'ring-2 ring-amber-300' : ''
+          }"
           style="background-color: ${color};"
         >
-          <!-- Pole SVG Icon / Provider Code -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current opacity-95" viewBox="0 0 24 24">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
+          ${iconSvg}
 
           <!-- Top-Right Condition Indicator Dot -->
           <span

@@ -3,7 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Coordinates } from '@/types/gis';
-import { PoleCondition, PoleType, SisiJalan, OwnershipStatus } from '@/types/pole';
+import {
+  PoleCondition,
+  PoleType,
+  SisiJalan,
+  OwnershipStatus,
+  InfrastructureCategory,
+  LampuPjuType,
+  LampuPjuCondition,
+} from '@/types/pole';
 import { Provider } from '@/types/provider';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
 import PhotoUploader from './PhotoUploader';
@@ -33,6 +41,8 @@ import {
   Layers,
   Palette,
   Check,
+  Zap,
+  Lightbulb,
 } from 'lucide-react';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
 import PoleVisualGuideModal, { PoleMiniGraphic } from './PoleVisualGuideModal';
@@ -71,7 +81,13 @@ export default function SurveyForm({
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(undefined);
 
-  // --- 3. INFORMASI TIANG & SPESIFIKASI ---
+  // --- 3. KATEGORI INFRASTRUKTUR & INFORMASI TIANG ---
+  const [infrastructureCategory, setInfrastructureCategory] = useState<InfrastructureCategory>('FO_WIFI');
+  const [pjuLampType, setPjuLampType] = useState<LampuPjuType>('LED');
+  const [pjuLampPower, setPjuLampPower] = useState('90W');
+  const [pjuLampCondition, setPjuLampCondition] = useState<LampuPjuCondition>('MENYALA_NORMAL');
+  const [hasKwhMeter, setHasKwhMeter] = useState(false);
+
   const [providerList, setProviderList] = useState<Provider[]>(DEFAULT_PROVIDERS);
   const [providerId, setProviderId] = useState(DEFAULT_PROVIDERS[0]?.id || 'PRV_TELKOM');
   const [showVisualGuideModal, setShowVisualGuideModal] = useState(false);
@@ -216,8 +232,11 @@ export default function SurveyForm({
         kota: 'Kota Lubuklinggau',
         patokanLokasi: patokanLokasi.trim() || undefined,
         sisiJalan,
-        height,
-        ownershipStatus,
+        infrastructureCategory,
+        pjuLampType: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampType : undefined,
+        pjuLampPower: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampPower : undefined,
+        pjuLampCondition: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampCondition : undefined,
+        hasKwhMeter: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasKwhMeter : undefined,
         isTilted,
         isMessyCable,
         isLowCable,
@@ -228,7 +247,7 @@ export default function SurveyForm({
         description: description.trim() || undefined,
         photoFileId: photoFileId || undefined,
         photoUrl: photoUrl || undefined,
-        surveyorId: user?.id || 'USR-SURVEYOR-01',
+        surveyorId: user?.id || 'USR-KOMINFO-ADMIN',
         surveyorName,
         surveyDate,
         surveyTime,
@@ -540,18 +559,217 @@ export default function SurveyForm({
         {/* ============================================================ */}
         {activeTab === 'SPECS' && (
           <div className="space-y-3 animate-in fade-in">
+            {/* Category & Infrastructure Type Card */}
+            <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
+              <h3 className="text-xs font-black text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+                <Layers className="w-3.5 h-3.5 text-blue-600" />
+                <span>Kategori &amp; Fungsi Infrastruktur Tiang</span>
+              </h3>
+
+              {/* 4 Category Segmented Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInfrastructureCategory('FO_WIFI');
+                    if (providerId === 'PRV_PJU_PEMKOT' || providerId === 'PRV_PLN_PJU_GABUNG' || providerId === 'PRV_PLN_DISTRIBUSI') {
+                      setProviderId('PRV_TELKOM');
+                    }
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    infrastructureCategory === 'FO_WIFI'
+                      ? 'bg-blue-50 border-blue-600 text-blue-900 ring-2 ring-blue-500/20 font-black shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'
+                  }`}
+                >
+                  <div className="text-xs flex items-center gap-1.5 mb-0.5">
+                    <span>🌐</span>
+                    <span>Tiang FO / WiFi</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-normal">Provider Internet / ISP</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInfrastructureCategory('PJU_MANDIRI');
+                    setProviderId('PRV_PJU_PEMKOT');
+                    setOwnershipStatus('SENDIRI');
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    infrastructureCategory === 'PJU_MANDIRI'
+                      ? 'bg-amber-50 border-amber-600 text-amber-950 ring-2 ring-amber-500/20 font-black shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'
+                  }`}
+                >
+                  <div className="text-xs flex items-center gap-1.5 mb-0.5">
+                    <span>💡</span>
+                    <span>Tiang PJU Mandiri</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-normal">Lampu Jalan Khusus Pemkot</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInfrastructureCategory('GABUNG_PLN_PJU');
+                    setProviderId('PRV_PLN_PJU_GABUNG');
+                    setOwnershipStatus('BERSAMA_PLN');
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    infrastructureCategory === 'GABUNG_PLN_PJU'
+                      ? 'bg-cyan-50 border-cyan-600 text-cyan-950 ring-2 ring-cyan-500/20 font-black shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'
+                  }`}
+                >
+                  <div className="text-xs flex items-center gap-1.5 mb-0.5">
+                    <span>⚡💡</span>
+                    <span>Gabung PLN + PJU</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-normal">Tiang Listrik Numpang Lampu</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInfrastructureCategory('PLN_MURNI');
+                    setProviderId('PRV_PLN_DISTRIBUSI');
+                    setOwnershipStatus('BERSAMA_PLN');
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    infrastructureCategory === 'PLN_MURNI'
+                      ? 'bg-sky-50 border-sky-600 text-sky-950 ring-2 ring-sky-500/20 font-black shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-bold'
+                  }`}
+                >
+                  <div className="text-xs flex items-center gap-1.5 mb-0.5">
+                    <span>⚡</span>
+                    <span>Tiang PLN Murni</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-normal">Jaringan Distribusi Listrik</p>
+                </button>
+              </div>
+
+              {/* PJU Special Technical Details (Visible if PJU Mandiri or Gabung PLN) */}
+              {(infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') && (
+                <div className="mt-3 p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-amber-900 flex items-center gap-1.5 uppercase tracking-wider">
+                      <span>💡</span>
+                      <span>Spesifikasi Lampu Penerangan Jalan (PJU)</span>
+                    </span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full">
+                      PJU Terpasang
+                    </span>
+                  </div>
+
+                  {/* Tipe Lampu */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1">
+                      Jenis / Tipe Lampu PJU
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { id: 'LED', label: '💡 LED' },
+                        { id: 'SON_T', label: '🟡 SON-T (Kuning)' },
+                        { id: 'SOLAR_CELL', label: '☀️ Solar Panel' },
+                        { id: 'MERKURI', label: '⚪ Merkuri' },
+                        { id: 'LAINNYA', label: '🔘 Lainnya' },
+                      ].map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setPjuLampType(t.id as any)}
+                          className={`p-2 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
+                            pjuLampType === t.id
+                              ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                              : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Daya & Meteran */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">
+                        Estimasi Daya (Watt)
+                      </label>
+                      <select
+                        value={pjuLampPower}
+                        onChange={(e) => setPjuLampPower(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-amber-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                      >
+                        <option value="40 Watt">40 Watt</option>
+                        <option value="60 Watt">60 Watt</option>
+                        <option value="90 Watt">90 Watt (Standar)</option>
+                        <option value="120 Watt">120 Watt</option>
+                        <option value="150 Watt">150 Watt</option>
+                        <option value="250 Watt">250 Watt (Kuning)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 mb-1">
+                        Sistem Meteran KWh
+                      </label>
+                      <select
+                        value={hasKwhMeter ? 'METER' : 'ABONEMEN'}
+                        onChange={(e) => setHasKwhMeter(e.target.value === 'METER')}
+                        className="w-full px-3 py-2 bg-white border border-amber-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                      >
+                        <option value="ABONEMEN">⚡ Non-Meter (Abonemen)</option>
+                        <option value="METER">🔌 Ada KWh Meter PJU</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Kondisi Nyala Lampu */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 mb-1">
+                      Kondisi Operasional Nyala Lampu
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        { id: 'MENYALA_NORMAL', label: '🟢 Menyala' },
+                        { id: 'REDUP', label: '🟡 Redup' },
+                        { id: 'MATI_TOTAL', label: '🔴 Mati' },
+                        { id: 'PECAH_RUSAK', label: '💥 Pecah' },
+                      ].map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setPjuLampCondition(c.id as any)}
+                          className={`py-1.5 rounded-xl text-[10px] font-bold border transition-all text-center cursor-pointer ${
+                            pjuLampCondition === c.id
+                              ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                              : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100'
+                          }`}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Provider & Material Card */}
             <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
               <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
                 <Building2 className="w-3.5 h-3.5 text-blue-600" />
-                <span>Provider &amp; Material Tiang</span>
+                <span>Instansi Pemilik &amp; Material Tiang</span>
               </h3>
 
               {/* Provider Selection */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="text-xs font-bold text-slate-700">
-                    Operator Provider / Pemilik <span className="text-rose-500">*</span>
+                    Operator Provider / Pemilik Aset <span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"

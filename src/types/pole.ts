@@ -10,6 +10,27 @@ export type SisiJalan = 'KIRI' | 'KANAN' | 'MEDIAN' | 'TIDAK_DITENTUKAN';
 
 export type OwnershipStatus = 'SENDIRI' | 'BERSAMA_PLN' | 'SEWA' | 'TIDAK_DIKETAHUI';
 
+export type InfrastructureCategory =
+  | 'FO_WIFI' // Tiang Fiber Optik / Provider Internet / WiFi
+  | 'PJU_MANDIRI' // Tiang PJU Mandiri Pemkot Lubuklinggau
+  | 'GABUNG_PLN_PJU' // Tiang PLN Gabung Lampu PJU
+  | 'PLN_MURNI'; // Tiang PLN Distribusi Listrik
+
+export type LampuPjuType =
+  | 'LED'
+  | 'SON_T' // Kuning Sodium
+  | 'SOLAR_CELL' // Tenaga Surya
+  | 'MERKURI'
+  | 'LAINNYA'
+  | 'TIDAK_ADA';
+
+export type LampuPjuCondition =
+  | 'MENYALA_NORMAL'
+  | 'REDUP'
+  | 'MATI_TOTAL'
+  | 'PECAH_RUSAK'
+  | 'TIDAK_ADA';
+
 export interface Pole {
   id: string; // e.g. "LL-0001" or "LLG-T1-TJ-463"
   poleCode?: string; // Physical tag/code on the pole
@@ -32,6 +53,13 @@ export interface Pole {
   sisiJalan?: SisiJalan;
   height?: string; // "7m", "9m", "11m", "12m"
   ownershipStatus?: OwnershipStatus;
+
+  // Kategori & Fungsi Infrastruktur Tiang (PJU / FO / PLN)
+  infrastructureCategory?: InfrastructureCategory;
+  pjuLampType?: LampuPjuType;
+  pjuLampPower?: string; // "40W", "60W", "90W", "120W", "150W", "250W"
+  pjuLampCondition?: LampuPjuCondition;
+  hasKwhMeter?: boolean; // Ada KWh Meter atau Non-Meter (Abonemen)
   
   // Quick Safety & Condition Hazards (Yes/No flags)
   isTilted?: boolean; // Tiang Miring
@@ -78,6 +106,14 @@ export interface CreatePoleInput {
   sisiJalan?: SisiJalan;
   height?: string;
   ownershipStatus?: OwnershipStatus;
+
+  // PJU / FO / PLN
+  infrastructureCategory?: InfrastructureCategory;
+  pjuLampType?: LampuPjuType;
+  pjuLampPower?: string;
+  pjuLampCondition?: LampuPjuCondition;
+  hasKwhMeter?: boolean;
+
   isTilted?: boolean;
   isMessyCable?: boolean;
   isLowCable?: boolean;
@@ -98,5 +134,4 @@ export interface CreatePoleInput {
 
 export interface UpdatePoleInput extends Partial<CreatePoleInput> {
   id: string;
-  validationNote?: string;
 }

@@ -14,6 +14,7 @@ interface MiniMapProps {
   poleId: string;
   poleCode?: string;
   providerColorHex?: string;
+  category?: import('@/types/pole').InfrastructureCategory;
 }
 
 export default function MiniMap({
@@ -22,6 +23,7 @@ export default function MiniMap({
   poleId,
   poleCode,
   providerColorHex,
+  category,
 }: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -73,6 +75,7 @@ export default function MiniMap({
       condition,
       label: poleCode || poleId,
       colorHex: providerColorHex || '#2563eb',
+      category,
     });
     L.marker([coord.lat, coord.lng], { icon }).addTo(map);
 
@@ -88,7 +91,7 @@ export default function MiniMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [leafletLib, coord, condition, poleId, poleCode, providerColorHex]);
+  }, [leafletLib, coord, condition, poleId, poleCode, providerColorHex, category]);
 
   const toggleTile = () => {
     if (!leafletLib || !mapRef.current) return;

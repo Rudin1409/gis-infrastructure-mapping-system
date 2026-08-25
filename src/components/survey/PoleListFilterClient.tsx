@@ -45,6 +45,7 @@ export default function PoleListFilterClient({
 }: PoleListFilterClientProps) {
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState(initialQuery || '');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedProvider, setSelectedProvider] = useState(initialProvider || 'ALL');
   const [selectedKecamatan, setSelectedKecamatan] = useState(initialKecamatan || 'ALL');
   const [selectedKelurahan, setSelectedKelurahan] = useState(initialKelurahan || 'ALL');
@@ -74,6 +75,7 @@ export default function PoleListFilterClient({
 
   const resetAllFilters = () => {
     setSearchQuery('');
+    setSelectedCategory('ALL');
     setSelectedProvider('ALL');
     setSelectedKecamatan('ALL');
     setSelectedKelurahan('ALL');
@@ -86,6 +88,7 @@ export default function PoleListFilterClient({
   // Active filters count for badge
   const activeFiltersCount = useMemo(() => {
     let count = 0;
+    if (selectedCategory !== 'ALL') count++;
     if (selectedProvider !== 'ALL') count++;
     if (selectedKecamatan !== 'ALL') count++;
     if (selectedKelurahan !== 'ALL') count++;
@@ -129,32 +132,38 @@ export default function PoleListFilterClient({
         }
       }
 
-      // 2. Provider Filter
+      // 2. Category Filter
+      if (selectedCategory !== 'ALL') {
+        const cat = pole.infrastructureCategory || 'FO_WIFI';
+        if (cat !== selectedCategory) return false;
+      }
+
+      // 3. Provider Filter
       if (selectedProvider !== 'ALL') {
         if (pole.providerId !== selectedProvider) return false;
       }
 
-      // 3. Kecamatan Filter
+      // 4. Kecamatan Filter
       if (selectedKecamatan !== 'ALL') {
         if (pole.kecamatan.toLowerCase() !== selectedKecamatan.toLowerCase()) return false;
       }
 
-      // 4. Kelurahan Filter
+      // 5. Kelurahan Filter
       if (selectedKelurahan !== 'ALL') {
         if (pole.kelurahan.toLowerCase() !== selectedKelurahan.toLowerCase()) return false;
       }
 
-      // 5. Condition Filter
+      // 6. Condition Filter
       if (selectedCondition !== 'ALL') {
         if (pole.condition !== selectedCondition) return false;
       }
 
-      // 6. Type Filter
+      // 7. Type Filter
       if (selectedType !== 'ALL') {
         if (pole.poleType !== selectedType) return false;
       }
 
-      // 7. Hazard Filter
+      // 8. Hazard Filter
       if (hazardFilter === 'HAZARD_ONLY') {
         const isProblem =
           pole.isTilted ||
@@ -177,6 +186,7 @@ export default function PoleListFilterClient({
   }, [
     initialPoles,
     searchQuery,
+    selectedCategory,
     selectedProvider,
     selectedKecamatan,
     selectedKelurahan,
@@ -202,7 +212,7 @@ export default function PoleListFilterClient({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari ID, kode wilayah, provider, jalan..."
+            placeholder="Cari ID, kode wilayah, provider, PJU, jalan..."
             className="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-900 placeholder-slate-400 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium"
           />
           {searchQuery && (
@@ -248,10 +258,59 @@ export default function PoleListFilterClient({
           Semua ({initialPoles.length})
         </button>
 
+        {/* Quick Category Chips */}
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedCategory(selectedCategory === 'PJU_MANDIRI' ? 'ALL' : 'PJU_MANDIRI');
+            setCurrentPage(1);
+          }}
+          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+            selectedCategory === 'PJU_MANDIRI'
+              ? 'bg-amber-500 text-white shadow-xs'
+              : 'bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100'
+          }`}
+        >
+          💡 PJU Mandiri
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedCategory(selectedCategory === 'GABUNG_PLN_PJU' ? 'ALL' : 'GABUNG_PLN_PJU');
+            setCurrentPage(1);
+          }}
+          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+            selectedCategory === 'GABUNG_PLN_PJU'
+              ? 'bg-cyan-600 text-white shadow-xs'
+              : 'bg-cyan-50 text-cyan-900 border border-cyan-200 hover:bg-cyan-100'
+          }`}
+        >
+          ⚡💡 Gabung PLN+PJU
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedCategory(selectedCategory === 'FO_WIFI' ? 'ALL' : 'FO_WIFI');
+            setCurrentPage(1);
+          }}
+          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+            selectedCategory === 'FO_WIFI'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'bg-blue-50 text-blue-900 border border-blue-200 hover:bg-blue-100'
+          }`}
+        >
+          🌐 Tiang FO/WiFi
+        </button>
+
         {/* Quick Condition Chips */}
         <button
           type="button"
-          onClick={() => setSelectedCondition(selectedCondition === 'GOOD' ? 'ALL' : 'GOOD')}
+          onClick={() => {
+            setSelectedCondition(selectedCondition === 'GOOD' ? 'ALL' : 'GOOD');
+            setCurrentPage(1);
+          }}
           className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
             selectedCondition === 'GOOD'
               ? 'bg-emerald-600 text-white shadow-xs'
@@ -312,12 +371,31 @@ export default function PoleListFilterClient({
             Filter Aktif:
           </span>
 
+          {selectedCategory !== 'ALL' && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
+              <span>
+                Kategori: {
+                  selectedCategory === 'PJU_MANDIRI'
+                    ? '💡 PJU Mandiri'
+                    : selectedCategory === 'GABUNG_PLN_PJU'
+                    ? '⚡💡 PLN+PJU'
+                    : selectedCategory === 'PLN_MURNI'
+                    ? '⚡ PLN Listrik'
+                    : '🌐 FO/WiFi'
+                }
+              </span>
+              <button onClick={() => setSelectedCategory('ALL')} className="hover:text-rose-600 cursor-pointer">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
           {selectedProvider !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>
                 Provider: {providers.find((p) => p.id === selectedProvider)?.name.split('.')[1] || selectedProvider}
               </span>
-              <button onClick={() => setSelectedProvider('ALL')} className="hover:text-rose-600">
+              <button onClick={() => setSelectedProvider('ALL')} className="hover:text-rose-600 cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -326,7 +404,7 @@ export default function PoleListFilterClient({
           {selectedKecamatan !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>Kec: {selectedKecamatan.replace('Lubuklinggau', '')}</span>
-              <button onClick={() => setSelectedKecamatan('ALL')} className="hover:text-rose-600">
+              <button onClick={() => setSelectedKecamatan('ALL')} className="hover:text-rose-600 cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -335,7 +413,7 @@ export default function PoleListFilterClient({
           {selectedKelurahan !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>Kel: {selectedKelurahan}</span>
-              <button onClick={() => setSelectedKelurahan('ALL')} className="hover:text-rose-600">
+              <button onClick={() => setSelectedKelurahan('ALL')} className="hover:text-rose-600 cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -344,7 +422,7 @@ export default function PoleListFilterClient({
           {selectedType !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>Jenis: {selectedType}</span>
-              <button onClick={() => setSelectedType('ALL')} className="hover:text-rose-600">
+              <button onClick={() => setSelectedType('ALL')} className="hover:text-rose-600 cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -373,7 +451,7 @@ export default function PoleListFilterClient({
             </p>
             <button
               onClick={resetAllFilters}
-              className="mt-2 py-2 px-4 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all"
+              className="mt-2 py-2 px-4 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all cursor-pointer"
             >
               Reset Semua Filter
             </button>
@@ -403,6 +481,20 @@ export default function PoleListFilterClient({
                     <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[9px] font-mono font-bold">
                       {pole.id}
                     </span>
+                    {/* Category Badge */}
+                    {pole.infrastructureCategory === 'PJU_MANDIRI' ? (
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-md text-[9px] font-bold">
+                        💡 PJU Mandiri
+                      </span>
+                    ) : pole.infrastructureCategory === 'GABUNG_PLN_PJU' ? (
+                      <span className="px-2 py-0.5 bg-cyan-50 text-cyan-900 border border-cyan-200 rounded-md text-[9px] font-bold">
+                        ⚡💡 PLN+PJU
+                      </span>
+                    ) : pole.infrastructureCategory === 'PLN_MURNI' ? (
+                      <span className="px-2 py-0.5 bg-sky-50 text-sky-900 border border-sky-200 rounded-md text-[9px] font-bold">
+                        ⚡ PLN Listrik
+                      </span>
+                    ) : null}
                     <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[9px] font-bold uppercase">
                       {pole.poleType} ({pole.height || '7m'})
                     </span>
@@ -587,10 +679,42 @@ export default function PoleListFilterClient({
 
             {/* Modal Body (Scrollable) */}
             <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 text-xs">
+              {/* 0. Filter Kategori Infrastruktur */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                  🏛️ Kategori Infrastruktur Tiang
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { id: 'ALL', label: 'Semua Kategori' },
+                    { id: 'PJU_MANDIRI', label: '💡 PJU Mandiri' },
+                    { id: 'GABUNG_PLN_PJU', label: '⚡💡 Gabung PLN+PJU' },
+                    { id: 'FO_WIFI', label: '🌐 Tiang FO / WiFi' },
+                    { id: 'PLN_MURNI', label: '⚡ Tiang PLN Listrik' },
+                  ].map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(c.id);
+                        setCurrentPage(1);
+                      }}
+                      className={`p-2 rounded-xl border text-center font-bold text-[11px] transition-all cursor-pointer ${
+                        selectedCategory === c.id
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* 1. Filter Provider */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                  🏢 Operator Provider Telekomunikasi
+                  🏢 Operator Provider / Pemilik Aset
                 </label>
                 <select
                   value={selectedProvider}

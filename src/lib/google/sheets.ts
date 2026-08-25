@@ -105,18 +105,18 @@ export function getGoogleSheetsClient(): sheets_v4.Sheets | null {
 /**
  * Mapping Pole object to Google Sheets row array
  */
-export function poleToSheetRow(pole: Pole): string[] {
+export function poleToSheetRow(pole: Pole): (string | number)[] {
   return [
     pole.id || '',
     pole.poleCode || '',
-    pole.poleLatitude !== undefined ? String(pole.poleLatitude) : '',
-    pole.poleLongitude !== undefined ? String(pole.poleLongitude) : '',
-    pole.deviceLatitude !== undefined ? String(pole.deviceLatitude) : '',
-    pole.deviceLongitude !== undefined ? String(pole.deviceLongitude) : '',
-    pole.gpsAccuracy !== undefined ? String(pole.gpsAccuracy) : '',
-    pole.distanceFromDevice !== undefined ? String(pole.distanceFromDevice) : '',
+    pole.poleLatitude !== undefined ? pole.poleLatitude : '',
+    pole.poleLongitude !== undefined ? pole.poleLongitude : '',
+    pole.deviceLatitude !== undefined ? pole.deviceLatitude : '',
+    pole.deviceLongitude !== undefined ? pole.deviceLongitude : '',
+    pole.gpsAccuracy !== undefined ? pole.gpsAccuracy : '',
+    pole.distanceFromDevice !== undefined ? pole.distanceFromDevice : '',
     pole.locationMethod || 'MANUAL_MAP_PIN',
-    pole.providerId || '',
+    pole.providerId || 'UNKNOWN',
     pole.providerName || '',
     pole.poleType || 'BETON',
     pole.condition || 'GOOD',
@@ -137,14 +137,19 @@ export function poleToSheetRow(pole: Pole): string[] {
     pole.description || '',
     pole.photoFileId || '',
     pole.photoUrl || '',
-    pole.surveyorId || '',
-    pole.surveyorName || '',
+    pole.surveyorId || 'USR-KOMINFO-ADMIN',
+    pole.surveyorName || 'Admin DISKOMINFO (Admin Teknis & Jaringan)',
     pole.surveyDate || '',
     pole.surveyTime || '',
     pole.validationStatus || 'SUBMITTED',
     pole.validationNote || '',
     pole.createdAt || new Date().toISOString(),
     pole.updatedAt || new Date().toISOString(),
+    pole.infrastructureCategory || 'FO_WIFI',
+    pole.pjuLampType || '',
+    pole.pjuLampPower || '',
+    pole.pjuLampCondition || '',
+    pole.hasKwhMeter ? 'YA' : 'TIDAK',
   ];
 }
 
@@ -184,6 +189,7 @@ export function sheetRowToPole(row: any[]): Pole | null {
     isHazardous: row[26] === 'YA' || row[26] === 'TRUE' || row[26] === true,
     description: row[27] ? String(row[27]) : undefined,
     photoFileId: row[28] ? String(row[28]) : undefined,
+    photoUrl: row[29] ? String(row[29]) : undefined,
     surveyorId: row[30] ? String(row[30]) : 'USR-KOMINFO-ADMIN',
     surveyorName: (row[31] && !String(row[31]).includes('Surveyor 1'))
       ? String(row[31])
@@ -194,6 +200,11 @@ export function sheetRowToPole(row: any[]): Pole | null {
     validationNote: row[35] ? String(row[35]) : undefined,
     createdAt: String(row[36] || new Date().toISOString()),
     updatedAt: String(row[37] || new Date().toISOString()),
+    infrastructureCategory: row[38] || 'FO_WIFI',
+    pjuLampType: row[39] || undefined,
+    pjuLampPower: row[40] || undefined,
+    pjuLampCondition: row[41] || undefined,
+    hasKwhMeter: row[42] === 'YA' || row[42] === 'TRUE' || row[42] === true,
   };
 }
 

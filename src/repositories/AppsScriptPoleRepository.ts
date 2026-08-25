@@ -90,6 +90,7 @@ export class AppsScriptPoleRepository implements IPoleRepository {
         isHazardous: parseBoolean(row.isHazardous ?? row.Potensi_Bahaya_Lain),
         description: row.description || row.Catatan_Keterangan_Lapangan ? String(row.description || row.Catatan_Keterangan_Lapangan) : undefined,
         photoFileId: row.photoFileId || row.ID_File_Google_Drive ? String(row.photoFileId || row.ID_File_Google_Drive) : undefined,
+        photoUrl: row.photoUrl || row.Link_Foto_Google_Drive ? String(row.photoUrl || row.Link_Foto_Google_Drive) : undefined,
         surveyorId: row.surveyorId || row.ID_Surveyor ? String(row.surveyorId || row.ID_Surveyor) : 'USR-KOMINFO-ADMIN',
         surveyorName: (row.surveyorName && !String(row.surveyorName).includes('Surveyor 1'))
           ? String(row.surveyorName)
@@ -100,6 +101,11 @@ export class AppsScriptPoleRepository implements IPoleRepository {
         validationNote: row.validationNote || row.Catatan_Validasi ? String(row.validationNote || row.Catatan_Validasi) : undefined,
         createdAt: String(row.createdAt || row.Waktu_Dibuat || new Date().toISOString()),
         updatedAt: String(row.updatedAt || row.Waktu_Diperbarui || new Date().toISOString()),
+        infrastructureCategory: row.infrastructureCategory || row.Kategori_Infrastruktur || 'FO_WIFI',
+        pjuLampType: row.pjuLampType || row.Tipe_Lampu_PJU || undefined,
+        pjuLampPower: row.pjuLampPower || row.Daya_Lampu_Watt || undefined,
+        pjuLampCondition: row.pjuLampCondition || row.Kondisi_Lampu_PJU || undefined,
+        hasKwhMeter: parseBoolean(row.hasKwhMeter ?? row.Ada_Kwh_Meter),
       }));
 
       // Filter based on options

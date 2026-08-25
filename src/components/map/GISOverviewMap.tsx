@@ -334,6 +334,7 @@ export default function GISOverviewMap({
         condition: pole.condition,
         label: pole.poleCode || pole.id,
         providerCode: provObj?.code,
+        category: pole.infrastructureCategory,
       });
 
       const marker = L.marker([pole.poleLatitude, pole.poleLongitude], {
