@@ -92,7 +92,7 @@ export default function SurveyForm({
   const [description, setDescription] = useState('');
 
   const { user } = useAuth();
-  const surveyorName = `${user.name} (${user.roleLabel})`;
+  const surveyorName = user ? `${user.name} (${user.roleLabel})` : 'Surveyor GIS Lubuklinggau';
   const [surveyDate] = useState(new Date().toISOString().split('T')[0]);
   const [surveyTime] = useState(
     new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
@@ -228,7 +228,7 @@ export default function SurveyForm({
         description: description.trim() || undefined,
         photoFileId: photoFileId || undefined,
         photoUrl: photoUrl || undefined,
-        surveyorId: user.id,
+        surveyorId: user?.id || 'USR-SURVEYOR-01',
         surveyorName,
         surveyDate,
         surveyTime,

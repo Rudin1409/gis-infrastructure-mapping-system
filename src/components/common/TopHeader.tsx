@@ -149,14 +149,22 @@ export default function TopHeader() {
           </button>
 
           {/* Active User Avatar Chip */}
-          <Link
-            href="/profile"
-            className="flex items-center gap-1 px-2 py-0.5 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full text-[10px] text-white font-bold backdrop-blur-md transition-all active:scale-95"
-            title={`Akun Aktif: ${user.name} (${user.roleLabel})`}
-          >
-            <span>{user.avatar || '👤'}</span>
-            <span className="max-w-[65px] truncate text-[9px]">{user.role.includes('BAPENDA') ? 'Bapenda' : user.role.includes('KOMINFO') ? 'Kominfo' : 'Surveyor'}</span>
-          </Link>
+          {user && (
+            <Link
+              href="/profile"
+              className="flex items-center gap-1 px-2 py-0.5 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full text-[10px] text-white font-bold backdrop-blur-md transition-all active:scale-95"
+              title={`Akun Aktif: ${user.name} (${user.roleLabel})`}
+            >
+              <span>{user.avatar || '👤'}</span>
+              <span className="max-w-[65px] truncate text-[9px]">
+                {user.role?.includes('BAPENDA')
+                  ? 'Bapenda'
+                  : user.role?.includes('KOMINFO')
+                  ? 'Kominfo'
+                  : 'Surveyor'}
+              </span>
+            </Link>
+          )}
         </div>
       </div>
     </header>

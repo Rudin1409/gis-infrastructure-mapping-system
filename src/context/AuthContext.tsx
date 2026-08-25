@@ -1,14 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { AuthUser, DEFAULT_ACCOUNTS } from '@/types/auth';
 
 interface AuthContextType {
-  user: AuthUser;
+  user: AuthUser | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginAs: (account: AuthUser) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoaded: boolean;
 }
 
 const STORAGE_KEY = 'infra_map_auth_user';
@@ -16,8 +18,11 @@ const STORAGE_KEY = 'infra_map_auth_user';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser>(DEFAULT_ACCOUNTS[0]);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     try {
@@ -26,14 +31,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.id) {
           setUser(parsed);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
         }
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (e) {
       console.warn('Could not read auth from storage:', e);
+      setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setIsLoaded(true);
     }
   }, []);
+
+  // Auth gate redirection
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!isAuthenticated && pathname !== '/login') {
+      router.replace('/login');
+    } else if (isAuthenticated && pathname === '/login') {
+      router.replace('/');
+    }
+  }, [isLoaded, isAuthenticated, pathname, router]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const trimmedEmail = email.trim().toLowerCase();
@@ -60,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     setUser(authUserData);
+    setIsAuthenticated(true);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(authUserData));
     } catch (e) {}
@@ -69,17 +95,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginAs = (account: AuthUser) => {
     setUser(account);
+    setIsAuthenticated(true);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(account));
     } catch (e) {}
   };
 
   const logout = () => {
-    const fallback = DEFAULT_ACCOUNTS[0];
-    setUser(fallback);
+    setUser(null);
+    setIsAuthenticated(false);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (e) {}
+    router.replace('/login');
   };
 
   return (
@@ -89,7 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         loginAs,
         logout,
-        isAuthenticated: true,
+        isAuthenticated,
+        isLoaded,
       }}
     >
       {children}

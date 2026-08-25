@@ -28,6 +28,7 @@ import {
 
 export default function ProfilePage() {
   const { user, loginAs, logout } = useAuth();
+  const currentUser = user || DEFAULT_ACCOUNTS[0];
 
   return (
     <div className="p-4 space-y-4 text-slate-800 font-sans pb-20 animate-in fade-in duration-150">
@@ -45,13 +46,14 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        <Link
-          href="/login"
-          className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-all"
+        <button
+          type="button"
+          onClick={logout}
+          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5" />
-          <span>Ganti Akun</span>
-        </Link>
+          <span>Keluar</span>
+        </button>
       </div>
 
       {/* 1. Active User Identity Card */}
@@ -60,23 +62,23 @@ export default function ProfilePage() {
 
         <div className="flex items-start gap-3 relative z-10">
           <div className="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner flex-shrink-0">
-            {user.avatar || '👨‍💼'}
+            {currentUser.avatar || '👨‍💼'}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <h2 className="text-base font-black tracking-tight leading-tight truncate">
-                {user.name}
+                {currentUser.name}
               </h2>
               <ShieldCheck className="w-4 h-4 text-cyan-300 flex-shrink-0" />
             </div>
             <p className="text-xs text-blue-100 font-bold mt-0.5">
-              {user.roleLabel}
+              {currentUser.roleLabel}
             </p>
             <p className="text-[11px] text-blue-200/90 font-medium leading-snug mt-1">
-              {user.agency}
+              {currentUser.agency}
             </p>
             <span className="inline-block text-[10px] text-cyan-200 bg-white/15 px-2.5 py-0.5 rounded-full font-mono mt-2">
-              {user.email}
+              {currentUser.email}
             </span>
           </div>
         </div>
@@ -88,7 +90,7 @@ export default function ProfilePage() {
               Hak Akses Role
             </span>
             <span className="text-xs font-black font-mono mt-0.5 block text-cyan-200">
-              {user.role}
+              {currentUser.role}
             </span>
           </div>
 
@@ -115,7 +117,7 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 gap-2">
           {DEFAULT_ACCOUNTS.map((acc) => {
-            const isActive = acc.id === user.id;
+            const isActive = acc.id === currentUser.id;
             return (
               <button
                 key={acc.id}
