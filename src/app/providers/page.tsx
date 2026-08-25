@@ -114,7 +114,7 @@ export default async function ProvidersPage() {
 
                   <div className="mt-1.5 flex items-center gap-2">
                     <Link
-                      href={`/poles?q=${encodeURIComponent(prov.code)}`}
+                      href={`/poles?provider=${encodeURIComponent(prov.id)}`}
                       className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5"
                     >
                       <Database className="w-3 h-3" />

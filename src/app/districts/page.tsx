@@ -117,10 +117,10 @@ export default async function DistrictsPage() {
                 </div>
 
                 <Link
-                  href={`/poles?q=${encodeURIComponent(kec.name)}`}
+                  href={`/poles?kecamatan=${encodeURIComponent(kec.name)}`}
                   className={`px-2.5 py-1 rounded-xl text-[10px] font-bold flex items-center gap-1 transition-all ${
                     count > 0
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 shadow-2xs'
                       : 'bg-slate-50 text-slate-400 border border-slate-100'
                   }`}
                 >
@@ -129,19 +129,20 @@ export default async function DistrictsPage() {
                 </Link>
               </div>
 
-              {/* Kelurahan Chips */}
+              {/* Kelurahan Chips (Clickable to Filter) */}
               <div>
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                  Kelurahan / Desa:
+                  Kelurahan / Desa (Ketuk untuk filter):
                 </span>
                 <div className="flex flex-wrap gap-1">
                   {kec.kelurahan.map((kel) => (
-                    <span
+                    <Link
                       key={kel}
-                      className="px-2.5 py-1 bg-slate-50 border border-slate-200/80 rounded-xl text-[10px] font-bold text-slate-700 hover:border-purple-300"
+                      href={`/poles?kecamatan=${encodeURIComponent(kec.name)}&kelurahan=${encodeURIComponent(kel)}`}
+                      className="px-2.5 py-1 bg-slate-50 hover:bg-purple-50 hover:text-purple-700 border border-slate-200/80 hover:border-purple-300 rounded-xl text-[10px] font-bold text-slate-700 transition-colors"
                     >
                       {kel}
-                    </span>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -157,8 +158,8 @@ export default async function DistrictsPage() {
                 </Link>
 
                 <Link
-                  href={`/poles?q=${encodeURIComponent(kec.name)}`}
-                  className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-0.5"
+                  href={`/poles?kecamatan=${encodeURIComponent(kec.name)}`}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5"
                 >
                   <span>Daftar Tiang</span>
                   <ChevronRight className="w-3.5 h-3.5" />

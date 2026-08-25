@@ -7,7 +7,17 @@ import PoleListFilterClient from '@/components/survey/PoleListFilterClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function PolesListPage() {
+export default async function PolesListPage({
+  searchParams,
+}: {
+  searchParams?: {
+    q?: string;
+    kecamatan?: string;
+    kelurahan?: string;
+    provider?: string;
+    condition?: string;
+  };
+}) {
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 
@@ -42,6 +52,11 @@ export default async function PolesListPage() {
       <PoleListFilterClient
         initialPoles={allPoles}
         providers={providers}
+        initialQuery={searchParams?.q}
+        initialKecamatan={searchParams?.kecamatan}
+        initialKelurahan={searchParams?.kelurahan}
+        initialProvider={searchParams?.provider}
+        initialCondition={searchParams?.condition}
       />
     </div>
   );

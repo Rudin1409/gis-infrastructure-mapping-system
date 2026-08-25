@@ -27,18 +27,28 @@ import {
 interface PoleListFilterClientProps {
   initialPoles: Pole[];
   providers: Provider[];
+  initialQuery?: string;
+  initialKecamatan?: string;
+  initialKelurahan?: string;
+  initialProvider?: string;
+  initialCondition?: string;
 }
 
 export default function PoleListFilterClient({
   initialPoles,
   providers,
+  initialQuery,
+  initialKecamatan,
+  initialKelurahan,
+  initialProvider,
+  initialCondition,
 }: PoleListFilterClientProps) {
   // --- Filter States ---
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState('ALL');
-  const [selectedKecamatan, setSelectedKecamatan] = useState('ALL');
-  const [selectedKelurahan, setSelectedKelurahan] = useState('ALL');
-  const [selectedCondition, setSelectedCondition] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState(initialQuery || '');
+  const [selectedProvider, setSelectedProvider] = useState(initialProvider || 'ALL');
+  const [selectedKecamatan, setSelectedKecamatan] = useState(initialKecamatan || 'ALL');
+  const [selectedKelurahan, setSelectedKelurahan] = useState(initialKelurahan || 'ALL');
+  const [selectedCondition, setSelectedCondition] = useState(initialCondition || 'ALL');
   const [selectedType, setSelectedType] = useState('ALL');
   const [hazardFilter, setHazardFilter] = useState<'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'>('ALL');
 
