@@ -1,7 +1,45 @@
 import { IPoleRepository, PoleFilterOptions } from './interfaces/IPoleRepository';
-import { Pole, CreatePoleInput, UpdatePoleInput } from '@/types/pole';
+import { Pole, CreatePoleInput, UpdatePoleInput, PoleCondition, PoleType, SisiJalan, OwnershipStatus } from '@/types/pole';
 import { generatePoleId } from '@/lib/utils/idGenerator';
 import { APPS_SCRIPT_URL } from '@/lib/google/appsScriptClient';
+
+function parseNumber(val: any, fallback = 0): number {
+  if (val === undefined || val === null || val === '') return fallback;
+  if (typeof val === 'number') return isNaN(val) ? fallback : val;
+  const str = String(val).trim().replace(',', '.');
+  const num = parseFloat(str);
+  return isNaN(num) ? fallback : num;
+}
+
+function parseOptionalNumber(val: any): number | undefined {
+  if (val === undefined || val === null || val === '') return undefined;
+  if (typeof val === 'number') return isNaN(val) ? undefined : val;
+  const str = String(val).trim().replace(',', '.');
+  const num = parseFloat(str);
+  return isNaN(num) ? undefined : num;
+}
+
+function parseBoolean(val: any): boolean {
+  if (typeof val === 'boolean') return val;
+  if (val === undefined || val === null) return false;
+  const str = String(val).trim().toUpperCase();
+  return str === 'YA' || str === 'TRUE' || str === '1' || str === 'YES';
+}
+
+function parseCondition(val: any): PoleCondition {
+  const str = String(val || '').toUpperCase();
+  if (str.includes('RUSAK') || str.includes('DAMAGED')) return 'DAMAGED';
+  if (str.includes('SERVIS') || str.includes('MIRING') || str.includes('NEEDS_REPAIR') || str.includes('CEK')) return 'NEEDS_REPAIR';
+  return 'GOOD';
+}
+
+function parsePoleType(val: any): PoleType {
+  const str = String(val || '').toUpperCase();
+  if (str.includes('BESI') || str.includes('STEEL')) return 'BESI';
+  if (str.includes('KAYU') || str.includes('WOOD')) return 'KAYU';
+  if (str.includes('LAIN')) return 'LAINNYA';
+  return 'BETON';
+}
 
 export class AppsScriptPoleRepository implements IPoleRepository {
   private url: string;
@@ -23,47 +61,47 @@ export class AppsScriptPoleRepository implements IPoleRepository {
 
       const json = await res.json();
       let poles: Pole[] = (json.data || []).map((row: any) => ({
-        id: String(row.id || ''),
-        poleCode: row.poleCode ? String(row.poleCode) : undefined,
-        poleLatitude: Number(row.poleLatitude) || 0,
-        poleLongitude: Number(row.poleLongitude) || 0,
-        deviceLatitude: row.deviceLatitude ? Number(row.deviceLatitude) : undefined,
-        deviceLongitude: row.deviceLongitude ? Number(row.deviceLongitude) : undefined,
-        gpsAccuracy: row.gpsAccuracy ? Number(row.gpsAccuracy) : undefined,
-        distanceFromDevice: row.distanceFromDevice ? Number(row.distanceFromDevice) : undefined,
-        locationMethod: row.locationMethod || 'MANUAL_MAP_PIN',
-        providerId: String(row.providerId || 'UNKNOWN'),
-        providerName: row.providerName ? String(row.providerName) : undefined,
-        poleType: row.poleType || 'BESI',
-        condition: row.condition || 'GOOD',
-        road: String(row.road || ''),
-        kelurahan: String(row.kelurahan || ''),
-        kecamatan: String(row.kecamatan || ''),
-        kota: row.kota ? String(row.kota) : 'Kota Lubuklinggau',
-        patokanLokasi: row.patokanLokasi ? String(row.patokanLokasi) : undefined,
-        sisiJalan: row.sisiJalan || 'KIRI',
-        height: row.height ? String(row.height) : undefined,
-        ownershipStatus: row.ownershipStatus || 'SENDIRI',
-        isTilted: row.isTilted === 'TRUE' || row.isTilted === true,
-        isMessyCable: row.isMessyCable === 'TRUE' || row.isMessyCable === true,
-        isLowCable: row.isLowCable === 'TRUE' || row.isLowCable === true,
-        isHazardous: row.isHazardous === 'TRUE' || row.isHazardous === true,
-        isCorroded: row.isCorroded === 'TRUE' || row.isCorroded === true,
-        isObstructing: row.isObstructing === 'TRUE' || row.isObstructing === true,
-        description: row.description ? String(row.description) : undefined,
-        photoFileId: row.photoFileId ? String(row.photoFileId) : undefined,
-        photoUrl: row.photoUrl ? String(row.photoUrl) : undefined,
-        surveyorId: row.surveyorId ? String(row.surveyorId) : undefined,
-        surveyorName: row.surveyorName ? String(row.surveyorName) : undefined,
-        surveyDate: String(row.surveyDate || new Date().toISOString().split('T')[0]),
-        surveyTime: row.surveyTime ? String(row.surveyTime) : undefined,
-        validationStatus: row.validationStatus || 'SUBMITTED',
-        validationNote: row.validationNote ? String(row.validationNote) : undefined,
-        createdAt: String(row.createdAt || new Date().toISOString()),
-        updatedAt: String(row.updatedAt || new Date().toISOString()),
+        id: String(row.id || row.ID_Tiang || ''),
+        poleCode: row.poleCode || row.Kode_Fisik_Tiang ? String(row.poleCode || row.Kode_Fisik_Tiang) : undefined,
+        poleLatitude: parseNumber(row.poleLatitude ?? row.Latitude_GIS),
+        poleLongitude: parseNumber(row.poleLongitude ?? row.Longitude_GIS),
+        deviceLatitude: parseOptionalNumber(row.deviceLatitude ?? row.Latitude_GPS_Device),
+        deviceLongitude: parseOptionalNumber(row.deviceLongitude ?? row.Longitude_GPS_Device),
+        gpsAccuracy: parseOptionalNumber(row.gpsAccuracy ?? row.Akurasi_GPS_Meter),
+        distanceFromDevice: parseOptionalNumber(row.distanceFromDevice ?? row.Jarak_Deviasi_Meter),
+        locationMethod: row.locationMethod || row.Metode_Penentuan_Lokasi || 'MANUAL_MAP_PIN',
+        providerId: String(row.providerId || row.ID_Provider || 'UNKNOWN'),
+        providerName: row.providerName || row.Nama_Provider_Operator ? String(row.providerName || row.Nama_Provider_Operator) : undefined,
+        poleType: parsePoleType(row.poleType || row.Jenis_Tiang),
+        condition: parseCondition(row.condition || row.Kondisi_Tiang),
+        road: String(row.road || row.Nama_Jalan_Lokasi || ''),
+        kelurahan: String(row.kelurahan || row.Kelurahan || ''),
+        kecamatan: String(row.kecamatan || row.Kecamatan || ''),
+        kota: String(row.kota || row.Kota_Kabupaten || 'Kota Lubuklinggau'),
+        patokanLokasi: row.patokanLokasi || row.Patokan_Lokasi ? String(row.patokanLokasi || row.Patokan_Lokasi) : undefined,
+        sisiJalan: (row.sisiJalan || row.Sisi_Jalan || 'KIRI') as SisiJalan,
+        height: row.height || row.Tinggi_Tiang ? String(row.height || row.Tinggi_Tiang) : '7m',
+        ownershipStatus: (row.ownershipStatus || row.Status_Kepemilikan || 'SENDIRI') as OwnershipStatus,
+        isTilted: parseBoolean(row.isTilted ?? row.Bahaya_Tiang_Miring),
+        isMessyCable: parseBoolean(row.isMessyCable ?? row.Bahaya_Kabel_Semrawut),
+        isLowCable: parseBoolean(row.isLowCable ?? row.Bahaya_Kabel_Rendah),
+        isCorroded: parseBoolean(row.isCorroded ?? row.Bahaya_Karat_Retak),
+        isObstructing: parseBoolean(row.isObstructing ?? row.Mengganggu_Jalan_Trotoar),
+        isHazardous: parseBoolean(row.isHazardous ?? row.Potensi_Bahaya_Lain),
+        description: row.description || row.Catatan_Keterangan_Lapangan ? String(row.description || row.Catatan_Keterangan_Lapangan) : undefined,
+        photoFileId: row.photoFileId || row.ID_File_Google_Drive ? String(row.photoFileId || row.ID_File_Google_Drive) : undefined,
+        photoUrl: row.photoUrl || row.Link_Foto_Google_Drive ? String(row.photoUrl || row.Link_Foto_Google_Drive) : undefined,
+        surveyorId: row.surveyorId || row.ID_Surveyor ? String(row.surveyorId || row.ID_Surveyor) : undefined,
+        surveyorName: row.surveyorName || row.Nama_Petugas_Surveyor ? String(row.surveyorName || row.Nama_Petugas_Surveyor) : 'Surveyor 1',
+        surveyDate: String(row.surveyDate || row.Tanggal_Survey || new Date().toISOString().split('T')[0]),
+        surveyTime: row.surveyTime || row.Waktu_Survey ? String(row.surveyTime || row.Waktu_Survey) : undefined,
+        validationStatus: row.validationStatus || row.Status_Validasi || 'SUBMITTED',
+        validationNote: row.validationNote || row.Catatan_Validasi ? String(row.validationNote || row.Catatan_Validasi) : undefined,
+        createdAt: String(row.createdAt || row.Waktu_Dibuat || new Date().toISOString()),
+        updatedAt: String(row.updatedAt || row.Waktu_Diperbarui || new Date().toISOString()),
       }));
 
-      // If sheet is fresh/empty, return empty list or fallback
+      // Filter based on options
       if (filters) {
         if (filters.providerId && filters.providerId !== 'ALL') {
           poles = poles.filter((p) => p.providerId === filters.providerId);
@@ -191,4 +229,3 @@ export class AppsScriptPoleRepository implements IPoleRepository {
     }
   }
 }
-
