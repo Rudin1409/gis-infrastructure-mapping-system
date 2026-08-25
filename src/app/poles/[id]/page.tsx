@@ -20,9 +20,15 @@ import {
   AlertTriangle,
   XCircle,
   ExternalLink,
-  Edit,
   Pencil,
-  Trash2,
+  ShieldAlert,
+  Clock,
+  Navigation,
+  Sparkles,
+  Info,
+  Check,
+  X,
+  Compass,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -39,13 +45,67 @@ export default async function PoleDetailPage({
     notFound();
   }
 
+  // 6 Item Safety Checklist Status
+  const safetyChecks = [
+    {
+      id: 'isTilted',
+      label: 'Kemiringan Tiang',
+      isHazard: !!pole.isTilted,
+      hazardText: 'Tiang Miring',
+      safeText: 'Tegak Normal',
+      icon: AlertTriangle,
+    },
+    {
+      id: 'isMessyCable',
+      label: 'Kerapian Kabel FO',
+      isHazard: !!pole.isMessyCable,
+      hazardText: 'Kabel Semrawut',
+      safeText: 'Rapi & Teratur',
+      icon: Layers,
+    },
+    {
+      id: 'isLowCable',
+      label: 'Ketinggian Kabel',
+      isHazard: !!pole.isLowCable,
+      hazardText: 'Menjuntai Rendah (<4.5m)',
+      safeText: 'Ketinggian Standar Aman',
+      icon: AlertTriangle,
+    },
+    {
+      id: 'isCorroded',
+      label: 'Kondisi Material Fisik',
+      isHazard: !!pole.isCorroded,
+      hazardText: 'Karat / Retak / Keropos',
+      safeText: 'Bebas Karat & Kokoh',
+      icon: ShieldAlert,
+    },
+    {
+      id: 'isObstructing',
+      label: 'Akses Jalan / Trotoar',
+      isHazard: !!pole.isObstructing,
+      hazardText: 'Menghalangi Lalu Lintas/Trotoar',
+      safeText: 'Bebas Hambatan Jalan',
+      icon: Navigation,
+    },
+    {
+      id: 'isHazardous',
+      label: 'Potensi Bahaya Lainnya',
+      isHazard: !!pole.isHazardous,
+      hazardText: 'Terdapat Potensi Bahaya',
+      safeText: 'Nihil Bahaya Tambahan',
+      icon: ShieldAlert,
+    },
+  ];
+
+  const totalHazards = safetyChecks.filter((s) => s.isHazard).length;
+
   return (
-    <div className="p-4 space-y-3.5 text-slate-800 font-sans pb-24">
+    <div className="p-4 space-y-4 text-slate-800 font-sans pb-24 animate-in fade-in duration-150">
       {/* Top Breadcrumb & Actions */}
       <div className="flex items-center justify-between pt-1">
         <Link
           href="/poles"
-          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 py-1.5 px-3 rounded-xl bg-white border border-slate-200 shadow-xs transition-all"
+          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 py-1.5 px-3 rounded-xl bg-white border border-slate-200 shadow-2xs transition-all"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Kembali</span>
@@ -57,12 +117,12 @@ export default async function PoleDetailPage({
             className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 shadow-2xs transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
-            <span>Edit Data &amp; Titik</span>
+            <span>Edit &amp; Atur Titik</span>
           </Link>
 
           <Link
             href={`/map?search=${pole.id}`}
-            className="inline-flex items-center gap-1 text-xs font-bold text-white py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-xs transition-all"
+            className="inline-flex items-center gap-1 text-xs font-bold text-white py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-2xs transition-all"
           >
             <Map className="w-3.5 h-3.5" />
             <span>Peta</span>
@@ -70,8 +130,8 @@ export default async function PoleDetailPage({
         </div>
       </div>
 
-      {/* Main Header Card */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-2">
+      {/* Main Pole Header Card */}
+      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -79,11 +139,11 @@ export default async function PoleDetailPage({
                 {pole.id}
               </h1>
               <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-[10px] font-bold uppercase">
-                {pole.poleType}
+                Tiang {pole.poleType}
               </span>
             </div>
-            <p className="text-xs font-bold text-slate-700 flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5 text-blue-600" />
+            <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
               <span>{pole.providerName || pole.providerId}</span>
               {pole.poleCode && (
                 <span className="text-[10px] text-slate-400 font-mono">({pole.poleCode})</span>
@@ -92,7 +152,7 @@ export default async function PoleDetailPage({
           </div>
 
           <span
-            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
               pole.condition === 'GOOD'
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 : pole.condition === 'NEEDS_REPAIR'
@@ -101,7 +161,7 @@ export default async function PoleDetailPage({
             }`}
           >
             <span
-              className={`w-1.5 h-1.5 rounded-full ${
+              className={`w-2 h-2 rounded-full ${
                 pole.condition === 'GOOD'
                   ? 'bg-emerald-500'
                   : pole.condition === 'NEEDS_REPAIR'
@@ -121,65 +181,125 @@ export default async function PoleDetailPage({
 
         {/* Quick Specs Pill Row */}
         <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-xs">
-          <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100 text-center">
-            <span className="text-[9px] font-bold text-slate-400 uppercase block">Tinggi</span>
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-center">
+            <span className="text-[9px] font-bold text-slate-400 uppercase block">Tinggi Tiang</span>
             <span className="font-bold text-slate-900 mt-0.5 block">{pole.height || '7m'}</span>
           </div>
 
-          <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100 text-center">
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-center">
             <span className="text-[9px] font-bold text-slate-400 uppercase block">Sisi Jalan</span>
-            <span className="font-bold text-slate-900 mt-0.5 block capitalize">
-              {pole.sisiJalan?.toLowerCase() || 'Kiri'}
+            <span className="font-bold text-slate-900 mt-0.5 block">
+              {pole.sisiJalan === 'MEDIAN'
+                ? 'Median Tengah'
+                : pole.sisiJalan === 'KANAN'
+                ? 'Kanan Jalan'
+                : pole.sisiJalan === 'KIRI'
+                ? 'Kiri Jalan'
+                : 'Tidak Ditentukan'}
             </span>
           </div>
 
-          <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100 text-center">
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-center">
             <span className="text-[9px] font-bold text-slate-400 uppercase block">Kepemilikan</span>
-            <span className="font-bold text-slate-900 mt-0.5 block capitalize">
-              {pole.ownershipStatus === 'BERSAMA_PLN' ? 'Joint PLN' : pole.ownershipStatus || 'Sendiri'}
+            <span className="font-bold text-slate-900 mt-0.5 block">
+              {pole.ownershipStatus === 'BERSAMA_PLN'
+                ? 'Joint PLN'
+                : pole.ownershipStatus === 'SEWA'
+                ? 'Sewa'
+                : pole.ownershipStatus === 'SENDIRI'
+                ? 'Sendiri'
+                : 'Tidak Tahu'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Safety Hazards Warning Card (If any) */}
-      {(pole.isTilted || pole.isMessyCable || pole.isLowCable || pole.isHazardous || pole.isCorroded || pole.isObstructing) && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-3xl space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
-            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span>Catatan Bahaya &amp; Kondisi Lapangan:</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {pole.isTilted && (
-              <span className="px-2 py-0.5 bg-white text-amber-900 text-[10px] font-bold rounded-lg border border-amber-200 shadow-2xs">
-                ⚠️ Tiang Miring
-              </span>
-            )}
-            {pole.isMessyCable && (
-              <span className="px-2 py-0.5 bg-white text-amber-900 text-[10px] font-bold rounded-lg border border-amber-200 shadow-2xs">
-                🔌 Kabel Semrawut
-              </span>
-            )}
-            {pole.isLowCable && (
-              <span className="px-2 py-0.5 bg-white text-rose-900 text-[10px] font-bold rounded-lg border border-rose-200 shadow-2xs">
-                🚨 Kabel Rendah Menjuntai
-              </span>
-            )}
-            {pole.isCorroded && (
-              <span className="px-2 py-0.5 bg-white text-amber-900 text-[10px] font-bold rounded-lg border border-amber-200 shadow-2xs">
-                ⚙️ Karat / Retak
-              </span>
-            )}
-            {pole.isObstructing && (
-              <span className="px-2 py-0.5 bg-white text-amber-900 text-[10px] font-bold rounded-lg border border-amber-200 shadow-2xs">
-                🚧 Mengganggu Jalan/Trotoar
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* ============================================================ */}
+      {/* 2. RINCIAN LENGKAP 6 HASIL CEK KONDISI & KESELAMATAN LAPANGAN */}
+      {/* ============================================================ */}
+      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+            <span>Hasil Pengamatan Kondisi &amp; Bahaya</span>
+          </h2>
 
-      {/* Photo Preview & Mini Map */}
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+              totalHazards > 0
+                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            }`}
+          >
+            {totalHazards > 0 ? `${totalHazards} Peringatan Bahaya` : 'Semua Kondisi Aman'}
+          </span>
+        </div>
+
+        {/* 6 Inspection Checklist Table */}
+        <div className="grid grid-cols-1 gap-2 text-xs">
+          {safetyChecks.map((item, idx) => (
+            <div
+              key={item.id}
+              className={`p-2.5 rounded-2xl border flex items-center justify-between transition-all ${
+                item.isHazard
+                  ? 'bg-rose-50/60 border-rose-200 text-rose-900'
+                  : 'bg-slate-50 border-slate-200/70 text-slate-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] bg-white border border-slate-200 text-slate-600">
+                  {idx + 1}
+                </span>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 block uppercase">
+                    {item.label}
+                  </span>
+                  <span className="font-bold text-xs text-slate-800">
+                    {item.isHazard ? (
+                      <span className="text-rose-700 flex items-center gap-1 font-black">
+                        <AlertTriangle className="w-3 h-3 text-rose-600" />
+                        <span>{item.hazardText}</span>
+                      </span>
+                    ) : (
+                      <span className="text-emerald-700 flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-600 stroke-[3]" />
+                        <span>{item.safeText}</span>
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <span
+                className={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase ${
+                  item.isHazard
+                    ? 'bg-rose-600 text-white shadow-2xs'
+                    : 'bg-emerald-100 text-emerald-800'
+                }`}
+              >
+                {item.isHazard ? 'BAHAYA' : 'AMAN'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Catatan Lapangan Khusus */}
+        {pole.description && (
+          <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-1">
+            <span className="text-[10px] font-bold text-blue-600 uppercase flex items-center gap-1">
+              <Info className="w-3 h-3" />
+              <span>Catatan / Keterangan Tambahan Surveyor</span>
+            </span>
+            <p className="text-xs font-medium text-slate-700 italic">
+              &ldquo;{pole.description}&rdquo;
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================ */}
+      {/* 3. FOTO LAPANGAN & PETA INTERAKTIF                           */}
+      {/* ============================================================ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {/* Photo Container */}
         <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-2">
@@ -243,86 +363,95 @@ export default async function PoleDetailPage({
         </div>
       </div>
 
-      {/* Details Specs Table */}
+      {/* ============================================================ */}
+      {/* 4. INFORMASI LOKASI GEOGRAFIS & ADMINISTRATIF                */}
+      {/* ============================================================ */}
       <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-2.5">
         <h2 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
           <FileText className="w-3.5 h-3.5 text-blue-600" />
-          <span>Informasi Lokasi &amp; Keterangan</span>
+          <span>Informasi Alamat &amp; Administratif</span>
         </h2>
 
         <div className="space-y-2 text-xs">
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 space-y-0.5">
             <span className="text-slate-400 text-[10px] uppercase font-bold block">
-              Nama Jalan / Patokan Lokasi
+              Nama Jalan / Lokasi
             </span>
             <span className="font-bold text-slate-900">{pole.road}</span>
             {pole.patokanLokasi && (
-              <span className="text-[11px] text-slate-500 block">Patokan: {pole.patokanLokasi}</span>
+              <span className="text-[11px] text-slate-500 block">
+                Patokan Gedung: <strong>{pole.patokanLokasi}</strong>
+              </span>
             )}
           </div>
 
-          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 space-y-0.5">
-            <span className="text-slate-400 text-[10px] uppercase font-bold block">
-              Wilayah Administratif
-            </span>
-            <span className="font-bold text-slate-900">
-              Kel. {pole.kelurahan}, Kec. {pole.kecamatan}
-            </span>
-          </div>
-
-          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 space-y-0.5">
-            <span className="text-slate-400 text-[10px] uppercase font-bold block">
-              Koordinat Presisi GIS
-            </span>
-            <span className="font-mono font-bold text-emerald-600">
-              {pole.poleLatitude.toFixed(6)}, {pole.poleLongitude.toFixed(6)}
-            </span>
-          </div>
-
-          {pole.description && (
+          <div className="grid grid-cols-2 gap-2">
             <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 space-y-0.5">
               <span className="text-slate-400 text-[10px] uppercase font-bold block">
-                Catatan Lapangan
+                Kecamatan
               </span>
-              <span className="text-slate-600 italic">
-                &ldquo;{pole.description}&rdquo;
+              <span className="font-bold text-slate-900">{pole.kecamatan}</span>
+            </div>
+
+            <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 space-y-0.5">
+              <span className="text-slate-400 text-[10px] uppercase font-bold block">
+                Kelurahan
+              </span>
+              <span className="font-bold text-slate-900">{pole.kelurahan}</span>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex items-center justify-between">
+            <div>
+              <span className="text-slate-400 text-[10px] uppercase font-bold block">
+                Koordinat Presisi GIS
+              </span>
+              <span className="font-mono font-bold text-emerald-600 text-xs">
+                {pole.poleLatitude.toFixed(6)}, {pole.poleLongitude.toFixed(6)}
               </span>
             </div>
-          )}
+            <span className="text-[10px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-lg border border-slate-200">
+              WGS84
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Quality Control & Audit Trail */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-2">
+      {/* ============================================================ */}
+      {/* 5. AUDIT TRAIL, GPS & PETUGAS SURVEYOR                       */}
+      {/* ============================================================ */}
+      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-2.5">
         <h2 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
           <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-          <span>Audit Trail Survey</span>
+          <span>Audit Trail &amp; Verifikasi Lapangan</span>
         </h2>
 
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-            <span className="text-slate-400 text-[10px] block">Akurasi GPS</span>
+            <span className="text-slate-400 text-[10px] block font-bold uppercase">Akurasi GPS</span>
             <span className="font-bold text-slate-900 font-mono">
-              {pole.gpsAccuracy ? `±${pole.gpsAccuracy.toFixed(1)}m` : '-'}
+              {pole.gpsAccuracy ? `±${pole.gpsAccuracy.toFixed(1)}m` : 'GPS Presisi Tinggi'}
             </span>
           </div>
 
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-            <span className="text-slate-400 text-[10px] block">Jarak Deviasi</span>
+            <span className="text-slate-400 text-[10px] block font-bold uppercase">Deviasi Titik</span>
             <span className="font-bold text-emerald-600 font-mono">
               {formatDistance(pole.distanceFromDevice || 0)}
             </span>
           </div>
 
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-            <span className="text-slate-400 text-[10px] block">Tanggal Survey</span>
-            <span className="font-bold text-slate-900">{pole.surveyDate}</span>
+            <span className="text-slate-400 text-[10px] block font-bold uppercase">Waktu Survey</span>
+            <span className="font-bold text-slate-900">
+              {pole.surveyDate} {pole.surveyTime ? `(${pole.surveyTime})` : ''}
+            </span>
           </div>
 
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-            <span className="text-slate-400 text-[10px] block">Petugas Surveyor</span>
+            <span className="text-slate-400 text-[10px] block font-bold uppercase">Surveyor Lapangan</span>
             <span className="font-bold text-blue-600 truncate block">
-              {pole.surveyorName || 'Surveyor 1'}
+              {pole.surveyorName || 'Surveyor 1 (Kominfo)'}
             </span>
           </div>
         </div>
