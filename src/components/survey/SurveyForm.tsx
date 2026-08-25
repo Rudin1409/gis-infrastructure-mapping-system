@@ -11,6 +11,7 @@ import {
   InfrastructureCategory,
   LampuPjuType,
   LampuPjuCondition,
+  CableInstallationType,
 } from '@/types/pole';
 import { Provider } from '@/types/provider';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
@@ -83,6 +84,7 @@ export default function SurveyForm({
 
   // --- 3. KATEGORI INFRASTRUKTUR & INFORMASI TIANG ---
   const [infrastructureCategory, setInfrastructureCategory] = useState<InfrastructureCategory>('FO_WIFI');
+  const [cableInstallationType, setCableInstallationType] = useState<CableInstallationType>('UDARA');
   const [pjuLampType, setPjuLampType] = useState<LampuPjuType>('LED');
   const [pjuLampPower, setPjuLampPower] = useState('90W');
   const [pjuLampCondition, setPjuLampCondition] = useState<LampuPjuCondition>('MENYALA_NORMAL');
@@ -232,6 +234,7 @@ export default function SurveyForm({
         kota: 'Kota Lubuklinggau',
         patokanLokasi: patokanLokasi.trim() || undefined,
         sisiJalan,
+        cableInstallationType,
         infrastructureCategory,
         pjuLampType: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampType : undefined,
         pjuLampPower: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampPower : undefined,
@@ -860,7 +863,7 @@ export default function SurveyForm({
                         key={h}
                         type="button"
                         onClick={() => setHeight(h)}
-                        className={`py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
+                        className={`py-1.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
                           height === h
                             ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
                             : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -886,6 +889,62 @@ export default function SurveyForm({
                     <option value="SEWA">Sewa Provider</option>
                     <option value="TIDAK_DIKETAHUI">Tidak Tahu</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Tipe Jalur Kabel (Kabel Udara vs Bawah Tanah vs Riser Transisi) */}
+              <div className="pt-2 border-t border-slate-100">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <Cable className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Tipe Pemasangan Jalur Kabel Jaringan</span>
+                  </span>
+                  <span className="text-[10px] font-normal text-slate-400 font-mono">
+                    {cableInstallationType}
+                  </span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    {
+                      id: 'UDARA',
+                      label: '🌐 Kabel Udara',
+                      sub: 'Di Atas Tiang (Aerial)',
+                      color: 'border-blue-200 bg-blue-50/50 text-blue-900',
+                      activeColor: 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-500/20',
+                    },
+                    {
+                      id: 'BAWAH_TANAH',
+                      label: '🕳️ Bawah Tanah',
+                      sub: 'Tanam / Ducting',
+                      color: 'border-amber-200 bg-amber-50/50 text-amber-900',
+                      activeColor: 'bg-amber-600 text-white border-amber-600 ring-2 ring-amber-500/20',
+                    },
+                    {
+                      id: 'TRANSISI_RISER',
+                      label: '↕️ Riser Transisi',
+                      sub: 'Tiang Turun ke Tanah',
+                      color: 'border-indigo-200 bg-indigo-50/50 text-indigo-900',
+                      activeColor: 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-500/20',
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setCableInstallationType(item.id as CableInstallationType)}
+                      className={`p-2 rounded-2xl border text-left transition-all cursor-pointer ${
+                        cableInstallationType === item.id
+                          ? `${item.activeColor} shadow-xs font-black`
+                          : `${item.color} hover:bg-slate-100 font-semibold opacity-90`
+                      }`}
+                    >
+                      <div className="text-[11px] font-bold truncate leading-tight">
+                        {item.label}
+                      </div>
+                      <div className="text-[9px] opacity-80 mt-0.5 truncate font-normal">
+                        {item.sub}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

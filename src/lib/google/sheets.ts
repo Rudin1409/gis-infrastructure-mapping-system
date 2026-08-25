@@ -47,6 +47,12 @@ export const POLE_HEADERS = [
   'Catatan_Validasi',
   'Waktu_Dibuat',
   'Waktu_Diperbarui',
+  'Kategori_Infrastruktur',
+  'Tipe_Lampu_PJU',
+  'Daya_Lampu_Watt',
+  'Kondisi_Lampu_PJU',
+  'Ada_Kwh_Meter',
+  'Tipe_Pemasangan_Kabel',
 ];
 
 export const PROVIDER_HEADERS = [
@@ -150,6 +156,7 @@ export function poleToSheetRow(pole: Pole): (string | number)[] {
     pole.pjuLampPower || '',
     pole.pjuLampCondition || '',
     pole.hasKwhMeter ? 'YA' : 'TIDAK',
+    pole.cableInstallationType || 'UDARA',
   ];
 }
 
@@ -205,6 +212,7 @@ export function sheetRowToPole(row: any[]): Pole | null {
     pjuLampPower: row[40] || undefined,
     pjuLampCondition: row[41] || undefined,
     hasKwhMeter: row[42] === 'YA' || row[42] === 'TRUE' || row[42] === true,
+    cableInstallationType: row[43] || 'UDARA',
   };
 }
 

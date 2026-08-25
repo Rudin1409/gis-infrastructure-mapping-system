@@ -71,6 +71,9 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   const [infrastructureCategory, setInfrastructureCategory] = useState<import('@/types/pole').InfrastructureCategory>(
     pole.infrastructureCategory || 'FO_WIFI'
   );
+  const [cableInstallationType, setCableInstallationType] = useState<import('@/types/pole').CableInstallationType>(
+    pole.cableInstallationType || 'UDARA'
+  );
   const [pjuLampType, setPjuLampType] = useState<import('@/types/pole').LampuPjuType>(
     pole.pjuLampType || 'LED'
   );
@@ -201,6 +204,7 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
         sisiJalan,
         height,
         ownershipStatus,
+        cableInstallationType,
         infrastructureCategory,
         pjuLampType: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampType : undefined,
         pjuLampPower: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampPower : undefined,
@@ -758,6 +762,62 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                 <option value="BERSAMA_PLN">Joint PLN</option>
                 <option value="TIDAK_DIKETAHUI">Tidak Diketahui</option>
               </select>
+            </div>
+          </div>
+
+          {/* Tipe Jalur Kabel (Kabel Udara vs Bawah Tanah vs Riser Transisi) */}
+          <div className="pt-2 border-t border-slate-100">
+            <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <span>🔌</span>
+                <span>Tipe Pemasangan Jalur Kabel</span>
+              </span>
+              <span className="text-[10px] font-normal text-slate-400 font-mono">
+                {cableInstallationType}
+              </span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                {
+                  id: 'UDARA',
+                  label: '🌐 Kabel Udara',
+                  sub: 'Di Atas Tiang (Aerial)',
+                  color: 'border-blue-200 bg-blue-50/50 text-blue-900',
+                  activeColor: 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-500/20',
+                },
+                {
+                  id: 'BAWAH_TANAH',
+                  label: '🕳️ Bawah Tanah',
+                  sub: 'Tanam / Ducting',
+                  color: 'border-amber-200 bg-amber-50/50 text-amber-900',
+                  activeColor: 'bg-amber-600 text-white border-amber-600 ring-2 ring-amber-500/20',
+                },
+                {
+                  id: 'TRANSISI_RISER',
+                  label: '↕️ Riser Transisi',
+                  sub: 'Tiang Turun ke Tanah',
+                  color: 'border-indigo-200 bg-indigo-50/50 text-indigo-900',
+                  activeColor: 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-500/20',
+                },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setCableInstallationType(item.id as any)}
+                  className={`p-2 rounded-2xl border text-left transition-all cursor-pointer ${
+                    cableInstallationType === item.id
+                      ? `${item.activeColor} shadow-xs font-black`
+                      : `${item.color} hover:bg-slate-100 font-semibold opacity-90`
+                  }`}
+                >
+                  <div className="text-[11px] font-bold truncate leading-tight">
+                    {item.label}
+                  </div>
+                  <div className="text-[9px] opacity-80 mt-0.5 truncate font-normal">
+                    {item.sub}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>

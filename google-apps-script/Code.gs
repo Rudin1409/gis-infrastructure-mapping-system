@@ -50,7 +50,8 @@ var POLE_HEADERS = [
   'Tipe_Lampu_PJU',
   'Daya_Lampu_Watt',
   'Kondisi_Lampu_PJU',
-  'Ada_Kwh_Meter'
+  'Ada_Kwh_Meter',
+  'Tipe_Pemasangan_Kabel'
 ];
 
 // 2. Sheet DATA_PROVIDER (Master 20+ Operator Provider)
@@ -264,7 +265,8 @@ function poleToRowArray(p) {
     p.pjuLampType || '',
     p.pjuLampPower || '',
     p.pjuLampCondition || '',
-    p.hasKwhMeter ? 'YA' : 'TIDAK'
+    p.hasKwhMeter ? 'YA' : 'TIDAK',
+    p.cableInstallationType || 'UDARA'
   ];
 }
 
@@ -328,7 +330,8 @@ function rowArrayToPole(row) {
     pjuLampType: row[39] || undefined,
     pjuLampPower: row[40] || undefined,
     pjuLampCondition: row[41] || undefined,
-    hasKwhMeter: row[42] === 'YA' || row[42] === 'TRUE' || row[42] === true
+    hasKwhMeter: row[42] === 'YA' || row[42] === 'TRUE' || row[42] === true,
+    cableInstallationType: row[43] || 'UDARA'
   };
 }
 

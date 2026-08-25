@@ -219,6 +219,18 @@ export default async function PoleDetailPage({
             </span>
           </div>
 
+          {/* Tipe Jalur Kabel */}
+          <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
+            <span className="text-slate-400 block text-[9px] uppercase font-bold">Tipe Pemasangan Jalur Kabel</span>
+            <span className="font-bold text-slate-800 block mt-0.5 text-xs">
+              {pole.cableInstallationType === 'BAWAH_TANAH'
+                ? '🕳️ Kabel Bawah Tanah / Tanam (Underground / Ducting)'
+                : pole.cableInstallationType === 'TRANSISI_RISER'
+                ? '↕️ Riser Pole (Transisi Naik/Turun Bawah Tanah)'
+                : '🌐 Kabel Udara (Di Atas Tiang / Aerial)'}
+            </span>
+          </div>
+
           {/* Alamat Spasial */}
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
             <span className="text-slate-400 block text-[9px] uppercase font-bold">Alamat Spasial</span>

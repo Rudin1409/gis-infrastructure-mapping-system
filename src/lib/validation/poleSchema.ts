@@ -31,6 +31,7 @@ export const createPoleSchema = z.object({
   sisiJalan: z.string().optional().default('TIDAK_DITENTUKAN'),
   height: z.string().optional().default('7m'),
   ownershipStatus: z.string().optional().default('SENDIRI'),
+  cableInstallationType: z.string().optional().default('UDARA'),
   isTilted: z.boolean().optional().default(false),
   isMessyCable: z.boolean().optional().default(false),
   isLowCable: z.boolean().optional().default(false),

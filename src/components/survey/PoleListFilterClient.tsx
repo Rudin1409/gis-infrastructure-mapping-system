@@ -495,6 +495,18 @@ export default function PoleListFilterClient({
                         ⚡ PLN Listrik
                       </span>
                     ) : null}
+
+                    {/* Cable Type Badge (if underground or riser) */}
+                    {pole.cableInstallationType === 'BAWAH_TANAH' ? (
+                      <span className="px-2 py-0.5 bg-amber-100/80 text-amber-950 border border-amber-300 rounded-md text-[9px] font-bold">
+                        🕳️ Bawah Tanah
+                      </span>
+                    ) : pole.cableInstallationType === 'TRANSISI_RISER' ? (
+                      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-900 border border-indigo-200 rounded-md text-[9px] font-bold">
+                        ↕️ Riser Pole
+                      </span>
+                    ) : null}
+
                     <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[9px] font-bold uppercase">
                       {pole.poleType} ({pole.height || '7m'})
                     </span>

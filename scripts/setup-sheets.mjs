@@ -68,6 +68,7 @@ const POLE_HEADERS = [
   'Daya_Lampu_Watt',
   'Kondisi_Lampu_PJU',
   'Ada_Kwh_Meter',
+  'Tipe_Pemasangan_Kabel',
 ];
 
 // 2. DATA_PROVIDER (Master 20+ Operator Provider)

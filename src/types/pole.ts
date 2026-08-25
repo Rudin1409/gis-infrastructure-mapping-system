@@ -16,6 +16,11 @@ export type InfrastructureCategory =
   | 'GABUNG_PLN_PJU' // Tiang PLN Gabung Lampu PJU
   | 'PLN_MURNI'; // Tiang PLN Distribusi Listrik
 
+export type CableInstallationType =
+  | 'UDARA' // Kabel Udara / Di Atas Tiang (Aerial)
+  | 'BAWAH_TANAH' // Kabel Bawah Tanah / Tanam (Underground / Ducting)
+  | 'TRANSISI_RISER'; // Transisi Riser Pole (Peralihan Udara ke Bawah Tanah)
+
 export type LampuPjuType =
   | 'LED'
   | 'SON_T' // Kuning Sodium
@@ -53,6 +58,9 @@ export interface Pole {
   sisiJalan?: SisiJalan;
   height?: string; // "7m", "9m", "11m", "12m"
   ownershipStatus?: OwnershipStatus;
+
+  // Tipe Pemasangan Jalur Kabel (Udara / Bawah Tanah / Riser)
+  cableInstallationType?: CableInstallationType;
 
   // Kategori & Fungsi Infrastruktur Tiang (PJU / FO / PLN)
   infrastructureCategory?: InfrastructureCategory;
@@ -106,6 +114,7 @@ export interface CreatePoleInput {
   sisiJalan?: SisiJalan;
   height?: string;
   ownershipStatus?: OwnershipStatus;
+  cableInstallationType?: CableInstallationType;
 
   // PJU / FO / PLN
   infrastructureCategory?: InfrastructureCategory;
