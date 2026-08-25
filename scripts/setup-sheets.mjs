@@ -141,10 +141,9 @@ const USER_HEADERS = [
 ];
 
 const MASTER_USERS = [
-  ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFO', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF', '2026-08-25'],
-  ['USR-BAPENDA-ADMIN', 'Admin BAPENDA', 'admin.bapenda@lubuklinggaukota.go.id', 'bapenda123', 'ADMIN_BAPENDA', 'Badan Pendapatan Daerah Kota Lubuklinggau', '0813-6789-5678', 'AKTIF', '2026-08-25'],
-  ['USR-SURVEYOR-01', 'Surveyor 1 (Kominfo)', 'surveyor1@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Kominfo Lubuklinggau', '0852-1122-3344', 'AKTIF', '2026-08-25'],
-  ['USR-SURVEYOR-02', 'Surveyor 2 (Bapenda)', 'surveyor2@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Badan Pendapatan Daerah Lubuklinggau', '0853-9988-7766', 'AKTIF', '2026-08-25'],
+  ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFOTIKSAN', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF', '2026-08-25'],
+  ['USR-SURVEYOR-01', 'Surveyor Lapangan 1', 'surveyor1@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0852-1122-3344', 'AKTIF', '2026-08-25'],
+  ['USR-SURVEYOR-02', 'Surveyor Lapangan 2', 'surveyor2@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0853-9988-7766', 'AKTIF', '2026-08-25'],
 ];
 
 async function initializeGoogleSpreadsheet() {

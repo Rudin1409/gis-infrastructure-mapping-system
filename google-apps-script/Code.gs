@@ -177,13 +177,12 @@ function initialSetup() {
   userSheet.setFrozenRows(1);
   userSheet.getRange(1, 1, 1, USER_HEADERS.length).setFontWeight('bold').setBackground('#dbeafe');
 
-  // Isi data awal akun jika masih kosong
+  // Isi data awal akun jika masih kosong (Akun resmi DISKOMINFOTIKSAN)
   if (userSheet.getLastRow() <= 1) {
     var defaultUsers = [
-      ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFO', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF', '2026-08-25'],
-      ['USR-BAPENDA-ADMIN', 'Admin BAPENDA', 'admin.bapenda@lubuklinggaukota.go.id', 'bapenda123', 'ADMIN_BAPENDA', 'Badan Pendapatan Daerah Kota Lubuklinggau', '0813-6789-5678', 'AKTIF', '2026-08-25'],
-      ['USR-SURVEYOR-01', 'Surveyor 1 (Kominfo)', 'surveyor1@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Kominfo Lubuklinggau', '0852-1122-3344', 'AKTIF', '2026-08-25'],
-      ['USR-SURVEYOR-02', 'Surveyor 2 (Bapenda)', 'surveyor2@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Badan Pendapatan Daerah Lubuklinggau', '0853-9988-7766', 'AKTIF', '2026-08-25']
+      ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFOTIKSAN', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF', '2026-08-25'],
+      ['USR-SURVEYOR-01', 'Surveyor Lapangan 1', 'surveyor1@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0852-1122-3344', 'AKTIF', '2026-08-25'],
+      ['USR-SURVEYOR-02', 'Surveyor Lapangan 2', 'surveyor2@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0853-9988-7766', 'AKTIF', '2026-08-25']
     ];
     userSheet.getRange(2, 1, defaultUsers.length, USER_HEADERS.length).setValues(defaultUsers);
   }
@@ -553,14 +552,12 @@ function doPost(e) {
               email: String(row[2]),
               role: String(row[4] || 'SURVEYOR'),
               roleLabel: String(row[4] || 'SURVEYOR') === 'ADMIN_KOMINFO'
-                ? 'Admin Teknis & Jaringan'
-                : String(row[4] || 'SURVEYOR') === 'ADMIN_BAPENDA'
-                ? 'Admin Pajak & Retribusi Tiang'
-                : 'Petugas Lapangan GIS',
-              agency: String(row[5] || 'Pemerintah Kota Lubuklinggau'),
+                ? 'Admin Teknis & Infrastruktur GIS'
+                : 'Petugas Survei Spasial Lapangan',
+              agency: String(row[5] || 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'),
               phone: String(row[6] || ''),
               status: String(row[7] || 'AKTIF'),
-              avatar: String(row[4]).includes('KOMINFO') ? '🏢' : String(row[4]).includes('BAPENDA') ? '🏛️' : '👨‍💼'
+              avatar: String(row[4]).includes('KOMINFO') ? '🏢' : '👨‍💼'
             }
           })).setMimeType(ContentService.MimeType.JSON);
         }

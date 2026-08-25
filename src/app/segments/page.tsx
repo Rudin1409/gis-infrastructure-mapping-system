@@ -154,7 +154,7 @@ export default async function SegmentsPage({
             Fungsi Pendataan Jalur &amp; Topologi Kabel
           </p>
           <p className="text-[10px] leading-relaxed text-slate-600">
-            Digunakan oleh Dinas Kominfo &amp; Bapenda untuk memantau <strong>kepadatan bentangan kabel FO</strong>, menghitung total retribusi panjang utilitas, serta mengidentifikasi kabel udara yang perlu dipindahkan ke bawah tanah (*ducting*).
+            Digunakan oleh DISKOMINFOTIKSAN Kota Lubuklinggau untuk memantau <strong>kepadatan bentangan kabel FO</strong>, menghitung total panjang utilitas, serta mengidentifikasi kabel udara yang perlu dipindahkan ke bawah tanah (*ducting*).
           </p>
         </div>
       </div>

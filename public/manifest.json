@@ -1,7 +1,7 @@
 {
   "name": "Sistem Pemetaan Tiang & GIS Lubuklinggau",
   "short_name": "InfraMap LLG",
-  "description": "Sistem inventarisasi dan pemetaan GIS tiang telekomunikasi Kota Lubuklinggau (Kominfo & Bapenda)",
+  "description": "Sistem inventarisasi dan pemetaan GIS tiang telekomunikasi dan infrastruktur Kota Lubuklinggau (DISKOMINFOTIKSAN)",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

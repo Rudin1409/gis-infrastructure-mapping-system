@@ -173,7 +173,7 @@ export default async function HomePage() {
           <div>
             <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 text-blue-100 text-[10px] font-semibold mb-1 backdrop-blur-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Petugas Surveyor Aktif • Kominfo / Bapenda</span>
+              <span>Petugas Surveyor Aktif • DISKOMINFOTIKSAN</span>
             </div>
             <h2 className="text-lg font-black text-white tracking-tight">
               Halo, Tim Surveyor! 👋

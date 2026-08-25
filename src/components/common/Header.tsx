@@ -22,7 +22,7 @@ export default function Header() {
             </span>
           </div>
           <p className="text-[10px] text-slate-400 leading-none mt-0.5">
-            Kominfo &amp; Bapenda Kota
+            DISKOMINFOTIKSAN Kota Lubuklinggau
           </p>
         </div>
       </Link>

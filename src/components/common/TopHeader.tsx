@@ -160,12 +160,8 @@ export default function TopHeader() {
               title={`Akun Aktif: ${user.name} (${user.roleLabel})`}
             >
               <span>{user.avatar || '👤'}</span>
-              <span className="max-w-[65px] truncate text-[9px]">
-                {user.role?.includes('BAPENDA')
-                  ? 'Bapenda'
-                  : user.role?.includes('KOMINFO')
-                  ? 'Kominfo'
-                  : 'Surveyor'}
+              <span className="max-w-[70px] truncate text-[9px]">
+                {user.role?.includes('ADMIN') ? 'Kominfo' : 'Surveyor'}
               </span>
             </Link>
           )}
