@@ -7,7 +7,7 @@ import BottomNav from './BottomNav';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isFullScreenPage = pathname.startsWith('/poles/new') || pathname.startsWith('/map');
+  const isFullScreenPage = pathname.startsWith('/poles/new') || pathname.startsWith('/map') || pathname.endsWith('/edit');
 
   return (
     <div className="min-h-screen bg-[#0b1120] flex justify-center items-start text-slate-800 font-sans selection:bg-blue-600 selection:text-white">
@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Sticky Universal Top Header on All Pages */}
         <TopHeader />
 
-        {/* Dynamic Page Content */}
+        {/* Dynamic Page Content with Fast Smooth Page Transition */}
         <main
           className={`flex-1 w-full relative min-h-0 ${
             isFullScreenPage
@@ -24,7 +24,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               : 'overflow-y-auto pb-24'
           }`}
         >
-          {children}
+          <div key={pathname} className="w-full h-full animate-in fade-in duration-150">
+            {children}
+          </div>
         </main>
 
         {/* Modern Mobile Bottom Navigation */}

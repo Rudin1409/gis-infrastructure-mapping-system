@@ -20,6 +20,9 @@ import {
   AlertTriangle,
   XCircle,
   ExternalLink,
+  Edit,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -37,24 +40,34 @@ export default async function PoleDetailPage({
   }
 
   return (
-    <div className="p-4 space-y-3.5 text-slate-800 font-sans pb-10">
+    <div className="p-4 space-y-3.5 text-slate-800 font-sans pb-24">
       {/* Top Breadcrumb & Actions */}
       <div className="flex items-center justify-between pt-1">
         <Link
           href="/poles"
-          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 py-1.5 px-3 rounded-xl bg-white border border-slate-200 shadow-sm transition-all"
+          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 py-1.5 px-3 rounded-xl bg-white border border-slate-200 shadow-xs transition-all"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Kembali</span>
         </Link>
 
-        <Link
-          href={`/map?search=${pole.id}`}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-white py-1.5 px-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all"
-        >
-          <Map className="w-4 h-4" />
-          <span>Fokus Peta</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/poles/${pole.id}/edit`}
+            className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 shadow-2xs transition-all"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span>Edit Data &amp; Titik</span>
+          </Link>
+
+          <Link
+            href={`/map?search=${pole.id}`}
+            className="inline-flex items-center gap-1 text-xs font-bold text-white py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-xs transition-all"
+          >
+            <Map className="w-3.5 h-3.5" />
+            <span>Peta</span>
+          </Link>
+        </div>
       </div>
 
       {/* Main Header Card */}
@@ -98,46 +111,129 @@ export default async function PoleDetailPage({
             />
             <span>
               {pole.condition === 'GOOD'
-                ? 'Baik'
+                ? 'Kondisi Baik'
                 : pole.condition === 'NEEDS_REPAIR'
                 ? 'Perlu Servis'
-                : 'Rusak'}
+                : 'Rusak Parah'}
             </span>
           </span>
         </div>
+
+        {/* Quick Specs Pill Row */}
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-xs">
+          <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100 text-center">
+            <span className="text-[9px] font-bold text-slate-400 uppercase block">Tinggi</span>
+            <span className="font-bold text-slate-900 mt-0.5 block">{pole.height || '7m'}</span>
+          </div>
+
+          <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100 text-center">
+            <span className="text-[9px] font-bold text-slate-400 uppercase block">Sisi Jalan</span>
+            <span className="font-bold text-slate-900 mt-0.5 block capitalize">
+              {pole.sisiJalan?.toLowerCase() || 'Kiri'}
+            </span>
+          </div>
+
+          <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100 text-center">
+            <span className="text-[9px] font-bold text-slate-400 uppercase block">Kepemilikan</span>
+            <span className="font-bold text-slate-900 mt-0.5 block capitalize">
+              {pole.ownershipStatus === 'BERSAMA_PLN' ? 'Joint PLN' : pole.ownershipStatus || 'Sendiri'}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Grid: Photo & Map */}
-      <div className="space-y-3.5">
+      {/* Safety Hazards Warning Card (If any) */}
+      {(pole.isTilted || pole.isMessyCable || pole.isLowCable || pole.isHazardous || pole.isCorroded || pole.isObstructing) && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-3xl space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span>Catatan Bahaya &amp; Kondisi Lapangan:</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {pole.isTilted && (
+              <span className="px-2 py-0.5 bg-white text-amber-900 text-[10px] font-bold rounded-lg border border-amber-200 shadow-2xs">
+                ⚠️ Tiang Miring
+              </span>
+            )}
+            {pole.isMessyCable && (
+              <span className="px-2 py-0.5 bg-white text-amber-900 text-[10px] font-bold rounded-lg border border-amber-200 shadow-2xs">
+                🔌 Kabel Semrawut
+              </span>
+            )}
+            {pole.isLowCable && (
+              <span className="px-2 py-0.5 bg-white text-rose-900 text-[10px] font-bold rounded-lg border border-rose-200 shadow-2xs">
+                🚨 Kabel Rendah Menjuntai
+              </span>
+            )}
+            {pole.isCorroded && (
+              <span className="px-2 py-0.5 bg-white text-amber-900 text-[10px] font-bold rounded-lg border border-amber-200 shadow-2xs">
+                ⚙️ Karat / Retak
+              </span>
+            )}
+            {pole.isObstructing && (
+              <span className="px-2 py-0.5 bg-white text-amber-900 text-[10px] font-bold rounded-lg border border-amber-200 shadow-2xs">
+                🚧 Mengganggu Jalan/Trotoar
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Photo Preview & Mini Map */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {/* Photo Container */}
         <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-2">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1.5">
-            <Camera className="w-3.5 h-3.5 text-blue-600" /> Dokumentasi Foto
-          </span>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+              <Camera className="w-3.5 h-3.5 text-blue-600" />
+              <span>Foto Lapangan</span>
+            </h2>
+            {pole.photoUrl && (
+              <a
+                href={pole.photoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] text-blue-600 font-bold hover:underline flex items-center gap-0.5"
+              >
+                <span>Lihat HD</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            )}
+          </div>
 
-          {pole.photoUrl ? (
-            <div className="relative rounded-2xl overflow-hidden border border-slate-100 group h-52 bg-slate-900">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80">
+            {pole.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={pole.photoUrl}
-                alt={`Foto Tiang ${pole.id}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                alt={`Tiang ${pole.id}`}
+                className="w-full h-full object-cover"
               />
-            </div>
-          ) : (
-            <div className="h-44 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 text-xs">
-              <Camera className="w-7 h-7 mb-1.5 opacity-50" />
-              <span>Foto belum tersedia</span>
-            </div>
-          )}
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                <Camera className="w-8 h-8 stroke-1 mb-1" />
+                <span className="text-xs font-medium">Foto belum tersedia</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Mini Map Location */}
+        {/* Mini Map Container */}
         <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-2">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-emerald-600" /> Posisi Koordinat GIS
-          </span>
-          <div className="rounded-2xl overflow-hidden border border-slate-200 h-48">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+              <MapPin className="w-3.5 h-3.5 text-blue-600" />
+              <span>Posisi Koordinat GIS</span>
+            </h2>
+            <Link
+              href={`/poles/${pole.id}/edit`}
+              className="text-[10px] text-blue-600 font-bold hover:underline"
+            >
+              Atur Titik 📍
+            </Link>
+          </div>
+
+          <div className="h-48 rounded-2xl overflow-hidden border border-slate-200/80 relative">
             <MiniMap
               coord={{ lat: pole.poleLatitude, lng: pole.poleLongitude }}
               condition={pole.condition}
@@ -160,6 +256,9 @@ export default async function PoleDetailPage({
               Nama Jalan / Patokan Lokasi
             </span>
             <span className="font-bold text-slate-900">{pole.road}</span>
+            {pole.patokanLokasi && (
+              <span className="text-[11px] text-slate-500 block">Patokan: {pole.patokanLokasi}</span>
+            )}
           </div>
 
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 space-y-0.5">
@@ -173,7 +272,7 @@ export default async function PoleDetailPage({
 
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 space-y-0.5">
             <span className="text-slate-400 text-[10px] uppercase font-bold block">
-              Koordinat GIS
+              Koordinat Presisi GIS
             </span>
             <span className="font-mono font-bold text-emerald-600">
               {pole.poleLatitude.toFixed(6)}, {pole.poleLongitude.toFixed(6)}
@@ -221,13 +320,32 @@ export default async function PoleDetailPage({
           </div>
 
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-            <span className="text-slate-400 text-[10px] block">Status Validasi</span>
-            <span className="font-bold text-blue-600">{pole.validationStatus}</span>
+            <span className="text-slate-400 text-[10px] block">Petugas Surveyor</span>
+            <span className="font-bold text-blue-600 truncate block">
+              {pole.surveyorName || 'Surveyor 1'}
+            </span>
           </div>
         </div>
+      </div>
+
+      {/* Floating Bottom Quick Action Bar for Pole Detail */}
+      <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] z-40 bg-white/95 backdrop-blur-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.18)] rounded-3xl p-2 flex gap-2">
+        <Link
+          href={`/poles/${pole.id}/edit`}
+          className="flex-1 py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-1.5 transition-all"
+        >
+          <Pencil className="w-4 h-4" />
+          <span>Edit &amp; Atur Titik Ulang</span>
+        </Link>
+
+        <Link
+          href={`/map?search=${pole.id}`}
+          className="py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+        >
+          <Map className="w-4 h-4 text-blue-600" />
+          <span>Peta</span>
+        </Link>
       </div>
     </div>
   );
 }
-
-

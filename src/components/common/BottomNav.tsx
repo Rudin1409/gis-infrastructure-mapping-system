@@ -8,7 +8,7 @@ import { LayoutDashboard, Map, Plus, Database, User } from 'lucide-react';
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Hide BottomNav on Survey Wizard (/poles/new) and Pole Detail (/poles/[id])
+  // Hide BottomNav on Survey Wizard (/poles/new) and Pole Detail / Edit (/poles/[id])
   // so the action buttons and map have 100% unobstructed screen space with TopHeader back button
   const isFormOrDetailPage =
     pathname.startsWith('/poles/new') || (pathname.startsWith('/poles/') && pathname !== '/poles');
@@ -26,7 +26,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] z-40 bg-white/95 backdrop-blur-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.14)] rounded-3xl py-1 px-2 select-none">
+    <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] z-40 bg-white/95 backdrop-blur-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.14)] rounded-3xl py-1 px-2 select-none transition-all duration-200">
       <div className="flex items-center justify-around relative">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -37,6 +37,7 @@ export default function BottomNav() {
               <div key={item.href} className="relative -top-5 flex flex-col items-center">
                 <Link
                   href={item.href}
+                  prefetch={true}
                   className="relative group p-0.5 active:scale-90 transition-transform duration-200"
                   aria-label="Survey Tiang Baru"
                 >
@@ -59,16 +60,17 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center py-1.5 px-2 rounded-2xl transition-all duration-200 active:scale-95 ${
+              prefetch={true}
+              className={`flex flex-col items-center py-1.5 px-2 rounded-2xl transition-all duration-150 active:scale-90 ${
                 isActive
-                  ? 'text-blue-600 font-bold'
+                  ? 'text-blue-600 font-bold scale-105'
                   : 'text-slate-400 hover:text-slate-700 font-medium'
               }`}
             >
               <div className="relative">
                 <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5] text-blue-600' : 'stroke-2 text-slate-400'}`} />
                 {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_#3b82f6]" />
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_#3b82f6] animate-in zoom-in-75" />
                 )}
               </div>
               <span className="text-[10px] mt-1 tracking-tight">{item.label}</span>

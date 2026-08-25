@@ -22,7 +22,7 @@ var SEGMENT_HEADERS = [
 ];
 var USER_HEADERS = ['id', 'name', 'email', 'role', 'agency', 'phone', 'status', 'createdAt'];
 
-// Fungsi Inisialisasi Otomatis (Bisa dijalankan langsung dengan tombol 'Jalankan / Run')
+// Fungsi Inisialisasi Otomatis (Membuat 4 Sheet & Folder Foto Drive)
 function initialSetup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
@@ -54,7 +54,7 @@ function getOrCreatePhotoFolder() {
   return folder;
 }
 
-// Endpoint GET: Ambil data tiang
+// Endpoint GET: Ambil data
 function doGet(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -91,7 +91,7 @@ function doGet(e) {
   }
 }
 
-// Endpoint POST: Simpan data survei & simpan foto ke Google Drive
+// Endpoint POST: Simpan, Edit & Hapus data survei serta simpan foto ke Google Drive
 function doPost(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -123,7 +123,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 2. Simpan Data Tiang ke Sheet POLES
+    // 2. Simpan Data Tiang Baru ke Sheet POLES
     if (action === 'savePole') {
       var poleSheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
       var pole = contents.data;
@@ -139,6 +139,70 @@ function doPost(e) {
 
       return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
         .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 3. Update Data Tiang yang Sudah Ada di Sheet POLES
+    if (action === 'updatePole') {
+      var poleSheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+      var pole = contents.data;
+      var data = poleSheet.getDataRange().getValues();
+
+      var targetRow = -1;
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(pole.id)) {
+          targetRow = i + 1; // 1-indexed for Sheets API
+          break;
+        }
+      }
+
+      if (targetRow !== -1) {
+        var rowValues = POLE_HEADERS.map(function(header) {
+          var val = pole[header];
+          if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+          if (val === undefined || val === null) return '';
+          return val;
+        });
+        poleSheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
+
+        return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
+          .setMimeType(ContentService.MimeType.JSON);
+      } else {
+        // Jika belum ada, append row baru
+        var newRow = POLE_HEADERS.map(function(header) {
+          var val = pole[header];
+          if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+          if (val === undefined || val === null) return '';
+          return val;
+        });
+        poleSheet.appendRow(newRow);
+
+        return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+    // 4. Hapus Data Tiang dari Sheet POLES
+    if (action === 'deletePole') {
+      var poleSheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+      var poleId = contents.id;
+      var data = poleSheet.getDataRange().getValues();
+
+      var targetRow = -1;
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(poleId)) {
+          targetRow = i + 1;
+          break;
+        }
+      }
+
+      if (targetRow !== -1) {
+        poleSheet.deleteRow(targetRow);
+        return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Tiang berhasil dihapus' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Tiang tidak ditemukan' }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
     }
 
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' }))

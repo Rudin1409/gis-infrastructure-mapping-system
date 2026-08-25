@@ -151,10 +151,44 @@ export class AppsScriptPoleRepository implements IPoleRepository {
       updatedAt: new Date().toISOString(),
     };
 
+    try {
+      const res = await fetch(this.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updatePole',
+          data: updated,
+        }),
+      });
+
+      const json = await res.json();
+      if (!json.success) {
+        console.warn('Update pole Google Sheet warning:', json.error);
+      }
+    } catch (e) {
+      console.error('Error syncing updatePole to Google Apps Script:', e);
+    }
+
     return updated;
   }
 
   async delete(id: string): Promise<boolean> {
-    return true;
+    try {
+      const res = await fetch(this.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'deletePole',
+          id: id,
+        }),
+      });
+
+      const json = await res.json();
+      return !!json.success;
+    } catch (e) {
+      console.error('Error syncing deletePole to Google Apps Script:', e);
+      return true;
+    }
   }
 }
+
