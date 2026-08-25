@@ -119,6 +119,33 @@ function initialSetup() {
   provSheet.setFrozenRows(1);
   provSheet.getRange(1, 1, 1, PROVIDER_HEADERS.length).setFontWeight('bold').setBackground('#dbeafe');
 
+  // Isi data 20 master provider jika masih kosong
+  if (provSheet.getLastRow() <= 1) {
+    var masterProviders = [
+      ['PRV_TELKOM', '1. TELKOM INDONESIA', 'TLKM', '#ef4444', 'ACTIVE'],
+      ['PRV_MNC_1', '2. MNC PLAY (Tipe A)', 'MNC', '#475569', 'ACTIVE'],
+      ['PRV_FIRSTMEDIA', '3. FIRST MEDIA', 'FM', '#16a34a', 'ACTIVE'],
+      ['PRV_MNC_2', '4. MNC PLAY (Tipe B)', 'MNC', '#475569', 'ACTIVE'],
+      ['PRV_BIZNET', '5. BIZNET NETWORKS', 'BIZ', '#f97316', 'ACTIVE'],
+      ['PRV_MORATEL_1', '6. MORATELINDO (Bawah Kuning)', 'MORA', '#eab308', 'ACTIVE'],
+      ['PRV_IFORTE', '7. IFORTE', 'IFORTE', '#3b82f6', 'ACTIVE'],
+      ['PRV_LINTASARTA', '8. LINTASARTA (LA)', 'LA', '#0ea5e9', 'ACTIVE'],
+      ['PRV_MSA', '9. MSA (Megasurya Angkasa)', 'MSA', '#38bdf8', 'ACTIVE'],
+      ['PRV_FIBERSTAR', '10. FIBERSTAR', 'FSTAR', '#06b6d4', 'ACTIVE'],
+      ['PRV_XL_1', '11. XL AXIATA (Biru Polos)', 'XL', '#2563eb', 'ACTIVE'],
+      ['PRV_INDOSAT', '12. INDOSAT OOREDOO', 'ISAT', '#eab308', 'ACTIVE'],
+      ['PRV_TBG', '13. TBG (Tower Bersama Group)', 'TBG', '#22c55e', 'ACTIVE'],
+      ['PRV_MORATEL_2', '14. MORATELINDO (Sabuk Kuning)', 'MORA', '#eab308', 'ACTIVE'],
+      ['PRV_SMARTFREN', '15. SMARTFREN TELECOM', 'SMART', '#ec4899', 'ACTIVE'],
+      ['PRV_CBN', '16. CBN FIBER', 'CBN', '#f97316', 'ACTIVE'],
+      ['PRV_BALITOWER', '17. BALI TOWERINDO', 'BALI', '#8b5cf6', 'ACTIVE'],
+      ['PRV_PLN_ICON', '18. PLN ICON PLUS (ICONNET)', 'ICON', '#0284c7', 'ACTIVE'],
+      ['PRV_XL_2', '19. XL HOME FIBER (Sabuk Kuning)', 'XL', '#2563eb', 'ACTIVE'],
+      ['PRV_MYREPUBLIC', '20. MYREPUBLIC INDONESIA', 'MYREP', '#9333ea', 'ACTIVE']
+    ];
+    provSheet.getRange(2, 1, masterProviders.length, PROVIDER_HEADERS.length).setValues(masterProviders);
+  }
+
   // 3. Rename NETWORK_SEGMENTS -> JALUR_KABEL_FO
   var segSheet = ss.getSheetByName('NETWORK_SEGMENTS') || ss.getSheetByName(SEGMENT_SHEET_NAME);
   if (segSheet) {

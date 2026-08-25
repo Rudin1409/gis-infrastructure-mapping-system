@@ -2,7 +2,7 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 
-// Read .env.local manually without extra dependencies
+// Read .env.local manually
 const envPath = path.resolve(process.cwd(), '.env.local');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
@@ -22,7 +22,7 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-// 1. DATA_TIANG (Tabel Utama Tiang Utilitas GIS)
+// 1. DATA_TIANG
 const POLE_SHEET_NAME = 'DATA_TIANG';
 const POLE_HEADERS = [
   'ID_Tiang',
@@ -65,7 +65,7 @@ const POLE_HEADERS = [
   'Waktu_Diperbarui',
 ];
 
-// 2. DATA_PROVIDER (Master Operator Telekomunikasi)
+// 2. DATA_PROVIDER (Master 20 Operator Provider)
 const PROVIDER_SHEET_NAME = 'DATA_PROVIDER';
 const PROVIDER_HEADERS = [
   'ID_Provider',
@@ -73,9 +73,33 @@ const PROVIDER_HEADERS = [
   'Kode_Singkatan',
   'Kode_Warna_Hex',
   'Status_Aktif',
+  'Karakteristik_Visual_Warna',
 ];
 
-// 3. JALUR_KABEL_FO (Master Topologi Bentangan Kabel FO)
+const MASTER_PROVIDERS = [
+  ['PRV_TELKOM', '1. TELKOM INDONESIA', 'TLKM', '#ef4444', 'ACTIVE', 'No. 1: Tiang hitam sabuk Merah & Abu-abu di tengah'],
+  ['PRV_MNC_1', '2. MNC PLAY (Tipe A)', 'MNC', '#475569', 'ACTIVE', 'No. 2: Tiang hitam berundak dengan 2 garis strip putih di bawah'],
+  ['PRV_FIRSTMEDIA', '3. FIRST MEDIA', 'FM', '#16a34a', 'ACTIVE', 'No. 3: Tiang galvanis abu-abu polos dengan pucuk Hijau cerah'],
+  ['PRV_MNC_2', '4. MNC PLAY (Tipe B)', 'MNC', '#475569', 'ACTIVE', 'No. 4: Tiang hitam panjang dengan 2 garis strip putih di bawah'],
+  ['PRV_BIZNET', '5. BIZNET NETWORKS', 'BIZ', '#f97316', 'ACTIVE', 'No. 5: Tiang hitam dengan gelang Kuning & Hitam di pucuk'],
+  ['PRV_MORATEL_1', '6. MORATELINDO (Bawah Kuning)', 'MORA', '#eab308', 'ACTIVE', 'No. 6: Tiang hitam berundak dengan blok Kuning di bagian bawah'],
+  ['PRV_IFORTE', '7. IFORTE', 'IFORTE', '#3b82f6', 'ACTIVE', 'No. 7: Tiang hitam gelang kombinasi Biru - Putih - Biru di pucuk'],
+  ['PRV_LINTASARTA', '8. LINTASARTA (LA)', 'LA', '#0ea5e9', 'ACTIVE', 'No. 8: Tiang hitam blok Biru Muda di tengah & label teks LA di bawah'],
+  ['PRV_MSA', '9. MSA (Megasurya Angkasa)', 'MSA', '#38bdf8', 'ACTIVE', 'No. 9: Tiang hitam strip Biru di pucuk & label teks MSA'],
+  ['PRV_FIBERSTAR', '10. FIBERSTAR', 'FSTAR', '#06b6d4', 'ACTIVE', 'No. 10: Tiang hitam blok Biru Langit di tengah & label teks FS'],
+  ['PRV_XL_1', '11. XL AXIATA (Biru Polos)', 'XL', '#2563eb', 'ACTIVE', 'No. 11: Tiang hitam dengan blok Biru XL di tengah'],
+  ['PRV_INDOSAT', '12. INDOSAT OOREDOO', 'ISAT', '#eab308', 'ACTIVE', 'No. 12: Tiang hitam sabuk Kuning Indosat di tengah'],
+  ['PRV_TBG', '13. TBG (Tower Bersama Group)', 'TBG', '#22c55e', 'ACTIVE', 'No. 13: Tiang hitam dengan sabuk Hijau Muda di bagian bawah'],
+  ['PRV_MORATEL_2', '14. MORATELINDO (Sabuk Kuning)', 'MORA', '#eab308', 'ACTIVE', 'No. 14: Tiang hitam dengan sabuk Kuning Moratel di tengah'],
+  ['PRV_SMARTFREN', '15. SMARTFREN TELECOM', 'SMART', '#ec4899', 'ACTIVE', 'No. 15: Tiang hitam pucuk Merah Muda / Magenta Smartfren'],
+  ['PRV_CBN', '16. CBN FIBER', 'CBN', '#f97316', 'ACTIVE', 'No. 16: Tiang hitam blok Oranye Terang CBN di tengah'],
+  ['PRV_BALITOWER', '17. BALI TOWERINDO', 'BALI', '#8b5cf6', 'ACTIVE', 'No. 17: Tiang hitam blok Ungu Bali Tower di tengah'],
+  ['PRV_PLN_ICON', '18. PLN ICON PLUS (ICONNET)', 'ICON', '#0284c7', 'ACTIVE', 'No. 18: Tiang beton/besi PLN Iconnet gelang Biru PLN'],
+  ['PRV_XL_2', '19. XL HOME FIBER (Sabuk Kuning)', 'XL', '#2563eb', 'ACTIVE', 'No. 19: Tiang hitam gelang Biru XL & Kuning di pucuk'],
+  ['PRV_MYREPUBLIC', '20. MYREPUBLIC INDONESIA', 'MYREP', '#9333ea', 'ACTIVE', 'No. 20: Tiang hitam gelang Ungu Magenta di pucuk'],
+];
+
+// 3. JALUR_KABEL_FO
 const SEGMENT_SHEET_NAME = 'JALUR_KABEL_FO';
 const SEGMENT_HEADERS = [
   'ID_Segmen',
@@ -93,12 +117,13 @@ const SEGMENT_HEADERS = [
   'Waktu_Diperbarui',
 ];
 
-// 4. DATA_SURVEYOR (Data Akun Surveyor & Petugas)
+// 4. DATA_SURVEYOR
 const USER_SHEET_NAME = 'DATA_SURVEYOR';
 const USER_HEADERS = [
   'ID_Pengguna',
   'Nama_Lengkap',
   'Email',
+  'Password',
   'Peran_Role',
   'Instansi_Dinas',
   'No_Handphone',
@@ -106,8 +131,15 @@ const USER_HEADERS = [
   'Waktu_Terdaftar',
 ];
 
+const MASTER_USERS = [
+  ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFO', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF', '2026-08-25'],
+  ['USR-BAPENDA-ADMIN', 'Admin BAPENDA', 'admin.bapenda@lubuklinggaukota.go.id', 'bapenda123', 'ADMIN_BAPENDA', 'Badan Pendapatan Daerah Kota Lubuklinggau', '0813-6789-5678', 'AKTIF', '2026-08-25'],
+  ['USR-SURVEYOR-01', 'Surveyor 1 (Kominfo)', 'surveyor1@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Kominfo Lubuklinggau', '0852-1122-3344', 'AKTIF', '2026-08-25'],
+  ['USR-SURVEYOR-02', 'Surveyor 2 (Bapenda)', 'surveyor2@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Badan Pendapatan Daerah Lubuklinggau', '0853-9988-7766', 'AKTIF', '2026-08-25'],
+];
+
 async function initializeGoogleSpreadsheet() {
-  console.log('🚀 Memulai Inisialisasi Google Spreadsheet GIS Lubuklinggau (Bahasa Indonesia)...\n');
+  console.log('🚀 Memulai Inisialisasi Data Master (Provider & Surveyor) ke Google Sheets...\n');
 
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -115,7 +147,6 @@ async function initializeGoogleSpreadsheet() {
 
   if (!clientEmail || !privateKey || !spreadsheetId) {
     console.error('❌ ERROR: Konfigurasi Google Cloud belum lengkap di .env.local!');
-    console.error('Pastikan GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, dan GOOGLE_SHEET_ID sudah diisi.');
     process.exit(1);
   }
 
@@ -135,56 +166,49 @@ async function initializeGoogleSpreadsheet() {
     const existingSheets = meta.data.sheets?.map((s) => s.properties?.title) || [];
     console.log('📄 Lembar kerja saat ini di Google Sheets:', existingSheets);
 
-    const requiredSheets = [
-      { title: POLE_SHEET_NAME, headers: POLE_HEADERS },
-      { title: PROVIDER_SHEET_NAME, headers: PROVIDER_HEADERS },
-      { title: SEGMENT_SHEET_NAME, headers: SEGMENT_HEADERS },
-      { title: USER_SHEET_NAME, headers: USER_HEADERS },
-    ];
+    // 1. Pastikan Sheet DATA_PROVIDER dan Tulis 20 Provider
+    console.log('📝 Mengisi data master ke sheet DATA_PROVIDER...');
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${PROVIDER_SHEET_NAME}!A1:F1`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [PROVIDER_HEADERS],
+      },
+    });
 
-    const addSheetRequests = [];
-    for (const req of requiredSheets) {
-      if (!existingSheets.includes(req.title)) {
-        console.log(`➕ Menambahkan sheet baru: ${req.title}`);
-        addSheetRequests.push({
-          addSheet: {
-            properties: {
-              title: req.title,
-              gridProperties: {
-                frozenRowCount: 1,
-              },
-            },
-          },
-        });
-      }
-    }
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${PROVIDER_SHEET_NAME}!A2:F${MASTER_PROVIDERS.length + 1}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: MASTER_PROVIDERS,
+      },
+    });
+    console.log(`✅ Sukses memasukkan ${MASTER_PROVIDERS.length} Provider ke DATA_PROVIDER!`);
 
-    if (addSheetRequests.length > 0) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: addSheetRequests,
-        },
-      });
-    }
+    // 2. Pastikan Sheet DATA_SURVEYOR dan Tulis 4 Akun
+    console.log('📝 Mengisi data akun ke sheet DATA_SURVEYOR...');
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${USER_SHEET_NAME}!A1:I1`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [USER_HEADERS],
+      },
+    });
 
-    for (const req of requiredSheets) {
-      console.log(`📝 Menulis header untuk sheet: ${req.title}`);
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${req.title}!A1:${String.fromCharCode(65 + Math.min(req.headers.length - 1, 25))}1`,
-        valueInputOption: 'RAW',
-        requestBody: {
-          values: [req.headers],
-        },
-      });
-    }
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${USER_SHEET_NAME}!A2:I${MASTER_USERS.length + 1}`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: MASTER_USERS,
+      },
+    });
+    console.log(`✅ Sukses memasukkan ${MASTER_USERS.length} Akun Dinas ke DATA_SURVEYOR!`);
 
-    console.log('\n✅ SEMUA LEMBAR KERJA BERHASIL DIINISIALISASI DENGAN BAHASA INDONESIA:');
-    console.log('1. DATA_TIANG     -> Data seluruh tiang fisik, koordinat GIS, & kondisi bahaya');
-    console.log('2. DATA_PROVIDER  -> Data master 20+ operator telekomunikasi');
-    console.log('3. JALUR_KABEL_FO -> Data bentangan kabel FO udara / bawah tanah');
-    console.log('4. DATA_SURVEYOR  -> Data akun surveyor & dinas');
+    console.log('\n🎉 SELURUH DATA MASTER TELAH BERHASIL MASUK KE GOOGLE SPREADSHEET!');
   } catch (error) {
     console.error('❌ Gagal menginisialisasi spreadsheet:', error.message || error);
   }
