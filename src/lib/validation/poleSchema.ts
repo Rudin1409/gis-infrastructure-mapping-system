@@ -46,6 +46,11 @@ export const createPoleSchema = z.object({
   surveyTime: z.string().optional(),
   validationStatus: z.string().default('SUBMITTED'),
   validationNote: z.string().optional().default(''),
+  infrastructureCategory: z.string().optional().default('FO_WIFI'),
+  pjuLampType: z.string().optional().default(''),
+  pjuLampPower: z.string().optional().default(''),
+  pjuLampCondition: z.string().optional().default(''),
+  hasKwhMeter: z.boolean().optional().default(false),
 });
 
 export const updatePoleSchema = createPoleSchema.partial().extend({

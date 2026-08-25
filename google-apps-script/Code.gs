@@ -146,7 +146,10 @@ function initialSetup() {
       ['PRV_BALITOWER', '17. BALI TOWERINDO', 'BALI', '#8b5cf6', 'ACTIVE'],
       ['PRV_PLN_ICON', '18. PLN ICON PLUS (ICONNET)', 'ICON', '#0284c7', 'ACTIVE'],
       ['PRV_XL_2', '19. XL HOME FIBER (Sabuk Kuning)', 'XL', '#2563eb', 'ACTIVE'],
-      ['PRV_MYREPUBLIC', '20. MYREPUBLIC INDONESIA', 'MYREP', '#9333ea', 'ACTIVE']
+      ['PRV_MYREPUBLIC', '20. MYREPUBLIC INDONESIA', 'MYREP', '#9333ea', 'ACTIVE'],
+      ['PRV_PJU_PEMKOT', 'PJU PEMERINTAH KOTA LUBUKLINGGAU', 'PJU', '#f59e0b', 'ACTIVE'],
+      ['PRV_PLN_PJU_GABUNG', 'PLN + PJU (TIANG GABUNGAN)', 'PLN+PJU', '#0ea5e9', 'ACTIVE'],
+      ['PRV_PLN_DISTRIBUSI', 'PT PLN (PERSERO) DISTRIBUSI', 'PLN', '#0284c7', 'ACTIVE']
     ];
     provSheet.getRange(2, 1, masterProviders.length, PROVIDER_HEADERS.length).setValues(masterProviders);
   }
