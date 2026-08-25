@@ -63,9 +63,14 @@ const POLE_HEADERS = [
   'Catatan_Validasi',
   'Waktu_Dibuat',
   'Waktu_Diperbarui',
+  'Kategori_Infrastruktur',
+  'Tipe_Lampu_PJU',
+  'Daya_Lampu_Watt',
+  'Kondisi_Lampu_PJU',
+  'Ada_Kwh_Meter',
 ];
 
-// 2. DATA_PROVIDER (Master 20 Operator Provider)
+// 2. DATA_PROVIDER (Master 20+ Operator Provider)
 const PROVIDER_SHEET_NAME = 'DATA_PROVIDER';
 const PROVIDER_HEADERS = [
   'ID_Provider',
@@ -97,6 +102,9 @@ const MASTER_PROVIDERS = [
   ['PRV_PLN_ICON', '18. PLN ICON PLUS (ICONNET)', 'ICON', '#0284c7', 'ACTIVE', 'No. 18: Tiang beton/besi PLN Iconnet gelang Biru PLN'],
   ['PRV_XL_2', '19. XL HOME FIBER (Sabuk Kuning)', 'XL', '#2563eb', 'ACTIVE', 'No. 19: Tiang hitam gelang Biru XL & Kuning di pucuk'],
   ['PRV_MYREPUBLIC', '20. MYREPUBLIC INDONESIA', 'MYREP', '#9333ea', 'ACTIVE', 'No. 20: Tiang hitam gelang Ungu Magenta di pucuk'],
+  ['PRV_PJU_PEMKOT', 'PJU PEMERINTAH KOTA LUBUKLINGGAU', 'PJU', '#f59e0b', 'ACTIVE', 'Tiang Penerangan Jalan Umum (PJU) Mandiri milik Pemkot Lubuklinggau'],
+  ['PRV_PLN_PJU_GABUNG', 'PLN + PJU (TIANG GABUNGAN)', 'PLN+PJU', '#0ea5e9', 'ACTIVE', 'Tiang distribusi listrik PLN yang ditumpangi instalasi lampu PJU jalan'],
+  ['PRV_PLN_DISTRIBUSI', 'PT PLN (PERSERO) DISTRIBUSI', 'PLN', '#0284c7', 'ACTIVE', 'Tiang distribusi jaringan kabel listrik tegangan rendah/menengah PLN'],
 ];
 
 // 3. JALUR_KABEL_FO
