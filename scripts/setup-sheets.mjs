@@ -22,84 +22,92 @@ if (fs.existsSync(envPath)) {
   });
 }
 
+// 1. DATA_TIANG (Tabel Utama Tiang Utilitas GIS)
+const POLE_SHEET_NAME = 'DATA_TIANG';
 const POLE_HEADERS = [
-  'id',
-  'poleCode',
-  'poleLatitude',
-  'poleLongitude',
-  'deviceLatitude',
-  'deviceLongitude',
-  'gpsAccuracy',
-  'distanceFromDevice',
-  'locationMethod',
-  'providerId',
-  'providerName',
-  'poleType',
-  'condition',
-  'road',
-  'kelurahan',
-  'kecamatan',
-  'kota',
-  'patokanLokasi',
-  'sisiJalan',
-  'height',
-  'ownershipStatus',
-  'isTilted',
-  'isMessyCable',
-  'isLowCable',
-  'isHazardous',
-  'isCorroded',
-  'isObstructing',
-  'description',
-  'photoFileId',
-  'photoUrl',
-  'surveyorId',
-  'surveyorName',
-  'surveyDate',
-  'surveyTime',
-  'validationStatus',
-  'validationNote',
-  'createdAt',
-  'updatedAt',
+  'ID_Tiang',
+  'Kode_Fisik_Tiang',
+  'Latitude_GIS',
+  'Longitude_GIS',
+  'Latitude_GPS_Device',
+  'Longitude_GPS_Device',
+  'Akurasi_GPS_Meter',
+  'Jarak_Deviasi_Meter',
+  'Metode_Penentuan_Lokasi',
+  'ID_Provider',
+  'Nama_Provider_Operator',
+  'Jenis_Tiang',
+  'Kondisi_Tiang',
+  'Nama_Jalan_Lokasi',
+  'Kelurahan',
+  'Kecamatan',
+  'Kota_Kabupaten',
+  'Patokan_Lokasi',
+  'Sisi_Jalan',
+  'Tinggi_Tiang',
+  'Status_Kepemilikan',
+  'Bahaya_Tiang_Miring',
+  'Bahaya_Kabel_Semrawut',
+  'Bahaya_Kabel_Rendah',
+  'Bahaya_Karat_Retak',
+  'Mengganggu_Jalan_Trotoar',
+  'Potensi_Bahaya_Lain',
+  'Catatan_Keterangan_Lapangan',
+  'ID_File_Google_Drive',
+  'Link_Foto_Google_Drive',
+  'ID_Surveyor',
+  'Nama_Petugas_Surveyor',
+  'Tanggal_Survey',
+  'Waktu_Survey',
+  'Status_Validasi',
+  'Catatan_Validasi',
+  'Waktu_Dibuat',
+  'Waktu_Diperbarui',
 ];
 
+// 2. DATA_PROVIDER (Master Operator Telekomunikasi)
+const PROVIDER_SHEET_NAME = 'DATA_PROVIDER';
 const PROVIDER_HEADERS = [
-  'id',
-  'name',
-  'code',
-  'colorHex',
-  'status',
+  'ID_Provider',
+  'Nama_Provider',
+  'Kode_Singkatan',
+  'Kode_Warna_Hex',
+  'Status_Aktif',
 ];
 
+// 3. JALUR_KABEL_FO (Master Topologi Bentangan Kabel FO)
+const SEGMENT_SHEET_NAME = 'JALUR_KABEL_FO';
 const SEGMENT_HEADERS = [
-  'id',
-  'segmentCode',
-  'fromNodeId',
-  'toNodeId',
-  'providerId',
-  'providerName',
-  'networkType',
-  'installationType',
-  'estimatedDistance',
-  'status',
-  'description',
-  'createdAt',
-  'updatedAt',
+  'ID_Segmen',
+  'Kode_Segmen_Kabel',
+  'ID_Tiang_Pangkal',
+  'ID_Tiang_Ujung',
+  'ID_Provider',
+  'Nama_Provider',
+  'Jenis_Jaringan',
+  'Tipe_Pemasangan',
+  'Estimasi_Jarak_Meter',
+  'Status_Jalur',
+  'Keterangan_Jalur',
+  'Waktu_Dibuat',
+  'Waktu_Diperbarui',
 ];
 
+// 4. DATA_SURVEYOR (Data Akun Surveyor & Petugas)
+const USER_SHEET_NAME = 'DATA_SURVEYOR';
 const USER_HEADERS = [
-  'id',
-  'name',
-  'email',
-  'role',
-  'agency',
-  'phone',
-  'status',
-  'createdAt',
+  'ID_Pengguna',
+  'Nama_Lengkap',
+  'Email',
+  'Peran_Role',
+  'Instansi_Dinas',
+  'No_Handphone',
+  'Status_Akun',
+  'Waktu_Terdaftar',
 ];
 
 async function initializeGoogleSpreadsheet() {
-  console.log('🚀 Memulai Inisialisasi Google Spreadsheet GIS Lubuklinggau...\n');
+  console.log('🚀 Memulai Inisialisasi Google Spreadsheet GIS Lubuklinggau (Bahasa Indonesia)...\n');
 
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -123,19 +131,17 @@ async function initializeGoogleSpreadsheet() {
   const sheets = google.sheets({ version: 'v4', auth });
 
   try {
-    // 1. Ambil info spreadsheet saat ini
     const meta = await sheets.spreadsheets.get({ spreadsheetId });
     const existingSheets = meta.data.sheets?.map((s) => s.properties?.title) || [];
     console.log('📄 Lembar kerja saat ini di Google Sheets:', existingSheets);
 
     const requiredSheets = [
-      { title: 'POLES', headers: POLE_HEADERS },
-      { title: 'PROVIDERS', headers: PROVIDER_HEADERS },
-      { title: 'NETWORK_SEGMENTS', headers: SEGMENT_HEADERS },
-      { title: 'USERS', headers: USER_HEADERS },
+      { title: POLE_SHEET_NAME, headers: POLE_HEADERS },
+      { title: PROVIDER_SHEET_NAME, headers: PROVIDER_HEADERS },
+      { title: SEGMENT_SHEET_NAME, headers: SEGMENT_HEADERS },
+      { title: USER_SHEET_NAME, headers: USER_HEADERS },
     ];
 
-    // 2. Buat sheet yang belum ada
     const addSheetRequests = [];
     for (const req of requiredSheets) {
       if (!existingSheets.includes(req.title)) {
@@ -145,7 +151,7 @@ async function initializeGoogleSpreadsheet() {
             properties: {
               title: req.title,
               gridProperties: {
-                frozenRowCount: 1, // Freeze header row
+                frozenRowCount: 1,
               },
             },
           },
@@ -162,12 +168,11 @@ async function initializeGoogleSpreadsheet() {
       });
     }
 
-    // 3. Tulis header baris 1 untuk setiap sheet
     for (const req of requiredSheets) {
       console.log(`📝 Menulis header untuk sheet: ${req.title}`);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${req.title}!A1:${String.fromCharCode(65 + req.headers.length - 1)}1`,
+        range: `${req.title}!A1:${String.fromCharCode(65 + Math.min(req.headers.length - 1, 25))}1`,
         valueInputOption: 'RAW',
         requestBody: {
           values: [req.headers],
@@ -175,12 +180,11 @@ async function initializeGoogleSpreadsheet() {
       });
     }
 
-    console.log('\n✅ SEMUA LEMBAR KERJA BERHASIL DIINISIALISASI DENGAN RAPI:');
-    console.log('1. POLES             -> Data seluruh tiang fisik, GPS, & kondisi bahaya');
-    console.log('2. PROVIDERS         -> Data master 20+ operator telekomunikasi');
-    console.log('3. NETWORK_SEGMENTS  -> Data bentangan kabel FO udara / bawah tanah');
-    console.log('4. USERS             -> Data akun surveyor & dinas');
-    console.log('\n🎉 Sistem siap digunakan untuk menyimpan data survei lapangan secara real-time!');
+    console.log('\n✅ SEMUA LEMBAR KERJA BERHASIL DIINISIALISASI DENGAN BAHASA INDONESIA:');
+    console.log('1. DATA_TIANG     -> Data seluruh tiang fisik, koordinat GIS, & kondisi bahaya');
+    console.log('2. DATA_PROVIDER  -> Data master 20+ operator telekomunikasi');
+    console.log('3. JALUR_KABEL_FO -> Data bentangan kabel FO udara / bawah tanah');
+    console.log('4. DATA_SURVEYOR  -> Data akun surveyor & dinas');
   } catch (error) {
     console.error('❌ Gagal menginisialisasi spreadsheet:', error.message || error);
   }

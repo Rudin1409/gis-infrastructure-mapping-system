@@ -1,40 +1,200 @@
 // ==============================================================================
-// GOOGLE APPS SCRIPT: BACKEND DATABASE & CLOUD FOTO GIS LUBUKLINGGAU
+// GOOGLE APPS SCRIPT: BACKEND DATABASE & CLOUD FOTO GIS KOTA LUBUKLINGGAU
+// (SEMUA NAMA TABEL & KOLOM DALAM BAHASA INDONESIA)
 // ==============================================================================
 
 var FOLDER_NAME = 'FOTO_SURVEI_TIANG_LUBUKLINGGAU';
 
+// 1. Sheet DATA_TIANG (Tabel Utama Tiang Utilitas GIS)
+var POLE_SHEET_NAME = 'DATA_TIANG';
 var POLE_HEADERS = [
-  'id', 'poleCode', 'poleLatitude', 'poleLongitude', 'deviceLatitude', 'deviceLongitude',
-  'gpsAccuracy', 'distanceFromDevice', 'locationMethod', 'providerId', 'providerName',
-  'poleType', 'condition', 'road', 'kelurahan', 'kecamatan', 'kota', 'patokanLokasi',
-  'sisiJalan', 'height', 'ownershipStatus', 'isTilted', 'isMessyCable', 'isLowCable',
-  'isHazardous', 'isCorroded', 'isObstructing', 'description', 'photoFileId', 'photoUrl',
-  'surveyorId', 'surveyorName', 'surveyDate', 'surveyTime', 'validationStatus',
-  'validationNote', 'createdAt', 'updatedAt'
+  'ID_Tiang',
+  'Kode_Fisik_Tiang',
+  'Latitude_GIS',
+  'Longitude_GIS',
+  'Latitude_GPS_Device',
+  'Longitude_GPS_Device',
+  'Akurasi_GPS_Meter',
+  'Jarak_Deviasi_Meter',
+  'Metode_Penentuan_Lokasi',
+  'ID_Provider',
+  'Nama_Provider_Operator',
+  'Jenis_Tiang',
+  'Kondisi_Tiang',
+  'Nama_Jalan_Lokasi',
+  'Kelurahan',
+  'Kecamatan',
+  'Kota_Kabupaten',
+  'Patokan_Lokasi',
+  'Sisi_Jalan',
+  'Tinggi_Tiang',
+  'Status_Kepemilikan',
+  'Bahaya_Tiang_Miring',
+  'Bahaya_Kabel_Semrawut',
+  'Bahaya_Kabel_Rendah',
+  'Bahaya_Karat_Retak',
+  'Mengganggu_Jalan_Trotoar',
+  'Potensi_Bahaya_Lain',
+  'Catatan_Keterangan_Lapangan',
+  'ID_File_Google_Drive',
+  'Link_Foto_Google_Drive',
+  'ID_Surveyor',
+  'Nama_Petugas_Surveyor',
+  'Tanggal_Survey',
+  'Waktu_Survey',
+  'Status_Validasi',
+  'Catatan_Validasi',
+  'Waktu_Dibuat',
+  'Waktu_Diperbarui'
 ];
 
-var PROVIDER_HEADERS = ['id', 'name', 'code', 'colorHex', 'status'];
+// 2. Sheet DATA_PROVIDER (Master 20+ Operator Provider)
+var PROVIDER_SHEET_NAME = 'DATA_PROVIDER';
+var PROVIDER_HEADERS = [
+  'ID_Provider',
+  'Nama_Provider',
+  'Kode_Singkatan',
+  'Kode_Warna_Hex',
+  'Status_Aktif'
+];
+
+// 3. Sheet JALUR_KABEL_FO (Master Segmen Topologi Jaringan Kabel FO)
+var SEGMENT_SHEET_NAME = 'JALUR_KABEL_FO';
 var SEGMENT_HEADERS = [
-  'id', 'segmentCode', 'fromNodeId', 'toNodeId', 'providerId', 'providerName',
-  'networkType', 'installationType', 'estimatedDistance', 'status', 'description',
-  'createdAt', 'updatedAt'
+  'ID_Segmen',
+  'Kode_Segmen_Kabel',
+  'ID_Tiang_Pangkal',
+  'ID_Tiang_Ujung',
+  'ID_Provider',
+  'Nama_Provider',
+  'Jenis_Jaringan',
+  'Tipe_Pemasangan',
+  'Estimasi_Jarak_Meter',
+  'Status_Jalur',
+  'Keterangan_Jalur',
+  'Waktu_Dibuat',
+  'Waktu_Diperbarui'
 ];
-var USER_HEADERS = ['id', 'name', 'email', 'role', 'agency', 'phone', 'status', 'createdAt'];
 
-// Fungsi Inisialisasi Otomatis (Membuat 4 Sheet & Folder Foto Drive)
+// 4. Sheet DATA_SURVEYOR (Data Akun Petugas & Surveyor)
+var USER_SHEET_NAME = 'DATA_SURVEYOR';
+var USER_HEADERS = [
+  'ID_Pengguna',
+  'Nama_Lengkap',
+  'Email',
+  'Peran_Role',
+  'Instansi_Dinas',
+  'No_Handphone',
+  'Status_Akun',
+  'Waktu_Terdaftar'
+];
+
+// Mapping helper untuk mengonversi data objek aplikasi ke baris spreadsheet
+function poleToRowArray(p) {
+  return [
+    p.id || '',
+    p.poleCode || '',
+    p.poleLatitude !== undefined ? p.poleLatitude : '',
+    p.poleLongitude !== undefined ? p.poleLongitude : '',
+    p.deviceLatitude !== undefined ? p.deviceLatitude : '',
+    p.deviceLongitude !== undefined ? p.deviceLongitude : '',
+    p.gpsAccuracy !== undefined ? p.gpsAccuracy : '',
+    p.distanceFromDevice !== undefined ? p.distanceFromDevice : '',
+    p.locationMethod || 'MANUAL_MAP_PIN',
+    p.providerId || '',
+    p.providerName || '',
+    p.poleType || 'BETON',
+    p.condition || 'GOOD',
+    p.road || '',
+    p.kelurahan || '',
+    p.kecamatan || '',
+    p.kota || 'Kota Lubuklinggau',
+    p.patokanLokasi || '',
+    p.sisiJalan || 'KIRI',
+    p.height || '7m',
+    p.ownershipStatus || 'SENDIRI',
+    p.isTilted ? 'YA' : 'TIDAK',
+    p.isMessyCable ? 'YA' : 'TIDAK',
+    p.isLowCable ? 'YA' : 'TIDAK',
+    p.isCorroded ? 'YA' : 'TIDAK',
+    p.isObstructing ? 'YA' : 'TIDAK',
+    p.isHazardous ? 'YA' : 'TIDAK',
+    p.description || '',
+    p.photoFileId || '',
+    p.photoUrl || '',
+    p.surveyorId || '',
+    p.surveyorName || 'Surveyor 1',
+    p.surveyDate || new Date().toISOString().split('T')[0],
+    p.surveyTime || '',
+    p.validationStatus || 'SUBMITTED',
+    p.validationNote || '',
+    p.createdAt || new Date().toISOString(),
+    p.updatedAt || new Date().toISOString()
+  ];
+}
+
+function rowArrayToPole(row) {
+  return {
+    id: String(row[0] || ''),
+    poleCode: row[1] ? String(row[1]) : '',
+    poleLatitude: Number(row[2]) || 0,
+    poleLongitude: Number(row[3]) || 0,
+    deviceLatitude: row[4] ? Number(row[4]) : undefined,
+    deviceLongitude: row[5] ? Number(row[5]) : undefined,
+    gpsAccuracy: row[6] ? Number(row[6]) : undefined,
+    distanceFromDevice: row[7] ? Number(row[7]) : undefined,
+    locationMethod: row[8] || 'MANUAL_MAP_PIN',
+    providerId: String(row[9] || 'UNKNOWN'),
+    providerName: row[10] ? String(row[10]) : '',
+    poleType: row[11] || 'BETON',
+    condition: row[12] || 'GOOD',
+    road: String(row[13] || ''),
+    kelurahan: String(row[14] || ''),
+    kecamatan: String(row[15] || ''),
+    kota: row[16] ? String(row[16]) : 'Kota Lubuklinggau',
+    patokanLokasi: row[17] ? String(row[17]) : '',
+    sisiJalan: row[18] || 'KIRI',
+    height: row[19] ? String(row[19]) : '7m',
+    ownershipStatus: row[20] || 'SENDIRI',
+    isTilted: row[21] === 'YA' || row[21] === 'TRUE' || row[21] === true,
+    isMessyCable: row[22] === 'YA' || row[22] === 'TRUE' || row[22] === true,
+    isLowCable: row[23] === 'YA' || row[23] === 'TRUE' || row[23] === true,
+    isCorroded: row[24] === 'YA' || row[24] === 'TRUE' || row[24] === true,
+    isObstructing: row[25] === 'YA' || row[25] === 'TRUE' || row[25] === true,
+    isHazardous: row[26] === 'YA' || row[26] === 'TRUE' || row[26] === true,
+    description: row[27] ? String(row[27]) : '',
+    photoFileId: row[28] ? String(row[28]) : '',
+    photoUrl: row[29] ? String(row[29]) : '',
+    surveyorId: row[30] ? String(row[30]) : '',
+    surveyorName: row[31] ? String(row[31]) : '',
+    surveyDate: String(row[32] || ''),
+    surveyTime: row[33] ? String(row[33]) : '',
+    validationStatus: row[34] || 'SUBMITTED',
+    validationNote: row[35] ? String(row[35]) : '',
+    createdAt: String(row[36] || ''),
+    updatedAt: String(row[37] || '')
+  };
+}
+
+// Fungsi Inisialisasi Otomatis (Membuat 4 Sheet Bahasa Indonesia & Folder Foto Drive)
 function initialSetup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
-  getOrCreateSheet(ss, 'PROVIDERS', PROVIDER_HEADERS);
-  getOrCreateSheet(ss, 'NETWORK_SEGMENTS', SEGMENT_HEADERS);
-  getOrCreateSheet(ss, 'USERS', USER_HEADERS);
+  getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
+  getOrCreateSheet(ss, PROVIDER_SHEET_NAME, PROVIDER_HEADERS);
+  getOrCreateSheet(ss, SEGMENT_SHEET_NAME, SEGMENT_HEADERS);
+  getOrCreateSheet(ss, USER_SHEET_NAME, USER_HEADERS);
   getOrCreatePhotoFolder();
-  Logger.log('SUKSES: 4 Sheet dan Folder Foto Google Drive berhasil dibuat!');
+  Logger.log('SUKSES: 4 Sheet Bahasa Indonesia dan Folder Foto Google Drive berhasil dibuat!');
 }
 
 function getOrCreateSheet(ss, sheetName, headers) {
   var sheet = ss.getSheetByName(sheetName);
+  // Cek fallback nama lama jika ada
+  if (!sheet && sheetName === POLE_SHEET_NAME) sheet = ss.getSheetByName('POLES');
+  if (!sheet && sheetName === PROVIDER_SHEET_NAME) sheet = ss.getSheetByName('PROVIDERS');
+  if (!sheet && sheetName === SEGMENT_SHEET_NAME) sheet = ss.getSheetByName('NETWORK_SEGMENTS');
+  if (!sheet && sheetName === USER_SHEET_NAME) sheet = ss.getSheetByName('USERS');
+
   if (!sheet) {
     sheet = ss.insertSheet(sheetName);
     sheet.appendRow(headers);
@@ -62,25 +222,20 @@ function doGet(e) {
 
     if (action === 'init') {
       initialSetup();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Inisialisasi berhasil' }))
+      return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Inisialisasi 4 Sheet Bahasa Indonesia berhasil' }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    var sheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+    var sheet = getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
     var data = sheet.getDataRange().getValues();
     if (data.length <= 1) {
       return ContentService.createTextOutput(JSON.stringify({ success: true, data: [] }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    var headers = data[0];
     var rows = data.slice(1);
     var poles = rows.map(function(row) {
-      var obj = {};
-      headers.forEach(function(h, i) {
-        obj[h] = row[i];
-      });
-      return obj;
+      return rowArrayToPole(row);
     });
 
     return ContentService.createTextOutput(JSON.stringify({ success: true, data: poles }))
@@ -101,7 +256,7 @@ function doPost(e) {
     // 1. Upload Foto Kamera Langsung ke Google Drive
     if (action === 'uploadPhoto') {
       var base64Data = contents.base64;
-      var fileName = contents.fileName || ('POLE_' + new Date().getTime() + '.jpg');
+      var fileName = contents.fileName || ('FOTO_TIANG_' + new Date().getTime() + '.jpg');
       var mimeType = contents.mimeType || 'image/jpeg';
 
       var folder = getOrCreatePhotoFolder();
@@ -123,17 +278,11 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 2. Simpan Data Tiang Baru ke Sheet POLES
+    // 2. Simpan Data Tiang Baru ke Sheet DATA_TIANG
     if (action === 'savePole') {
-      var poleSheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+      var poleSheet = getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
       var pole = contents.data;
-
-      var row = POLE_HEADERS.map(function(header) {
-        var val = pole[header];
-        if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
-        if (val === undefined || val === null) return '';
-        return val;
-      });
+      var row = poleToRowArray(pole);
 
       poleSheet.appendRow(row);
 
@@ -141,49 +290,35 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 3. Update Data Tiang yang Sudah Ada di Sheet POLES
+    // 3. Update Data Tiang yang Sudah Ada di Sheet DATA_TIANG
     if (action === 'updatePole') {
-      var poleSheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+      var poleSheet = getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
       var pole = contents.data;
       var data = poleSheet.getDataRange().getValues();
 
       var targetRow = -1;
       for (var i = 1; i < data.length; i++) {
         if (String(data[i][0]) === String(pole.id)) {
-          targetRow = i + 1; // 1-indexed for Sheets API
+          targetRow = i + 1; // 1-indexed
           break;
         }
       }
 
+      var rowValues = poleToRowArray(pole);
+
       if (targetRow !== -1) {
-        var rowValues = POLE_HEADERS.map(function(header) {
-          var val = pole[header];
-          if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
-          if (val === undefined || val === null) return '';
-          return val;
-        });
         poleSheet.getRange(targetRow, 1, 1, rowValues.length).setValues([rowValues]);
-
-        return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
-          .setMimeType(ContentService.MimeType.JSON);
       } else {
-        // Jika belum ada, append row baru
-        var newRow = POLE_HEADERS.map(function(header) {
-          var val = pole[header];
-          if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
-          if (val === undefined || val === null) return '';
-          return val;
-        });
-        poleSheet.appendRow(newRow);
-
-        return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
-          .setMimeType(ContentService.MimeType.JSON);
+        poleSheet.appendRow(rowValues);
       }
+
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 4. Hapus Data Tiang dari Sheet POLES
+    // 4. Hapus Data Tiang dari Sheet DATA_TIANG
     if (action === 'deletePole') {
-      var poleSheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+      var poleSheet = getOrCreateSheet(ss, POLE_SHEET_NAME, POLE_HEADERS);
       var poleId = contents.id;
       var data = poleSheet.getDataRange().getValues();
 
