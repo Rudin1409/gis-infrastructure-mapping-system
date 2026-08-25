@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -12,11 +12,13 @@ import {
   Cable,
   PlusCircle,
   Sparkles,
+  RotateCw,
 } from 'lucide-react';
 
 export default function TopHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Determine dynamic title and subtitle based on route
   const getHeaderMeta = () => {
@@ -86,6 +88,14 @@ export default function TopHeader() {
     }
   };
 
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    router.refresh();
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 800);
+  };
+
   const meta = getHeaderMeta();
   const Icon = meta.icon;
 
@@ -119,8 +129,23 @@ export default function TopHeader() {
           </div>
         </div>
 
-        {/* Right Side: Live GPS Indicator */}
+        {/* Right Side: Reload/Refresh Button & Live GPS Indicator */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Reload / Refresh Button */}
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 active:scale-90 flex items-center justify-center text-white border border-white/20 transition-all cursor-pointer disabled:opacity-50"
+            title="Muat Ulang / Refresh Data"
+            aria-label="Refresh Halaman"
+          >
+            <RotateCw
+              className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-cyan-200' : 'text-white'}`}
+            />
+          </button>
+
+          {/* Live GPS Indicator */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 border border-emerald-300/30 rounded-full text-[10px] text-emerald-200 font-bold backdrop-blur-md">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
             <span>GPS Aktif</span>
