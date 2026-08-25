@@ -182,32 +182,11 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* 1-Click Demo Accounts Quick Login Selector */}
-        <div className="pt-2 border-t border-white/10 space-y-2">
-          <span className="text-[10px] font-bold text-blue-200 uppercase block text-center">
-            Atau Pilih Akun Cepat (1-Klik):
-          </span>
-
-          <div className="grid grid-cols-2 gap-2">
-            {DEFAULT_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.id}
-                type="button"
-                onClick={() => handleQuickLogin(acc)}
-                className="p-2.5 rounded-2xl bg-white/5 hover:bg-white/15 active:scale-95 border border-white/10 text-left transition-all flex items-center gap-2 cursor-pointer group"
-              >
-                <span className="text-lg">{acc.avatar}</span>
-                <div className="min-w-0">
-                  <span className="text-[11px] font-bold text-white block truncate group-hover:text-cyan-300">
-                    {acc.name}
-                  </span>
-                  <span className="text-[9px] text-blue-300 block truncate">
-                    {acc.role.replace('_', ' ')}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+        {/* Official Credentials Info Notice */}
+        <div className="pt-3 border-t border-white/10 text-center text-[10px] text-blue-200/80 space-y-1">
+          <p className="leading-relaxed">
+            🔐 Masuk menggunakan akun terdaftar di lembar kerja <strong>DATA_SURVEYOR</strong> Google Spreadsheet.
+          </p>
         </div>
       </div>
 

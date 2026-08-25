@@ -105,54 +105,45 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* 2. Fast Switch Multi-Agency Account Selector */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-2.5">
+      {/* 2. Informasi Keamanan Sesi & Ganti Akun */}
+      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
         <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <UserCheck className="w-3.5 h-3.5 text-blue-600" />
-            <span>Pilih Akun Petugas (Kominfo &amp; Bapenda)</span>
+            <Lock className="w-3.5 h-3.5 text-blue-600" />
+            <span>Keamanan Sesi &amp; Hak Akses Petugas</span>
           </span>
-          <span className="text-[9px] text-slate-400 font-medium">1-Klik Ganti</span>
+          <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+            Terverifikasi Aktif
+          </span>
         </h3>
 
-        <div className="grid grid-cols-1 gap-2">
-          {DEFAULT_ACCOUNTS.map((acc) => {
-            const isActive = acc.id === currentUser.id;
-            return (
-              <button
-                key={acc.id}
-                type="button"
-                onClick={() => loginAs(acc)}
-                className={`p-3 rounded-2xl border text-left transition-all flex items-center justify-between cursor-pointer ${
-                  isActive
-                    ? 'bg-blue-50/80 border-blue-500/50 shadow-xs ring-2 ring-blue-500/20'
-                    : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-xl">{acc.avatar}</span>
-                  <div className="min-w-0">
-                    <span className="text-xs font-bold text-slate-900 block truncate">
-                      {acc.name}
-                    </span>
-                    <span className="text-[10px] text-slate-500 block truncate">
-                      {acc.roleLabel} • {acc.agency.split(' ')[0]} {acc.agency.split(' ')[1]}
-                    </span>
-                  </div>
-                </div>
+        <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500 font-medium">Nomor Handphone:</span>
+            <span className="font-bold text-slate-800 font-mono">{currentUser.phone || '0812-xxxx-xxxx'}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500 font-medium">ID Database Surveyor:</span>
+            <span className="font-bold text-slate-800 font-mono text-blue-600">{currentUser.id}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-500 font-medium">Status Akun Spreadsheet:</span>
+            <span className="font-bold text-emerald-600 font-mono">AKTIF (DATA_SURVEYOR)</span>
+          </div>
+        </div>
 
-                {isActive ? (
-                  <span className="px-2 py-0.5 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase shadow-2xs">
-                    Aktif
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-slate-400 hover:text-blue-600">
-                    Pilih
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        <div className="pt-1">
+          <p className="text-[11px] text-slate-500 leading-relaxed mb-3">
+            Untuk menjaga integritas dan riwayat audit survei lapangan Kota Lubuklinggau, pergantian akun wajib melalui proses <strong>Keluar (Logout)</strong> dan login ulang menggunakan email serta kata sandi resmi yang terdaftar di Google Spreadsheet.
+          </p>
+          <button
+            type="button"
+            onClick={logout}
+            className="w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 active:scale-[0.99] text-rose-700 border border-rose-200 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Keluar Akun &amp; Masuk Sebagai Petugas Lain</span>
+          </button>
         </div>
       </div>
 

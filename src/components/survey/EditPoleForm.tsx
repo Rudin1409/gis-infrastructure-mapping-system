@@ -7,6 +7,7 @@ import { Provider } from '@/types/provider';
 import { Coordinates } from '@/types/gis';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
+import { useAuth } from '@/context/AuthContext';
 import PinSelectorMap from '@/components/map/PinSelectorMap';
 import PhotoUploader from './PhotoUploader';
 import PoleVisualGuideModal, { PoleMiniGraphic } from './PoleVisualGuideModal';
@@ -41,6 +42,7 @@ interface EditPoleFormProps {
 
 export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   const router = useRouter();
+  const { user } = useAuth();
 
   // Mode: Form vs Interactive Map Pin Repositioning
   const [isMapRepositionMode, setIsMapRepositionMode] = useState(false);
@@ -196,6 +198,8 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
         description: description.trim() || undefined,
         photoUrl: finalPhotoUrl,
         photoFileId: finalPhotoFileId,
+        surveyorId: user?.id || pole.surveyorId,
+        surveyorName: user ? `${user.name} (${user.roleLabel})` : pole.surveyorName,
       };
 
       const res = await fetch(`/api/poles/${pole.id}`, {
