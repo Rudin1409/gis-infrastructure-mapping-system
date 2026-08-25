@@ -1,0 +1,39 @@
+{
+  "name": "Sistem Pemetaan Tiang & GIS Lubuklinggau",
+  "short_name": "InfraMap LLG",
+  "description": "Sistem inventarisasi dan pemetaan GIS tiang telekomunikasi Kota Lubuklinggau (Kominfo & Bapenda)",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090d16",
+  "theme_color": "#1d4ed8",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Survey Lapangan Baru",
+      "short_name": "Survey Baru",
+      "description": "Buka formulir input tiang lapangan dengan GPS",
+      "url": "/poles/new"
+    },
+    {
+      "name": "Peta GIS Interaktif",
+      "short_name": "Peta GIS",
+      "description": "Buka peta persebaran tiang dan jalur kabel",
+      "url": "/map"
+    },
+    {
+      "name": "Data Tiang",
+      "short_name": "Inventaris",
+      "description": "Lihat seluruh data tiang terdata",
+      "url": "/poles"
+    }
+  ]
+}

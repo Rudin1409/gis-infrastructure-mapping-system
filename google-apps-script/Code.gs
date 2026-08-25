@@ -1,0 +1,150 @@
+// ==============================================================================
+// GOOGLE APPS SCRIPT: BACKEND DATABASE & CLOUD FOTO GIS LUBUKLINGGAU
+// ==============================================================================
+
+var FOLDER_NAME = 'FOTO_SURVEI_TIANG_LUBUKLINGGAU';
+
+var POLE_HEADERS = [
+  'id', 'poleCode', 'poleLatitude', 'poleLongitude', 'deviceLatitude', 'deviceLongitude',
+  'gpsAccuracy', 'distanceFromDevice', 'locationMethod', 'providerId', 'providerName',
+  'poleType', 'condition', 'road', 'kelurahan', 'kecamatan', 'kota', 'patokanLokasi',
+  'sisiJalan', 'height', 'ownershipStatus', 'isTilted', 'isMessyCable', 'isLowCable',
+  'isHazardous', 'isCorroded', 'isObstructing', 'description', 'photoFileId', 'photoUrl',
+  'surveyorId', 'surveyorName', 'surveyDate', 'surveyTime', 'validationStatus',
+  'validationNote', 'createdAt', 'updatedAt'
+];
+
+var PROVIDER_HEADERS = ['id', 'name', 'code', 'colorHex', 'status'];
+var SEGMENT_HEADERS = [
+  'id', 'segmentCode', 'fromNodeId', 'toNodeId', 'providerId', 'providerName',
+  'networkType', 'installationType', 'estimatedDistance', 'status', 'description',
+  'createdAt', 'updatedAt'
+];
+var USER_HEADERS = ['id', 'name', 'email', 'role', 'agency', 'phone', 'status', 'createdAt'];
+
+// Fungsi Inisialisasi Otomatis (Bisa dijalankan langsung dengan tombol 'Jalankan / Run')
+function initialSetup() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+  getOrCreateSheet(ss, 'PROVIDERS', PROVIDER_HEADERS);
+  getOrCreateSheet(ss, 'NETWORK_SEGMENTS', SEGMENT_HEADERS);
+  getOrCreateSheet(ss, 'USERS', USER_HEADERS);
+  getOrCreatePhotoFolder();
+  Logger.log('SUKSES: 4 Sheet dan Folder Foto Google Drive berhasil dibuat!');
+}
+
+function getOrCreateSheet(ss, sheetName, headers) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    sheet.appendRow(headers);
+    sheet.setFrozenRows(1);
+    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#dbeafe');
+  }
+  return sheet;
+}
+
+function getOrCreatePhotoFolder() {
+  var folders = DriveApp.getFoldersByName(FOLDER_NAME);
+  if (folders.hasNext()) {
+    return folders.next();
+  }
+  var folder = DriveApp.createFolder(FOLDER_NAME);
+  folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return folder;
+}
+
+// Endpoint GET: Ambil data tiang
+function doGet(e) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var action = (e && e.parameter && e.parameter.action) || 'getPoles';
+
+    if (action === 'init') {
+      initialSetup();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Inisialisasi berhasil' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var sheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) {
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var headers = data[0];
+    var rows = data.slice(1);
+    var poles = rows.map(function(row) {
+      var obj = {};
+      headers.forEach(function(h, i) {
+        obj[h] = row[i];
+      });
+      return obj;
+    });
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, data: poles }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Endpoint POST: Simpan data survei & simpan foto ke Google Drive
+function doPost(e) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var contents = JSON.parse(e.postData.contents);
+    var action = contents.action || 'savePole';
+
+    // 1. Upload Foto Kamera Langsung ke Google Drive
+    if (action === 'uploadPhoto') {
+      var base64Data = contents.base64;
+      var fileName = contents.fileName || ('POLE_' + new Date().getTime() + '.jpg');
+      var mimeType = contents.mimeType || 'image/jpeg';
+
+      var folder = getOrCreatePhotoFolder();
+      var decoded = Utilities.base64Decode(base64Data);
+      var blob = Utilities.newBlob(decoded, mimeType, fileName);
+      var file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+      var fileId = file.getId();
+      var photoUrl = 'https://drive.google.com/uc?id=' + fileId + '&export=view';
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        data: {
+          fileId: fileId,
+          photoUrl: photoUrl,
+          fileName: fileName
+        }
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 2. Simpan Data Tiang ke Sheet POLES
+    if (action === 'savePole') {
+      var poleSheet = getOrCreateSheet(ss, 'POLES', POLE_HEADERS);
+      var pole = contents.data;
+
+      var row = POLE_HEADERS.map(function(header) {
+        var val = pole[header];
+        if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+        if (val === undefined || val === null) return '';
+        return val;
+      });
+
+      poleSheet.appendRow(row);
+
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}

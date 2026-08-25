@@ -1,0 +1,102 @@
+export type PoleCondition = 'GOOD' | 'NEEDS_REPAIR' | 'DAMAGED' | 'UNKNOWN';
+
+export type PoleType = 'BETON' | 'BESI' | 'KAYU' | 'LAINNYA' | 'TIDAK_DIKETAHUI';
+
+export type ValidationStatus = 'DRAFT' | 'SUBMITTED' | 'VERIFIED' | 'REJECTED';
+
+export type LocationMethod = 'MANUAL_MAP_PIN' | 'GPS_DEVICE' | 'IMPORT_DATA';
+
+export type SisiJalan = 'KIRI' | 'KANAN' | 'MEDIAN' | 'TIDAK_DITENTUKAN';
+
+export type OwnershipStatus = 'SENDIRI' | 'BERSAMA_PLN' | 'SEWA' | 'TIDAK_DIKETAHUI';
+
+export interface Pole {
+  id: string; // e.g. "LL-0001" or "LLG-T1-TJ-463"
+  poleCode?: string; // Physical tag/code on the pole
+  poleLatitude: number; // Final manual map pin latitude
+  poleLongitude: number; // Final manual map pin longitude
+  deviceLatitude?: number; // Surveyor GPS device latitude
+  deviceLongitude?: number; // Surveyor GPS device longitude
+  gpsAccuracy?: number; // Device GPS accuracy in meters
+  distanceFromDevice?: number; // Spatial distance in meters between pin and device
+  locationMethod: LocationMethod;
+  providerId: string;
+  providerName?: string;
+  poleType: PoleType;
+  condition: PoleCondition;
+  road: string;
+  kelurahan: string;
+  kecamatan: string;
+  kota?: string; // "Kota Lubuklinggau"
+  patokanLokasi?: string; // e.g. "Depan Kantor Lurah / Samping Minimarket"
+  sisiJalan?: SisiJalan;
+  height?: string; // "7m", "9m", "11m", "12m"
+  ownershipStatus?: OwnershipStatus;
+  
+  // Quick Safety & Condition Hazards (Yes/No flags)
+  isTilted?: boolean; // Tiang Miring
+  isMessyCable?: boolean; // Kabel Semrawut
+  isLowCable?: boolean; // Kabel Terlalu Rendah
+  isHazardous?: boolean; // Potensi Bahaya
+  isCorroded?: boolean; // Berkarat / Retak
+  isObstructing?: boolean; // Mengganggu Trotoar / Jalan
+
+  description?: string;
+  photoFileId?: string; // Google Drive file ID
+  photoUrl?: string; // Preview or view URL
+  additionalPhotoFileId?: string;
+  additionalPhotoUrl?: string;
+
+  surveyorId?: string;
+  surveyorName?: string;
+  surveyDate: string; // YYYY-MM-DD
+  surveyTime?: string; // HH:mm:ss
+  validationStatus: ValidationStatus;
+  validationNote?: string;
+  createdAt: string; // ISO 8601 string
+  updatedAt: string; // ISO 8601 string
+}
+
+export interface CreatePoleInput {
+  poleCode?: string;
+  poleLatitude: number;
+  poleLongitude: number;
+  deviceLatitude?: number;
+  deviceLongitude?: number;
+  gpsAccuracy?: number;
+  distanceFromDevice?: number;
+  locationMethod?: LocationMethod;
+  providerId: string;
+  providerName?: string;
+  poleType: PoleType;
+  condition: PoleCondition;
+  road: string;
+  kelurahan: string;
+  kecamatan: string;
+  kota?: string;
+  patokanLokasi?: string;
+  sisiJalan?: SisiJalan;
+  height?: string;
+  ownershipStatus?: OwnershipStatus;
+  isTilted?: boolean;
+  isMessyCable?: boolean;
+  isLowCable?: boolean;
+  isHazardous?: boolean;
+  isCorroded?: boolean;
+  isObstructing?: boolean;
+  description?: string;
+  photoFileId?: string;
+  photoUrl?: string;
+  additionalPhotoFileId?: string;
+  additionalPhotoUrl?: string;
+  surveyorId?: string;
+  surveyorName?: string;
+  surveyDate?: string;
+  surveyTime?: string;
+  validationStatus?: ValidationStatus;
+}
+
+export interface UpdatePoleInput extends Partial<CreatePoleInput> {
+  id: string;
+  validationNote?: string;
+}
