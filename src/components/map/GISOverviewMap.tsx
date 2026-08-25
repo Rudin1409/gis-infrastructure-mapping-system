@@ -147,6 +147,12 @@ export default function GISOverviewMap({
 
     mapInstanceRef.current = map;
 
+    setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 150);
+
     return () => {
       map.remove();
       mapInstanceRef.current = null;

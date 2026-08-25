@@ -167,6 +167,12 @@ export default function PinSelectorMap({
     pinMarkerRef.current = pinMarker;
     mapInstanceRef.current = map;
 
+    setTimeout(() => {
+      if (isMountedRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 150);
+
     // Trigger high-accuracy geolocation
     requestGpsLocation(map, L, pinMarker);
 
