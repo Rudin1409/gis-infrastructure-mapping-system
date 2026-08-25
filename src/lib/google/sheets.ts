@@ -184,9 +184,10 @@ export function sheetRowToPole(row: any[]): Pole | null {
     isHazardous: row[26] === 'YA' || row[26] === 'TRUE' || row[26] === true,
     description: row[27] ? String(row[27]) : undefined,
     photoFileId: row[28] ? String(row[28]) : undefined,
-    photoUrl: row[29] ? String(row[29]) : undefined,
-    surveyorId: row[30] ? String(row[30]) : undefined,
-    surveyorName: row[31] ? String(row[31]) : undefined,
+    surveyorId: row[30] ? String(row[30]) : 'USR-KOMINFO-ADMIN',
+    surveyorName: (row[31] && !String(row[31]).includes('Surveyor 1'))
+      ? String(row[31])
+      : 'Admin DISKOMINFO (Admin Teknis & Jaringan)',
     surveyDate: String(row[32] || ''),
     surveyTime: row[33] ? String(row[33]) : undefined,
     validationStatus: row[34] || 'SUBMITTED',

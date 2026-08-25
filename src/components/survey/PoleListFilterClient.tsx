@@ -42,6 +42,10 @@ export default function PoleListFilterClient({
   const [selectedType, setSelectedType] = useState('ALL');
   const [hazardFilter, setHazardFilter] = useState<'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'>('ALL');
 
+  // --- Pagination States ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   // Modal / Drawer State
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
@@ -55,6 +59,7 @@ export default function PoleListFilterClient({
   const handleKecamatanChange = (kec: string) => {
     setSelectedKecamatan(kec);
     setSelectedKelurahan('ALL');
+    setCurrentPage(1);
   };
 
   const resetAllFilters = () => {
@@ -65,6 +70,7 @@ export default function PoleListFilterClient({
     setSelectedCondition('ALL');
     setSelectedType('ALL');
     setHazardFilter('ALL');
+    setCurrentPage(1);
   };
 
   // Active filters count for badge
@@ -168,6 +174,13 @@ export default function PoleListFilterClient({
     selectedType,
     hazardFilter,
   ]);
+
+  // Compute Total Pages & Slice Data
+  const totalPages = Math.max(1, Math.ceil(filteredPoles.length / itemsPerPage));
+  const paginatedPoles = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredPoles.slice(start, start + itemsPerPage);
+  }, [filteredPoles, currentPage, itemsPerPage]);
 
   return (
     <div className="space-y-3.5">
@@ -356,7 +369,7 @@ export default function PoleListFilterClient({
             </button>
           </div>
         ) : (
-          filteredPoles.map((pole) => {
+          paginatedPoles.map((pole) => {
             const hasHazards =
               pole.isTilted ||
               pole.isMessyCable ||
@@ -482,6 +495,54 @@ export default function PoleListFilterClient({
           })
         )}
       </div>
+
+      {/* 4.5 Pagination Controls Bar */}
+      {filteredPoles.length > 0 && (
+        <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] flex items-center justify-between gap-2 flex-wrap text-xs">
+          <div className="text-[11px] text-slate-500 font-medium">
+            Menampilkan <strong className="text-slate-900 font-mono">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredPoles.length)}</strong> dari <strong className="text-blue-600 font-mono">{filteredPoles.length}</strong> tiang
+          </div>
+
+          <div className="flex items-center gap-1.5 ml-auto flex-wrap">
+            {/* Items Per Page Selector */}
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-bold text-slate-700 outline-none"
+            >
+              <option value={5}>5 / hal</option>
+              <option value={10}>10 / hal</option>
+              <option value={20}>20 / hal</option>
+              <option value={50}>50 / hal</option>
+            </select>
+
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none font-bold text-slate-700 transition-all cursor-pointer"
+            >
+              ← Prev
+            </button>
+
+            <span className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-xl font-mono font-bold text-xs">
+              Hal {currentPage} / {totalPages}
+            </span>
+
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none font-bold text-slate-700 transition-all cursor-pointer"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ================================================================= */}
       {/* 5. FILTER MODAL DRAWER (LENGKAP: PROVIDER, KEC, KEL, JENIS, DLL) */}

@@ -90,9 +90,10 @@ export class AppsScriptPoleRepository implements IPoleRepository {
         isHazardous: parseBoolean(row.isHazardous ?? row.Potensi_Bahaya_Lain),
         description: row.description || row.Catatan_Keterangan_Lapangan ? String(row.description || row.Catatan_Keterangan_Lapangan) : undefined,
         photoFileId: row.photoFileId || row.ID_File_Google_Drive ? String(row.photoFileId || row.ID_File_Google_Drive) : undefined,
-        photoUrl: row.photoUrl || row.Link_Foto_Google_Drive ? String(row.photoUrl || row.Link_Foto_Google_Drive) : undefined,
-        surveyorId: row.surveyorId || row.ID_Surveyor ? String(row.surveyorId || row.ID_Surveyor) : undefined,
-        surveyorName: row.surveyorName || row.Nama_Petugas_Surveyor ? String(row.surveyorName || row.Nama_Petugas_Surveyor) : 'Surveyor 1',
+        surveyorId: row.surveyorId || row.ID_Surveyor ? String(row.surveyorId || row.ID_Surveyor) : 'USR-KOMINFO-ADMIN',
+        surveyorName: (row.surveyorName && !String(row.surveyorName).includes('Surveyor 1'))
+          ? String(row.surveyorName)
+          : 'Admin DISKOMINFO (Admin Teknis & Jaringan)',
         surveyDate: String(row.surveyDate || row.Tanggal_Survey || new Date().toISOString().split('T')[0]),
         surveyTime: row.surveyTime || row.Waktu_Survey ? String(row.surveyTime || row.Waktu_Survey) : undefined,
         validationStatus: row.validationStatus || row.Status_Validasi || 'SUBMITTED',
