@@ -3,9 +3,14 @@ import './globals.css';
 import AppLayout from '@/components/common/AppLayout';
 
 export const metadata: Metadata = {
-  title: 'Infrastructure Mapping System — Kota Lubuklinggau',
+  title: 'InfraMap GIS — Sistem Pemetaan Infrastruktur Kota Lubuklinggau',
   description:
-    'Sistem inventarisasi, pemetaan GIS, dokumentasi, validasi, dan pengelolaan infrastruktur jaringan telekomunikasi Kota Lubuklinggau (Kominfo & Bapenda).',
+    'Sistem inventarisasi spasial, pemetaan GIS, dokumentasi tiang FO, PJU, dan jaringan telekomunikasi Kota Lubuklinggau.',
+  icons: {
+    icon: '/images/app-logo.png',
+    shortcut: '/images/app-logo.png',
+    apple: '/images/app-logo.png',
+  },
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

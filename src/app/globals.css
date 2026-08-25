@@ -66,5 +66,15 @@ body {
   color: #2563eb !important;
 }
 
+@keyframes float-subtle {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.02);
+  }
+}
 
-
+.animate-bounce-subtle {
+  animation: float-subtle 3s ease-in-out infinite;
+}

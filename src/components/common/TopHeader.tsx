@@ -117,8 +117,12 @@ export default function TopHeader() {
               <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
             </button>
           ) : (
-            <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-inner flex-shrink-0">
-              <Icon className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-white p-0.5 flex items-center justify-center shadow-md flex-shrink-0 border border-blue-200">
+              <img
+                src="/images/app-logo.png"
+                alt="Logo GIS Lubuklinggau"
+                className="w-full h-full object-contain rounded-lg"
+              />
             </div>
           )}
 
