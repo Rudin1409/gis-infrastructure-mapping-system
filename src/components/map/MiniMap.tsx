@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type L from 'leaflet';
 import { Coordinates } from '@/types/gis';
 import { MAP_TILE_LAYERS } from '@/lib/gis/tiles';
-import { createConditionMarkerIcon } from './markerIcons';
+import { createProviderPoleMarkerIcon } from './markerIcons';
 import { PoleCondition } from '@/types/pole';
 import { Layers } from 'lucide-react';
 
@@ -12,9 +12,17 @@ interface MiniMapProps {
   coord: Coordinates;
   condition: PoleCondition;
   poleId: string;
+  poleCode?: string;
+  providerColorHex?: string;
 }
 
-export default function MiniMap({ coord, condition, poleId }: MiniMapProps) {
+export default function MiniMap({
+  coord,
+  condition,
+  poleId,
+  poleCode,
+  providerColorHex,
+}: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -47,7 +55,7 @@ export default function MiniMap({ coord, condition, poleId }: MiniMapProps) {
 
     const map = L.map(containerRef.current, {
       center: [coord.lat, coord.lng],
-      zoom: 17,
+      zoom: 18,
       maxZoom: 21,
       zoomControl: false,
     });
@@ -61,16 +69,26 @@ export default function MiniMap({ coord, condition, poleId }: MiniMapProps) {
 
     tileLayerRef.current = tileLayer;
 
-    const icon = createConditionMarkerIcon(L, condition, poleId);
+    const icon = createProviderPoleMarkerIcon(L, {
+      condition,
+      label: poleCode || poleId,
+      colorHex: providerColorHex || '#2563eb',
+    });
     L.marker([coord.lat, coord.lng], { icon }).addTo(map);
 
     mapRef.current = map;
+
+    setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    }, 150);
 
     return () => {
       map.remove();
       mapRef.current = null;
     };
-  }, [leafletLib, coord, condition, poleId]);
+  }, [leafletLib, coord, condition, poleId, poleCode, providerColorHex]);
 
   const toggleTile = () => {
     if (!leafletLib || !mapRef.current) return;
@@ -97,15 +115,15 @@ export default function MiniMap({ coord, condition, poleId }: MiniMapProps) {
   };
 
   return (
-    <div className="relative w-full h-48 md:h-64 rounded-2xl overflow-hidden border border-slate-700/80 shadow-lg">
+    <div className="relative w-full h-44 rounded-2xl overflow-hidden border border-slate-200/80 shadow-inner">
       <div ref={containerRef} className="w-full h-full z-0" />
       <button
         type="button"
         onClick={toggleTile}
-        className="absolute top-2.5 right-2.5 z-[400] flex items-center gap-1 px-2.5 py-1.5 bg-slate-900/90 hover:bg-slate-800 text-white rounded-lg text-xs border border-slate-700 shadow backdrop-blur transition-all"
+        className="absolute top-2.5 right-2.5 z-[400] flex items-center gap-1 px-2.5 py-1 bg-slate-900/80 hover:bg-slate-900 text-white rounded-xl text-[10px] font-bold border border-white/20 shadow-md backdrop-blur-md transition-all cursor-pointer"
       >
-        <Layers className="w-3.5 h-3.5 text-blue-400" />
-        <span>{tileMode === 'street' ? 'Peta Jalan' : 'Satelit'}</span>
+        <Layers className="w-3 h-3 text-cyan-300" />
+        <span>{tileMode === 'street' ? 'Jalan' : 'Satelit'}</span>
       </button>
     </div>
   );

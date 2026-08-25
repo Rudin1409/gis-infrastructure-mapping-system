@@ -7,7 +7,8 @@ import { NetworkSegment } from '@/types/segment';
 import { Provider } from '@/types/provider';
 import { MAP_TILE_LAYERS } from '@/lib/gis/tiles';
 import { LUBUKLINGGAU_CENTER, KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
-import { createConditionMarkerIcon } from './markerIcons';
+import { DEFAULT_PROVIDERS } from '@/config/providers';
+import { createProviderPoleMarkerIcon } from './markerIcons';
 import {
   Layers,
   Search,
@@ -322,9 +323,19 @@ export default function GISOverviewMap({
       });
     }
 
-    // Render Pole Markers
+    // Render Pole Markers with Provider Color & Smart GIS Code
     filteredPoles.forEach((pole) => {
-      const markerIcon = createConditionMarkerIcon(L, pole.condition, pole.id);
+      const provObj =
+        providers.find((pr) => pr.id === pole.providerId) ||
+        DEFAULT_PROVIDERS.find((pr) => pr.id === pole.providerId);
+
+      const markerIcon = createProviderPoleMarkerIcon(L, {
+        colorHex: provObj?.colorHex || '#2563eb',
+        condition: pole.condition,
+        label: pole.poleCode || pole.id,
+        providerCode: provObj?.code,
+      });
+
       const marker = L.marker([pole.poleLatitude, pole.poleLongitude], {
         icon: markerIcon,
       });

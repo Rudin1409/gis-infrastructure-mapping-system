@@ -47,31 +47,62 @@ export function createConditionMarkerIcon(
   condition: 'GOOD' | 'NEEDS_REPAIR' | 'DAMAGED' | 'UNKNOWN',
   label?: string
 ) {
-  let bgClass = 'from-emerald-500 to-emerald-600';
-  let arrowClass = 'bg-emerald-600';
+  return createProviderPoleMarkerIcon(LInstance, {
+    condition,
+    label,
+    colorHex: '#2563eb',
+  });
+}
 
-  if (condition === 'NEEDS_REPAIR') {
-    bgClass = 'from-amber-400 to-amber-500';
-    arrowClass = 'bg-amber-500';
-  } else if (condition === 'DAMAGED') {
-    bgClass = 'from-rose-500 to-rose-600';
-    arrowClass = 'bg-rose-600';
-  } else if (condition === 'UNKNOWN') {
-    bgClass = 'from-slate-500 to-slate-600';
-    arrowClass = 'bg-slate-600';
+export function createProviderPoleMarkerIcon(
+  LInstance: typeof L,
+  options: {
+    colorHex?: string;
+    condition: 'GOOD' | 'NEEDS_REPAIR' | 'DAMAGED' | 'UNKNOWN';
+    label?: string;
+    providerCode?: string;
   }
+) {
+  const color = options.colorHex || '#2563eb';
+  const condition = options.condition;
+  const label = options.label;
+
+  let conditionRing = '#10b981'; // Green
+  if (condition === 'NEEDS_REPAIR') conditionRing = '#f59e0b'; // Amber
+  else if (condition === 'DAMAGED') conditionRing = '#ef4444'; // Red
+  else if (condition === 'UNKNOWN') conditionRing = '#64748b'; // Slate
 
   const html = `
     <div class="relative flex flex-col items-center group cursor-pointer select-none">
-      <div class="w-6 h-6 bg-gradient-to-tr ${bgClass} rounded-full border-2 border-white shadow-md flex items-center justify-center text-white font-bold text-[9px] transform transition-transform group-hover:scale-125">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-        </svg>
+      <div class="relative flex items-center justify-center">
+        <!-- Pin Head with Provider Color -->
+        <div
+          class="w-7 h-7 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white font-black text-[9px] transform transition-transform group-hover:scale-125"
+          style="background-color: ${color};"
+        >
+          <!-- Pole SVG Icon / Provider Code -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 fill-current opacity-95" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+
+          <!-- Top-Right Condition Indicator Dot -->
+          <span
+            class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-xs"
+            style="background-color: ${conditionRing};"
+          ></span>
+        </div>
       </div>
-      <div class="w-1.5 h-1.5 ${arrowClass} rotate-45 -mt-1 shadow-sm"></div>
+
+      <!-- Arrow Pointer -->
+      <div
+        class="w-2 h-2 rotate-45 -mt-1 shadow-sm"
+        style="background-color: ${color};"
+      ></div>
+
+      <!-- Prominent Smart GIS Label Pill -->
       ${
         label
-          ? `<span class="mt-0.5 px-1 py-0.2 text-[8px] font-bold font-mono bg-white/95 text-slate-800 rounded shadow-xs border border-slate-200/90 whitespace-nowrap pointer-events-none">${label}</span>`
+          ? `<span class="mt-0.5 px-1.5 py-0.2 text-[8px] font-black font-mono bg-white/95 text-slate-900 rounded-md shadow-md border border-slate-300/90 whitespace-nowrap pointer-events-none tracking-tight">${label}</span>`
           : ''
       }
     </div>
@@ -79,9 +110,9 @@ export function createConditionMarkerIcon(
 
   return LInstance.divIcon({
     html,
-    className: 'custom-condition-marker',
-    iconSize: [28, 36],
-    iconAnchor: [14, 24],
-    popupAnchor: [0, -24],
+    className: 'custom-provider-pole-marker',
+    iconSize: [36, 44],
+    iconAnchor: [18, 28],
+    popupAnchor: [0, -28],
   });
 }

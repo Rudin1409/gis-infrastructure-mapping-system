@@ -314,6 +314,8 @@ export default async function PoleDetailPage({
             coord={{ lat: pole.poleLatitude, lng: pole.poleLongitude }}
             condition={pole.condition}
             poleId={pole.id}
+            poleCode={pole.poleCode}
+            providerColorHex={selectedProviderObj?.colorHex}
           />
         </div>
       </div>
