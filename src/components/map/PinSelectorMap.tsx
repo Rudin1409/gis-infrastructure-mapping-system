@@ -11,7 +11,11 @@ import {
   getGpsQuality,
   evaluateLocationQC,
 } from '@/lib/gis/haversine';
-import { createDraggablePinIcon, createSurveyorBlueDotIcon } from './markerIcons';
+import {
+  createDraggablePinIcon,
+  createSurveyorBlueDotIcon,
+  createPreviousPolePinIcon,
+} from './markerIcons';
 import { LUBUKLINGGAU_DISTRICT_BOUNDARIES } from '@/lib/gis/boundaries';
 import {
   Layers,
@@ -28,25 +32,35 @@ import {
   Loader2,
   Info,
   Shield,
+  ChevronLeft,
+  RotateCcw,
 } from 'lucide-react';
 
 interface PinSelectorMapProps {
   initialPinCoord?: Coordinates;
+  originalCoord?: Coordinates;
+  poleCode?: string;
   onConfirmLocation: (data: {
     poleCoord: Coordinates;
     deviceCoord?: Coordinates;
     gpsAccuracy?: number;
     distanceFromDevice?: number;
   }) => void;
+  onCancel?: () => void;
 }
 
 export default function PinSelectorMap({
   initialPinCoord,
+  originalCoord,
+  poleCode,
   onConfirmLocation,
+  onCancel,
 }: PinSelectorMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const pinMarkerRef = useRef<L.Marker | null>(null);
+  const originalMarkerRef = useRef<L.Marker | null>(null);
+  const shiftLineRef = useRef<L.Polyline | null>(null);
   const surveyorMarkerRef = useRef<L.Marker | null>(null);
   const distanceLineRef = useRef<L.Polyline | null>(null);
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
@@ -145,6 +159,31 @@ export default function PinSelectorMap({
     }
     boundaryLayerGroupRef.current = boundaryGroup;
 
+    // Previous Saved Location Marker (if originalCoord provided)
+    if (originalCoord) {
+      const origIcon = createPreviousPolePinIcon(L, poleCode);
+      const origMarker = L.marker([originalCoord.lat, originalCoord.lng], {
+        icon: origIcon,
+        zIndexOffset: 700,
+      }).addTo(map);
+      originalMarkerRef.current = origMarker;
+
+      // Dashed Leader Line connecting Original Pos to Moving New Pin
+      const leaderLine = L.polyline(
+        [
+          [originalCoord.lat, originalCoord.lng],
+          [initialCenter.lat, initialCenter.lng],
+        ],
+        {
+          color: '#f59e0b',
+          weight: 2.5,
+          dashArray: '6, 6',
+          opacity: 0.85,
+        }
+      ).addTo(map);
+      shiftLineRef.current = leaderLine;
+    }
+
     // Draggable Pin Marker
     const pinIcon = createDraggablePinIcon(L);
     const pinMarker = L.marker([initialCenter.lat, initialCenter.lng], {
@@ -156,22 +195,37 @@ export default function PinSelectorMap({
     pinMarker.on('drag', (e: any) => {
       const pos = e.target.getLatLng();
       setPinCoord({ lat: pos.lat, lng: pos.lng });
+      if (originalCoord && shiftLineRef.current) {
+        shiftLineRef.current.setLatLngs([
+          [originalCoord.lat, originalCoord.lng],
+          [pos.lat, pos.lng],
+        ]);
+      }
     });
 
     // Tap map anywhere to move pin immediately
     map.on('click', (e: L.LeafletMouseEvent) => {
       pinMarker.setLatLng(e.latlng);
       setPinCoord({ lat: e.latlng.lat, lng: e.latlng.lng });
+      if (originalCoord && shiftLineRef.current) {
+        shiftLineRef.current.setLatLngs([
+          [originalCoord.lat, originalCoord.lng],
+          [e.latlng.lat, e.latlng.lng],
+        ]);
+      }
     });
 
     pinMarkerRef.current = pinMarker;
     mapInstanceRef.current = map;
 
-    setTimeout(() => {
-      if (isMountedRef.current && mapInstanceRef.current) {
-        mapInstanceRef.current.invalidateSize();
-      }
-    }, 150);
+    // Multiple invalidateSize passes to guarantee full viewport rendering
+    [50, 150, 350, 700].forEach((delay) => {
+      setTimeout(() => {
+        if (isMountedRef.current && mapInstanceRef.current) {
+          mapInstanceRef.current.invalidateSize();
+        }
+      }, delay);
+    });
 
     // Trigger high-accuracy geolocation
     requestGpsLocation(map, L, pinMarker);
@@ -413,6 +467,23 @@ export default function PinSelectorMap({
     }
   };
 
+  const shiftFromOriginal = originalCoord
+    ? calculateHaversineDistance(originalCoord, pinCoord)
+    : 0;
+
+  const resetToOriginal = () => {
+    if (!originalCoord || !pinMarkerRef.current || !mapInstanceRef.current) return;
+    pinMarkerRef.current.setLatLng([originalCoord.lat, originalCoord.lng]);
+    setPinCoord(originalCoord);
+    if (shiftLineRef.current) {
+      shiftLineRef.current.setLatLngs([
+        [originalCoord.lat, originalCoord.lng],
+        [originalCoord.lat, originalCoord.lng],
+      ]);
+    }
+    mapInstanceRef.current.panTo([originalCoord.lat, originalCoord.lng]);
+  };
+
   // Quality Control evaluation
   const deviceCoord = gpsReading
     ? { lat: gpsReading.latitude, lng: gpsReading.longitude }
@@ -439,6 +510,17 @@ export default function PinSelectorMap({
     <div className="flex flex-col h-full w-full bg-slate-100 text-slate-800 relative select-none">
       {/* Top Search & GPS Status Bar */}
       <div className="z-10 bg-white/95 backdrop-blur-md px-3 py-2 border-b border-slate-200 shadow-sm flex items-center gap-2">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="p-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all flex items-center gap-1 font-bold text-xs flex-shrink-0 cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Batal</span>
+          </button>
+        )}
+
         {/* Search Input for Perumahan / Street */}
         <form onSubmit={handleSearchLocation} className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -475,7 +557,7 @@ export default function PinSelectorMap({
           <button
             type="button"
             onClick={toggleTileMode}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/95 hover:bg-slate-50 text-slate-800 rounded-2xl shadow-lg border border-slate-200 text-xs font-bold backdrop-blur transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/95 hover:bg-slate-50 text-slate-800 rounded-2xl shadow-lg border border-slate-200 text-xs font-bold backdrop-blur transition-all active:scale-95 cursor-pointer"
             title="Ganti Tampilan Peta / Satelit"
           >
             <Layers className="w-3.5 h-3.5 text-blue-600" />
@@ -486,7 +568,7 @@ export default function PinSelectorMap({
           <button
             type="button"
             onClick={toggleBoundaries}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl shadow-lg border text-xs font-bold backdrop-blur transition-all active:scale-95 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl shadow-lg border text-xs font-bold backdrop-blur transition-all active:scale-95 cursor-pointer ${
               showBoundaries
                 ? 'bg-blue-600 text-white border-blue-500 shadow-blue-500/25'
                 : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -502,7 +584,7 @@ export default function PinSelectorMap({
             type="button"
             onClick={focusToSurveyor}
             disabled={isLocating}
-            className="flex items-center justify-center w-9 h-9 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-2xl shadow-lg border border-blue-500 transition-all"
+            className="flex items-center justify-center w-9 h-9 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-2xl shadow-lg border border-blue-500 transition-all cursor-pointer"
             title="Fokus ke Posisi Saya (GPS)"
           >
             <Locate className={`w-4 h-4 ${isLocating ? 'animate-spin text-blue-200' : ''}`} />
@@ -512,7 +594,7 @@ export default function PinSelectorMap({
           <button
             type="button"
             onClick={zoomIn}
-            className="flex items-center justify-center w-9 h-9 bg-white/95 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-2xl shadow-lg border border-slate-200 backdrop-blur transition-all font-bold"
+            className="flex items-center justify-center w-9 h-9 bg-white/95 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-2xl shadow-lg border border-slate-200 backdrop-blur transition-all font-bold cursor-pointer"
             title="Perbesar Peta (+)"
           >
             <Plus className="w-4 h-4 text-slate-800 stroke-[3]" />
@@ -522,7 +604,7 @@ export default function PinSelectorMap({
           <button
             type="button"
             onClick={zoomOut}
-            className="flex items-center justify-center w-9 h-9 bg-white/95 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-2xl shadow-lg border border-slate-200 backdrop-blur transition-all font-bold"
+            className="flex items-center justify-center w-9 h-9 bg-white/95 hover:bg-slate-50 active:scale-95 text-slate-700 rounded-2xl shadow-lg border border-slate-200 backdrop-blur transition-all font-bold cursor-pointer"
             title="Perkecil Peta (-)"
           >
             <Minus className="w-4 h-4 text-slate-800 stroke-[3]" />
@@ -532,35 +614,77 @@ export default function PinSelectorMap({
         {/* Draggable & Tap Hint Pill */}
         <div className="absolute top-3 left-3 z-[400] bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-200 text-[10px] font-bold text-slate-700 shadow-md flex items-center gap-1.5 pointer-events-none">
           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-          <span>Ketuk peta untuk geser Pin</span>
+          <span>Geser pin atau ketuk peta untuk pindah</span>
         </div>
       </div>
 
       {/* Floating Bottom Data Card & Action */}
       <div className="absolute bottom-4 left-3 right-3 z-[400] bg-white/98 backdrop-blur-xl rounded-3xl p-3 border border-slate-200/90 shadow-[0_10px_35px_rgba(15,23,42,0.18)] animate-in slide-in-from-bottom-2">
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          {/* Pole Coordinates */}
-          <div className="bg-slate-50 rounded-2xl p-2 border border-slate-100">
-            <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block mb-0.5 flex items-center gap-1">
-              <MapPin className="w-3 h-3" /> Koordinat Tiang
-            </span>
-            <div className="font-mono text-[10px] text-slate-800 font-bold">
-              <div>Lat: <span className="text-emerald-600">{pinCoord.lat.toFixed(6)}</span></div>
-              <div>Lng: <span className="text-emerald-600">{pinCoord.lng.toFixed(6)}</span></div>
+        {originalCoord ? (
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {/* New Moving Position */}
+            <div className="bg-emerald-50/80 rounded-2xl p-2 border border-emerald-200">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                  <span>📌</span> Titik Baru
+                </span>
+                <span className="text-[8px] font-bold px-1.5 py-0.2 bg-emerald-600 text-white rounded-md">
+                  Aktif
+                </span>
+              </div>
+              <div className="font-mono text-[10px] text-slate-800 font-bold">
+                <div>Lat: <span className="text-emerald-700">{pinCoord.lat.toFixed(6)}</span></div>
+                <div>Lng: <span className="text-emerald-700">{pinCoord.lng.toFixed(6)}</span></div>
+              </div>
             </div>
-          </div>
 
-          {/* Surveyor GPS & Distance Info */}
-          <div className="bg-slate-50 rounded-2xl p-2 border border-slate-100">
-            <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block mb-0.5 flex items-center gap-1">
-              <Locate className="w-3 h-3" /> Posisi Surveyor
-            </span>
-            <div className="text-[10px] text-slate-600">
-              <div>Akurasi: <span className="font-bold text-slate-900">{gpsReading ? `±${gpsReading.accuracy.toFixed(0)}m${gpsReading.accuracy > 30 ? ' (WiFi)' : ''}` : '-'}</span></div>
-              <div>Jarak: <span className={`font-bold ${locationQC.isWarningDistance ? 'text-amber-600' : 'text-emerald-600'}`}>{formatDistance(distance)}</span></div>
+            {/* Original Saved Position */}
+            <div className="bg-amber-50/80 rounded-2xl p-2 border border-amber-200">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[9px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                  <span>📍</span> Titik Awal
+                </span>
+                <button
+                  type="button"
+                  onClick={resetToOriginal}
+                  className="text-[8px] font-bold px-1.5 py-0.5 bg-white text-amber-900 border border-amber-300 hover:bg-amber-100 rounded-md flex items-center gap-0.5 cursor-pointer"
+                  title="Kembalikan pin ke posisi awal"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  <span>Reset</span>
+                </button>
+              </div>
+              <div className="text-[10px] text-slate-700">
+                <div>Geser: <span className="font-bold text-amber-900">{formatDistance(shiftFromOriginal)}</span></div>
+                <div className="text-[9px] text-slate-500 truncate">{poleCode || 'Posisi Awal'}</div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {/* Pole Coordinates */}
+            <div className="bg-slate-50 rounded-2xl p-2 border border-slate-100">
+              <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block mb-0.5 flex items-center gap-1">
+                <MapPin className="w-3 h-3" /> Koordinat Tiang
+              </span>
+              <div className="font-mono text-[10px] text-slate-800 font-bold">
+                <div>Lat: <span className="text-emerald-600">{pinCoord.lat.toFixed(6)}</span></div>
+                <div>Lng: <span className="text-emerald-600">{pinCoord.lng.toFixed(6)}</span></div>
+              </div>
+            </div>
+
+            {/* Surveyor GPS & Distance Info */}
+            <div className="bg-slate-50 rounded-2xl p-2 border border-slate-100">
+              <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block mb-0.5 flex items-center gap-1">
+                <Locate className="w-3 h-3" /> Posisi Surveyor
+              </span>
+              <div className="text-[10px] text-slate-600">
+                <div>Akurasi: <span className="font-bold text-slate-900">{gpsReading ? `±${gpsReading.accuracy.toFixed(0)}m${gpsReading.accuracy > 30 ? ' (WiFi)' : ''}` : '-'}</span></div>
+                <div>Jarak: <span className={`font-bold ${locationQC.isWarningDistance ? 'text-amber-600' : 'text-emerald-600'}`}>{formatDistance(distance)}</span></div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Confirmation Button */}
         <button

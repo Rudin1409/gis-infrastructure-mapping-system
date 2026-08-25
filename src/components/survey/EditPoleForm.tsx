@@ -273,13 +273,16 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
     }
   };
 
-  // If in Map Repositioning Mode, show full-screen PinSelectorMap
+  // If in Map Repositioning Mode, show dedicated full-screen Map Modal with original location reference
   if (isMapRepositionMode) {
     return (
-      <div className="relative w-full h-full flex flex-col">
+      <div className="fixed inset-0 z-[9999] w-screen h-screen bg-slate-900 flex flex-col overflow-hidden animate-in fade-in">
         <PinSelectorMap
           initialPinCoord={coord}
+          originalCoord={{ lat: pole.poleLatitude, lng: pole.poleLongitude }}
+          poleCode={pole.poleCode || pole.id}
           onConfirmLocation={handleConfirmNewLocation}
+          onCancel={() => setIsMapRepositionMode(false)}
         />
       </div>
     );

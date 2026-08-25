@@ -43,6 +43,27 @@ export function createDraggablePinIcon(LInstance: typeof L) {
   });
 }
 
+export function createPreviousPolePinIcon(LInstance: typeof L, label?: string) {
+  const html = `
+    <div class="relative flex flex-col items-center select-none pointer-events-none">
+      <div class="px-2 py-0.5 bg-slate-900/90 text-amber-300 border border-amber-400/50 rounded-full text-[9px] font-bold shadow-md whitespace-nowrap mb-1">
+        📍 Titik Awal ${label ? `(${label})` : ''}
+      </div>
+      <div class="w-7 h-7 bg-slate-800 rounded-full border-2 border-amber-400 shadow-md flex items-center justify-center text-amber-300 text-xs">
+        📌
+      </div>
+      <div class="w-1.5 h-1.5 bg-amber-400 rotate-45 -mt-1 shadow-sm"></div>
+    </div>
+  `;
+
+  return LInstance.divIcon({
+    html,
+    className: 'custom-previous-pole-pin',
+    iconSize: [120, 56],
+    iconAnchor: [60, 52],
+  });
+}
+
 export function createConditionMarkerIcon(
   LInstance: typeof L,
   condition: 'GOOD' | 'NEEDS_REPAIR' | 'DAMAGED' | 'UNKNOWN',
