@@ -328,8 +328,27 @@ function doPost(e) {
       }
 
       var pole = contents.data;
-      var row = poleToRowArray(pole);
 
+      // Auto sequence ID fallback if missing or duplicate
+      var existingData = poleSheet.getDataRange().getValues();
+      var maxNum = 0;
+      for (var i = 1; i < existingData.length; i++) {
+        var rowId = String(existingData[i][0] || '');
+        if (rowId.indexOf('LL-') === 0) {
+          var num = parseInt(rowId.replace('LL-', ''), 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+
+      if (!pole.id || (pole.id === 'LL-0001' && maxNum >= 1)) {
+        var nextNum = maxNum + 1;
+        var pad = ('0000' + nextNum).slice(-4);
+        pole.id = 'LL-' + pad;
+      }
+
+      var row = poleToRowArray(pole);
       poleSheet.appendRow(row);
 
       return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))

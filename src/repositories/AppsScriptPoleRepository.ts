@@ -149,10 +149,12 @@ export class AppsScriptPoleRepository implements IPoleRepository {
   }
 
   async create(input: CreatePoleInput): Promise<Pole> {
+    const existingIds = await this.getExistingIds();
+    const newId = generatePoleId(existingIds);
     const now = new Date().toISOString();
     const newPole: Pole = {
-      id: generatePoleId(),
       ...input,
+      id: newId,
       surveyDate: input.surveyDate || now.split('T')[0],
       locationMethod: input.locationMethod || 'MANUAL_MAP_PIN',
       validationStatus: input.validationStatus || 'SUBMITTED',
