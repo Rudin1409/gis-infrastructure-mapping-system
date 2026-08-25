@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
 import PoleVisualGuideModal, { PoleMiniGraphic } from './PoleVisualGuideModal';
+import { useAuth } from '@/context/AuthContext';
 
 interface SurveyFormProps {
   confirmedCoord: Coordinates;
@@ -90,8 +91,8 @@ export default function SurveyForm({
   const [isHazardous, setIsHazardous] = useState(false);
   const [description, setDescription] = useState('');
 
-  // --- METADATA SISTEM ---
-  const [surveyorName] = useState('Surveyor 1 (Kominfo/Bapenda)');
+  const { user } = useAuth();
+  const surveyorName = `${user.name} (${user.roleLabel})`;
   const [surveyDate] = useState(new Date().toISOString().split('T')[0]);
   const [surveyTime] = useState(
     new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
@@ -227,7 +228,7 @@ export default function SurveyForm({
         description: description.trim() || undefined,
         photoFileId: photoFileId || undefined,
         photoUrl: photoUrl || undefined,
-        surveyorId: 'USR-KOMINFO-01',
+        surveyorId: user.id,
         surveyorName,
         surveyDate,
         surveyTime,

@@ -4,42 +4,46 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import TopHeader from './TopHeader';
 import BottomNav from './BottomNav';
+import { AuthProvider } from '@/context/AuthContext';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
   // Map and survey wizard need full-height flex container for Leaflet map canvas
-  const isFullScreenPage = pathname.startsWith('/map') || pathname.startsWith('/poles/new');
+  const isFullScreenPage = pathname.startsWith('/map') || pathname.startsWith('/poles/new') || isLoginPage;
 
   return (
-    <div className="min-h-screen bg-[#0b1120] flex justify-center items-start text-slate-800 font-sans selection:bg-blue-600 selection:text-white">
-      {/* Centered Clean Mobile App Container */}
-      <div className="w-full max-w-[430px] h-screen max-h-screen bg-[#f4f7fb] border-x border-slate-200/50 shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative flex flex-col overflow-hidden">
-        {/* Sticky Universal Top Header on All Pages */}
-        <TopHeader />
+    <AuthProvider>
+      <div className="min-h-screen bg-[#0b1120] flex justify-center items-start text-slate-800 font-sans selection:bg-blue-600 selection:text-white">
+        {/* Centered Clean Mobile App Container */}
+        <div className="w-full max-w-[430px] h-screen max-h-screen bg-[#f4f7fb] border-x border-slate-200/50 shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative flex flex-col overflow-hidden">
+          {/* Sticky Universal Top Header on All Pages (except login) */}
+          {!isLoginPage && <TopHeader />}
 
-        {/* Dynamic Page Content with Layout Adaptation */}
-        <main
-          className={`flex-1 w-full relative min-h-0 ${
-            isFullScreenPage
-              ? 'overflow-hidden pb-0 flex flex-col'
-              : 'overflow-y-auto pb-24 scroll-smooth'
-          }`}
-        >
-          <div
-            key={pathname}
-            className={`w-full ${
+          {/* Dynamic Page Content with Layout Adaptation */}
+          <main
+            className={`flex-1 w-full relative min-h-0 ${
               isFullScreenPage
-                ? 'h-full flex flex-col flex-1 overflow-hidden'
-                : 'min-h-full'
-            } animate-in fade-in duration-150`}
+                ? 'overflow-hidden pb-0 flex flex-col'
+                : 'overflow-y-auto pb-24 scroll-smooth'
+            }`}
           >
-            {children}
-          </div>
-        </main>
+            <div
+              key={pathname}
+              className={`w-full ${
+                isFullScreenPage
+                  ? 'h-full flex flex-col flex-1 overflow-hidden'
+                  : 'min-h-full'
+              } animate-in fade-in duration-150`}
+            >
+              {children}
+            </div>
+          </main>
 
-        {/* Modern Mobile Bottom Navigation */}
-        <BottomNav />
+          {/* Modern Mobile Bottom Navigation (except login) */}
+          {!isLoginPage && <BottomNav />}
+        </div>
       </div>
-    </div>
+    </AuthProvider>
   );
 }

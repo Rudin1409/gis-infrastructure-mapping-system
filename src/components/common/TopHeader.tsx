@@ -13,11 +13,14 @@ import {
   PlusCircle,
   Sparkles,
   RotateCw,
+  User,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function TopHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Determine dynamic title and subtitle based on route
@@ -129,7 +132,7 @@ export default function TopHeader() {
           </div>
         </div>
 
-        {/* Right Side: Reload/Refresh Button & Live GPS Indicator */}
+        {/* Right Side: Reload/Refresh Button & Active Agency Avatar */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Reload / Refresh Button */}
           <button
@@ -145,11 +148,15 @@ export default function TopHeader() {
             />
           </button>
 
-          {/* Live GPS Indicator */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 border border-emerald-300/30 rounded-full text-[10px] text-emerald-200 font-bold backdrop-blur-md">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-            <span>GPS Aktif</span>
-          </div>
+          {/* Active User Avatar Chip */}
+          <Link
+            href="/profile"
+            className="flex items-center gap-1 px-2 py-0.5 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full text-[10px] text-white font-bold backdrop-blur-md transition-all active:scale-95"
+            title={`Akun Aktif: ${user.name} (${user.roleLabel})`}
+          >
+            <span>{user.avatar || '👤'}</span>
+            <span className="max-w-[65px] truncate text-[9px]">{user.role.includes('BAPENDA') ? 'Bapenda' : user.role.includes('KOMINFO') ? 'Kominfo' : 'Surveyor'}</span>
+          </Link>
         </div>
       </div>
     </header>
