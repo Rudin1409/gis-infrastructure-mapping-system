@@ -11,6 +11,7 @@ import PinSelectorMap from '@/components/map/PinSelectorMap';
 import PhotoUploader from './PhotoUploader';
 import PoleVisualGuideModal, { PoleMiniGraphic } from './PoleVisualGuideModal';
 import { reverseGeocodeLocation } from '@/lib/gis/geocoding';
+import { formatGoogleDriveImageUrl } from '@/lib/utils/driveImage';
 import {
   MapPin,
   Locate,
@@ -59,7 +60,9 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
 
   // --- 2. DOKUMENTASI FOTO ---
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(pole.photoUrl);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(
+    formatGoogleDriveImageUrl(pole.photoUrl, pole.photoFileId, 1000)
+  );
   const [photoFileId, setPhotoFileId] = useState<string | undefined>(pole.photoFileId);
 
   // --- 3. INFORMASI TIANG & SPESIFIKASI ---

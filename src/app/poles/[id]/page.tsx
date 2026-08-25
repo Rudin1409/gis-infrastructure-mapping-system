@@ -6,6 +6,7 @@ import { getProviderRepository } from '@/repositories/GoogleSheetsProviderReposi
 import MiniMap from '@/components/map/MiniMap';
 import { formatDistance } from '@/lib/gis/haversine';
 import { PoleMiniGraphic } from '@/components/survey/PoleVisualGuideModal';
+import { formatGoogleDriveImageUrl, getGoogleDriveThumbnailUrl } from '@/lib/utils/driveImage';
 import {
   ChevronLeft,
   MapPin,
@@ -56,6 +57,10 @@ export default async function PoleDetailPage({
     pole.isCorroded ||
     pole.isObstructing ||
     pole.isHazardous;
+
+  // Format Direct Google Drive Image CDN URL for 100% reliable in-app browser rendering
+  const displayPhotoUrl = formatGoogleDriveImageUrl(pole.photoUrl, pole.photoFileId, 1000);
+  const rawHdUrl = pole.photoUrl || (pole.photoFileId ? `https://drive.google.com/uc?id=${pole.photoFileId}&export=view` : undefined);
 
   return (
     <div className="p-4 space-y-3.5 text-slate-800 font-sans pb-24 animate-in fade-in duration-150">
@@ -125,28 +130,31 @@ export default async function PoleDetailPage({
           </span>
         </div>
 
-        {/* Photo Container (if exists) */}
-        {pole.photoUrl && (
-          <div className="relative rounded-2xl overflow-hidden h-44 border border-slate-100 bg-slate-900">
+        {/* Photo Container (if exists) with Direct Google Drive CDN Embed */}
+        {displayPhotoUrl && (
+          <div className="relative rounded-2xl overflow-hidden h-48 border border-slate-100 bg-slate-900 shadow-inner">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={pole.photoUrl}
-              alt={`Foto ${pole.id}`}
+              src={displayPhotoUrl}
+              alt={`Foto Lapangan Tiang ${pole.id}`}
               className="w-full h-full object-cover"
+              loading="eager"
             />
-            <a
-              href={pole.photoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="absolute top-2 right-2 px-2.5 py-1 bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold rounded-lg hover:bg-black/80 transition-colors flex items-center gap-1"
-            >
-              <span>Lihat HD</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
+            {rawHdUrl && (
+              <a
+                href={rawHdUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="absolute top-2 right-2 px-2.5 py-1 bg-black/70 backdrop-blur-md text-white text-[10px] font-bold rounded-xl hover:bg-black/90 transition-colors flex items-center gap-1 shadow-md"
+              >
+                <span>Lihat HD</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            )}
           </div>
         )}
 
-        {/* Data Summary Grid (Clean Matching Layout) */}
+        {/* Data Summary Grid */}
         <div className="grid grid-cols-2 gap-2 text-[11px]">
           {/* Provider Card */}
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex items-center gap-2">
@@ -229,7 +237,7 @@ export default async function PoleDetailPage({
           </div>
         </div>
 
-        {/* Temuan Masalah di Lapangan (Chips yang sama seperti Form Tambah) */}
+        {/* Temuan Masalah di Lapangan */}
         <div className="pt-2 border-t border-slate-100">
           <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1.5">
             Temuan Masalah di Lapangan:

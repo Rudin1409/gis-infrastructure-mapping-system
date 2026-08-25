@@ -307,7 +307,7 @@ function doPost(e) {
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
       var fileId = file.getId();
-      var photoUrl = 'https://drive.google.com/uc?id=' + fileId + '&export=view';
+      var photoUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
