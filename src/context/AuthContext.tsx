@@ -61,36 +61,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isLoaded, isAuthenticated, pathname, router]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const trimmedEmail = email.trim().toLowerCase();
-    const matched = DEFAULT_ACCOUNTS.find(
-      (acc) => acc.email.toLowerCase() === trimmedEmail && acc.password === password
-    );
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!matched) {
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return {
+          success: false,
+          error: data.error || 'Email atau kata sandi tidak cocok. Silakan periksa kembali.',
+        };
+      }
+
+      const authUserData: AuthUser = data.user;
+      setUser(authUserData);
+      setIsAuthenticated(true);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(authUserData));
+      } catch (e) {}
+
+      return { success: true };
+    } catch (err: any) {
       return {
         success: false,
-        error: 'Email atau kata sandi tidak cocok. Silakan periksa kembali.',
+        error: err.message || 'Gagal menghubungi server verifikasi.',
       };
     }
-
-    const authUserData: AuthUser = {
-      id: matched.id,
-      name: matched.name,
-      email: matched.email,
-      role: matched.role,
-      agency: matched.agency,
-      roleLabel: matched.roleLabel,
-      phone: matched.phone,
-      avatar: matched.avatar,
-    };
-
-    setUser(authUserData);
-    setIsAuthenticated(true);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(authUserData));
-    } catch (e) {}
-
-    return { success: true };
   };
 
   const loginAs = (account: AuthUser) => {

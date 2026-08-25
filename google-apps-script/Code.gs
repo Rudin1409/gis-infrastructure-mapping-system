@@ -82,6 +82,7 @@ var USER_HEADERS = [
   'ID_Pengguna',
   'Nama_Lengkap',
   'Email',
+  'Password',
   'Peran_Role',
   'Instansi_Dinas',
   'No_Handphone',
@@ -139,6 +140,17 @@ function initialSetup() {
   userSheet.getRange(1, 1, 1, USER_HEADERS.length).setValues([USER_HEADERS]);
   userSheet.setFrozenRows(1);
   userSheet.getRange(1, 1, 1, USER_HEADERS.length).setFontWeight('bold').setBackground('#dbeafe');
+
+  // Isi data awal akun jika masih kosong
+  if (userSheet.getLastRow() <= 1) {
+    var defaultUsers = [
+      ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFO', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF', '2026-08-25'],
+      ['USR-BAPENDA-ADMIN', 'Admin BAPENDA', 'admin.bapenda@lubuklinggaukota.go.id', 'bapenda123', 'ADMIN_BAPENDA', 'Badan Pendapatan Daerah Kota Lubuklinggau', '0813-6789-5678', 'AKTIF', '2026-08-25'],
+      ['USR-SURVEYOR-01', 'Surveyor 1 (Kominfo)', 'surveyor1@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Kominfo Lubuklinggau', '0852-1122-3344', 'AKTIF', '2026-08-25'],
+      ['USR-SURVEYOR-02', 'Surveyor 2 (Bapenda)', 'surveyor2@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Badan Pendapatan Daerah Lubuklinggau', '0853-9988-7766', 'AKTIF', '2026-08-25']
+    ];
+    userSheet.getRange(2, 1, defaultUsers.length, USER_HEADERS.length).setValues(defaultUsers);
+  }
 
   // 5. Hapus Sheet1 kosong bawaan jika ada
   var sheet1 = ss.getSheetByName('Sheet1') || ss.getSheetByName('Sheet 1');
@@ -259,6 +271,35 @@ function doGet(e) {
     if (action === 'init') {
       initialSetup();
       return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Inisialisasi 4 Sheet Bahasa Indonesia berhasil' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Ambil Data Akun Petugas & Surveyor
+    if (action === 'getUsers') {
+      var userSheet = ss.getSheetByName(USER_SHEET_NAME) || ss.getSheetByName('USERS');
+      if (!userSheet) {
+        initialSetup();
+        userSheet = ss.getSheetByName(USER_SHEET_NAME);
+      }
+      var userData = userSheet.getDataRange().getValues();
+      if (userData.length <= 1) {
+        return ContentService.createTextOutput(JSON.stringify({ success: true, data: [] }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      var users = userData.slice(1).map(function(row) {
+        return {
+          id: String(row[0] || ''),
+          name: String(row[1] || ''),
+          email: String(row[2] || ''),
+          password: String(row[3] || ''),
+          role: String(row[4] || 'SURVEYOR'),
+          agency: String(row[5] || ''),
+          phone: String(row[6] || ''),
+          status: String(row[7] || 'AKTIF'),
+          createdAt: String(row[8] || '')
+        };
+      });
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: users }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -413,6 +454,48 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Tiang tidak ditemukan' }))
           .setMimeType(ContentService.MimeType.JSON);
       }
+    }
+
+    // 5. Verifikasi Login Kredensial Pengguna dari Sheet DATA_SURVEYOR
+    if (action === 'login') {
+      var userSheet = ss.getSheetByName(USER_SHEET_NAME) || ss.getSheetByName('USERS');
+      if (!userSheet) {
+        initialSetup();
+        userSheet = ss.getSheetByName(USER_SHEET_NAME);
+      }
+      var email = (contents.email || '').toString().trim().toLowerCase();
+      var password = (contents.password || '').toString();
+
+      var data = userSheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        var row = data[i];
+        var rowEmail = String(row[2] || '').trim().toLowerCase();
+        var rowPassword = String(row[3] || '');
+        if (rowEmail === email && rowPassword === password) {
+          return ContentService.createTextOutput(JSON.stringify({
+            success: true,
+            user: {
+              id: String(row[0]),
+              name: String(row[1]),
+              email: String(row[2]),
+              role: String(row[4] || 'SURVEYOR'),
+              roleLabel: String(row[4] || 'SURVEYOR') === 'ADMIN_KOMINFO'
+                ? 'Admin Teknis & Jaringan'
+                : String(row[4] || 'SURVEYOR') === 'ADMIN_BAPENDA'
+                ? 'Admin Pajak & Retribusi Tiang'
+                : 'Petugas Lapangan GIS',
+              agency: String(row[5] || 'Pemerintah Kota Lubuklinggau'),
+              phone: String(row[6] || ''),
+              status: String(row[7] || 'AKTIF'),
+              avatar: String(row[4]).includes('KOMINFO') ? '🏢' : String(row[4]).includes('BAPENDA') ? '🏛️' : '👨‍💼'
+            }
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: 'Email atau kata sandi tidak cocok di database DATA_SURVEYOR.'
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' }))
