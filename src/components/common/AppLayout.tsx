@@ -7,7 +7,8 @@ import BottomNav from './BottomNav';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isFullScreenPage = pathname.startsWith('/poles/new') || pathname.startsWith('/map') || pathname.endsWith('/edit');
+  // Only map and survey wizard need overflow-hidden for internal full-screen Leaflet canvas
+  const isFullScreenPage = pathname === '/map' || pathname === '/poles/new';
 
   return (
     <div className="min-h-screen bg-[#0b1120] flex justify-center items-start text-slate-800 font-sans selection:bg-blue-600 selection:text-white">
@@ -16,15 +17,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Sticky Universal Top Header on All Pages */}
         <TopHeader />
 
-        {/* Dynamic Page Content with Fast Smooth Page Transition */}
+        {/* Dynamic Page Content with Smooth Scrolling */}
         <main
           className={`flex-1 w-full relative min-h-0 ${
             isFullScreenPage
               ? 'overflow-hidden pb-0'
-              : 'overflow-y-auto pb-24'
+              : 'overflow-y-auto pb-24 scroll-smooth'
           }`}
         >
-          <div key={pathname} className="w-full h-full animate-in fade-in duration-150">
+          <div key={pathname} className="w-full min-h-full animate-in fade-in duration-150">
             {children}
           </div>
         </main>
