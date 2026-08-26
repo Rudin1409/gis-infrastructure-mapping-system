@@ -190,9 +190,9 @@ export default function LoginPage() {
           </form>
 
           {/* Official Credentials Info Notice */}
-          <div className="pt-3 border-t border-slate-100 text-center text-[10px] text-slate-500 space-y-1">
+          <div className="pt-3 border-t border-slate-100 text-center text-[10px] text-slate-500">
             <p className="leading-relaxed">
-              🔐 Masuk menggunakan akun dinas resmi <strong>DISKOMINFOTIKSAN Kota Lubuklinggau</strong>. Untuk pendaftaran akun baru, silakan hubungi Administrator Kominfo.
+              🔐 Masuk menggunakan akun dinas resmi <strong>DISKOMINFOTIKSAN Kota Lubuklinggau</strong>.
             </p>
           </div>
         </div>

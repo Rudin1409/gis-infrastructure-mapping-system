@@ -272,7 +272,7 @@ export default function ProfilePage() {
       )}
 
       {/* ============================================================ */}
-      {/* 2. INFORMASI KEAMANAN SESI & DATA SPREADSHEET                */}
+      {/* 2. INFORMASI KEAMANAN SESI & IDENTITAS PETUGAS               */}
       {/* ============================================================ */}
       <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
         <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center justify-between">
@@ -299,39 +299,8 @@ export default function ProfilePage() {
             <span className="font-bold text-slate-800">DISKOMINFOTIKSAN</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-slate-500 font-medium">Status Database:</span>
-            <span className="font-bold text-emerald-600 font-mono">AKTIF &amp; TERSINKRON</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 3. STATUS SINKRONISASI CLOUD                                 */}
-      {/* ============================================================ */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
-        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-          <Cloud className="w-3.5 h-3.5 text-blue-600" />
-          <span>Status Sinkronisasi Cloud Spasial</span>
-        </h3>
-
-        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-600 font-medium">Database Master:</span>
-            <span className="font-bold text-emerald-600 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Server Cloud Terenkripsi
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-slate-600 font-medium">Penyimpanan Media &amp; Foto:</span>
-            <span className="font-bold text-slate-900">Cloud Storage DISKOMINFOTIKSAN</span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-slate-600 font-medium">Status Sinkronisasi:</span>
-            <span className="font-mono text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
-              Otomatis Real-Time
-            </span>
+            <span className="text-slate-500 font-medium">Wilayah Penugasan:</span>
+            <span className="font-bold text-slate-800 font-mono">Kota Lubuklinggau</span>
           </div>
         </div>
       </div>
