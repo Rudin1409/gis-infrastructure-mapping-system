@@ -32,6 +32,8 @@ import {
 interface CableAuditClientProps {
   poles: Pole[];
   providers: Provider[];
+  initialFilter?: AuditFilterType;
+  initialQuery?: string;
 }
 
 export type AuditFilterType =
@@ -46,12 +48,23 @@ export type AuditFilterType =
   | 'ALL_POLES'
   | 'NORMAL_ONLY';
 
-export default function CableAuditClient({ poles, providers }: CableAuditClientProps) {
+export default function CableAuditClient({
+  poles,
+  providers,
+  initialFilter = 'ALL_ISSUES',
+  initialQuery = '',
+}: CableAuditClientProps) {
   // Filter States
-  const [activeIssueFilter, setActiveIssueFilter] = useState<AuditFilterType>('ALL_ISSUES');
+  const [activeIssueFilter, setActiveIssueFilter] = useState<AuditFilterType>(initialFilter);
   const [selectedProvider, setSelectedProvider] = useState<string>('ALL');
   const [selectedKecamatan, setSelectedKecamatan] = useState<string>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>(initialQuery);
+
+  React.useEffect(() => {
+    if (initialFilter) {
+      setActiveIssueFilter(initialFilter);
+    }
+  }, [initialFilter]);
 
   // 1. Calculate Real-Time Audit Metrics from Surveyed Poles
   const metrics = useMemo(() => {

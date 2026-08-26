@@ -153,7 +153,7 @@ export default async function HomePage() {
     {
       label: 'Bawah Tanah',
       desc: `${undergroundCount} Titik Ducting`,
-      href: '/segments',
+      href: '/segments?filter=UNDERGROUND',
       icon: Cable,
       bgColor: 'bg-teal-50 text-teal-700 border-teal-200',
     },

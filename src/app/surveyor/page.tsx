@@ -84,7 +84,7 @@ export default async function SurveyorPortalPage() {
     {
       label: 'Bawah Tanah',
       desc: 'Ducting & Riser',
-      href: '/segments',
+      href: '/segments?filter=UNDERGROUND',
       icon: Cable,
       gradient: 'from-teal-500 to-cyan-600',
       shadow: 'shadow-teal-500/30',
@@ -92,7 +92,7 @@ export default async function SurveyorPortalPage() {
     {
       label: '8 Kecamatan',
       desc: 'Wilayah Kota',
-      href: '/map',
+      href: '/districts',
       icon: MapPin,
       gradient: 'from-purple-500 to-indigo-600',
       shadow: 'shadow-purple-500/30',
