@@ -14,6 +14,7 @@ import {
   Sparkles,
   RotateCw,
   User,
+  ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -67,9 +68,9 @@ export default function TopHeader() {
     }
     if (pathname === '/segments') {
       return {
-        title: 'Topologi Jalur Kabel',
-        subtitle: 'Koneksi Antar Node Jaringan',
-        icon: Cable,
+        title: 'Audit & Penataan Kabel',
+        subtitle: 'Monitoring Kabel Semrawut & Bahaya',
+        icon: ShieldAlert,
         showBack: false,
       };
     }

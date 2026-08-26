@@ -22,6 +22,7 @@ import {
   Database,
   Sparkles,
   ShieldCheck,
+  ShieldAlert,
   Camera,
   Navigation,
   ChevronRight,
@@ -120,10 +121,10 @@ export default async function HomePage() {
       bgColor: 'bg-cyan-50 text-cyan-600 border-cyan-100',
     },
     {
-      label: 'Jalur Kabel',
-      desc: 'Topologi FO',
+      label: 'Penataan Kabel',
+      desc: 'Audit & Bahaya',
       href: '/segments',
-      icon: Cable,
+      icon: ShieldAlert,
       bgColor: 'bg-amber-50 text-amber-600 border-amber-100',
     },
     {

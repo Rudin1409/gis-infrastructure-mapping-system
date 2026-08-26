@@ -8,7 +8,7 @@ import {
   Map,
   PlusCircle,
   Database,
-  Cable,
+  ShieldAlert,
   Smartphone,
   Radio,
   FileSpreadsheet,
@@ -25,7 +25,7 @@ export default function Sidebar() {
     { href: '/', label: 'Overview Data', icon: LayoutDashboard },
     { href: '/poles', label: 'Inventaris Tiang', icon: Database },
     { href: '/map', label: 'Peta GIS Spasial', icon: Map },
-    { href: '/segments', label: 'Jalur Kabel', icon: Cable },
+    { href: '/segments', label: 'Penataan Kabel', icon: ShieldAlert },
     { href: '/surveyor', label: 'Portal Surveyor HP', icon: Smartphone, isMobilePortal: true },
     { href: '/poles/new', label: 'Input Tiang Baru', icon: PlusCircle, isHighlight: true },
   ];

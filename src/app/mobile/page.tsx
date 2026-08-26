@@ -17,6 +17,7 @@ import {
   Wifi,
   Battery,
   Signal,
+  ShieldAlert,
 } from 'lucide-react';
 
 export default function MobileSimulatorPage() {
@@ -28,7 +29,7 @@ export default function MobileSimulatorPage() {
     { label: 'Survey Baru', href: '/poles/new', icon: PlusCircle, desc: 'GPS & Kamera HP' },
     { label: 'Peta GIS', href: '/map', icon: Map, desc: 'Peta Interaktif Lapangan' },
     { label: 'Data Tiang', href: '/poles', icon: Database, desc: 'Daftar Inventaris' },
-    { label: 'Jalur Kabel', href: '/segments', icon: Cable, desc: 'Topologi Jaringan' },
+    { label: 'Penataan Kabel', href: '/segments', icon: ShieldAlert, desc: 'Audit & Kabel Semrawut' },
   ];
 
   return (
