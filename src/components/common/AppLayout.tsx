@@ -33,26 +33,26 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* Full-Screen Pure Cinematic Logo Splash Screen */}
+      {/* Full-Screen Pure Cinematic Logo Splash Screen (100% Solid Opaque White) */}
       {showSplash && (
         <div
-          className={`fixed inset-0 z-[99999] w-screen h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white via-sky-50/50 to-blue-50/70 text-slate-800 p-6 select-none overflow-hidden transition-all duration-700 ease-out ${
+          className={`fixed inset-0 z-[99999] w-screen h-screen flex flex-col items-center justify-center bg-white text-slate-800 p-6 select-none overflow-hidden transition-all duration-700 ease-out ${
             isFadingOut ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
           }`}
         >
           {/* Subtle decorative background circles */}
-          <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-200/40 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-teal-200/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-100/50 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-teal-100/40 rounded-full blur-3xl pointer-events-none" />
 
           {/* Centered Pure Animated Logo with Sonar Radar GIS Waves */}
           <div className="relative flex items-center justify-center">
-            <div className="absolute w-48 h-48 rounded-full border-2 border-blue-400/35 animate-radar-1 pointer-events-none" />
-            <div className="absolute w-48 h-48 rounded-full border border-teal-400/30 animate-radar-2 pointer-events-none" />
-            <div className="absolute w-48 h-48 rounded-full border border-indigo-400/25 animate-radar-3 pointer-events-none" />
+            <div className="absolute w-48 h-48 rounded-full border-2 border-blue-400/40 animate-radar-1 pointer-events-none" />
+            <div className="absolute w-48 h-48 rounded-full border border-teal-400/35 animate-radar-2 pointer-events-none" />
+            <div className="absolute w-48 h-48 rounded-full border border-indigo-400/30 animate-radar-3 pointer-events-none" />
 
-            {/* Big Cinematic Animated App Logo Card */}
+            {/* Big Cinematic Animated App Logo Card (Solid White) */}
             <div className="relative z-10 animate-logo-intro">
-              <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-[36px] bg-white/95 backdrop-blur-2xl p-4 sm:p-5 shadow-[0_20px_60px_rgba(37,99,235,0.22)] border border-white ring-2 ring-blue-100/80 flex items-center justify-center overflow-hidden animate-bounce-subtle">
+              <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-[36px] bg-white p-4 sm:p-5 shadow-[0_20px_60px_rgba(37,99,235,0.20)] border border-slate-100 ring-2 ring-blue-100 flex items-center justify-center overflow-hidden animate-bounce-subtle">
                 {/* Shimmer Light Reflection Sweep */}
                 <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/80 to-transparent animate-shimmer pointer-events-none" />
 
