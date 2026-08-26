@@ -28,6 +28,7 @@ import {
   ChevronRight,
   Search,
   AlertCircle,
+  Lightbulb,
   BarChart3,
   TrendingUp,
 } from 'lucide-react';
@@ -97,6 +98,20 @@ export default async function HomePage() {
       p.isLowCable
   ).length;
 
+  const pjuCount = allPoles.filter(
+    (p) =>
+      p.infrastructureCategory === 'PJU_MANDIRI' ||
+      p.infrastructureCategory === 'GABUNG_PLN_PJU' ||
+      p.providerId === 'PRV_PJU_PEMKOT' ||
+      p.providerId === 'PRV_PLN_PJU_GABUNG'
+  ).length;
+
+  const undergroundCount = allPoles.filter(
+    (p) =>
+      p.cableInstallationType === 'BAWAH_TANAH' ||
+      p.cableInstallationType === 'TRANSISI_RISER'
+  ).length;
+
   const surveyorMenus = [
     {
       label: 'Survey Baru',
@@ -107,15 +122,15 @@ export default async function HomePage() {
       isHot: true,
     },
     {
-      label: 'Peta GIS',
-      desc: 'Sebaran Kota',
+      label: 'Peta Spasial',
+      desc: 'Satelit & Jalur',
       href: '/map',
       icon: Map,
       bgColor: 'bg-emerald-50 text-emerald-600 border-emerald-100',
     },
     {
       label: 'Data Tiang',
-      desc: `${stats.totalPoles} Terdata`,
+      desc: `${stats.totalPoles} Titik`,
       href: '/poles',
       icon: Database,
       bgColor: 'bg-cyan-50 text-cyan-600 border-cyan-100',
@@ -126,36 +141,35 @@ export default async function HomePage() {
       href: '/segments',
       icon: ShieldAlert,
       bgColor: 'bg-amber-50 text-amber-600 border-amber-100',
+      badge: hazardPolesCount > 0 ? `${hazardPolesCount}` : undefined,
     },
     {
-      label: 'Perlu Servis',
-      desc: `${stats.needsRepairCount} Miring`,
-      href: '/poles?condition=NEEDS_REPAIR',
-      icon: AlertTriangle,
-      bgColor: 'bg-yellow-50 text-amber-600 border-yellow-100',
-      badge: stats.needsRepairCount > 0 ? `${stats.needsRepairCount}` : undefined,
+      label: 'Lampu PJU',
+      desc: `${pjuCount} Titik Lampu`,
+      href: '/poles?provider=PRV_PJU_PEMKOT',
+      icon: Lightbulb,
+      bgColor: 'bg-yellow-50 text-yellow-700 border-yellow-200',
     },
     {
-      label: 'Tiang Rusak',
-      desc: `${stats.damagedCount} Rusak`,
-      href: '/poles?condition=DAMAGED',
-      icon: XCircle,
-      bgColor: 'bg-rose-50 text-rose-600 border-rose-100',
-      badge: stats.damagedCount > 0 ? `${stats.damagedCount}` : undefined,
+      label: 'Bawah Tanah',
+      desc: `${undergroundCount} Titik Ducting`,
+      href: '/segments',
+      icon: Cable,
+      bgColor: 'bg-teal-50 text-teal-700 border-teal-200',
     },
     {
-      label: '8 Kecamatan',
-      desc: 'Kota LLG',
-      href: '/districts',
-      icon: MapPin,
-      bgColor: 'bg-purple-50 text-purple-600 border-purple-100',
-    },
-    {
-      label: 'Provider',
-      desc: 'Katalog Tiang',
+      label: 'Katalog Provider',
+      desc: 'Warna Cat Tiang',
       href: '/providers',
       icon: Building2,
       bgColor: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+    },
+    {
+      label: '8 Kecamatan',
+      desc: '72 Kelurahan',
+      href: '/districts',
+      icon: MapPin,
+      bgColor: 'bg-purple-50 text-purple-600 border-purple-100',
     },
   ];
 
