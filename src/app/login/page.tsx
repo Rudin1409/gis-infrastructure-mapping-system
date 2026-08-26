@@ -192,7 +192,7 @@ export default function LoginPage() {
           {/* Official Credentials Info Notice */}
           <div className="pt-3 border-t border-slate-100 text-center text-[10px] text-slate-500 space-y-1">
             <p className="leading-relaxed">
-              🔐 Gunakan akun dinas resmi yang telah didaftarkan dan diaktifkan oleh Administrator <strong>DISKOMINFOTIKSAN Kota Lubuklinggau</strong>.
+              🔐 Masuk menggunakan akun dinas resmi <strong>DISKOMINFOTIKSAN Kota Lubuklinggau</strong>. Untuk pendaftaran akun baru, silakan hubungi Administrator Kominfo.
             </p>
           </div>
         </div>

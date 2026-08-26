@@ -968,7 +968,7 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                 Hapus Tiang {pole.id}?
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                Tindakan ini akan menghapus data tiang ini dari peta dan Google Spreadsheet secara permanen.
+                Tindakan ini akan menghapus data tiang ini dari peta dan database sistem secara permanen.
               </p>
             </div>
 

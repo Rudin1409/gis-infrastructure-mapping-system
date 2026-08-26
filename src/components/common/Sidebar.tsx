@@ -122,7 +122,7 @@ export default function Sidebar() {
             </span>
           </div>
           <p className="text-[10px] text-teal-200/80 leading-relaxed">
-            Google Sheets DB &amp; Drive Photos aktif untuk sinkronisasi lapangan.
+            Database Cloud &amp; Media Storage aktif untuk sinkronisasi lapangan.
           </p>
         </div>
 

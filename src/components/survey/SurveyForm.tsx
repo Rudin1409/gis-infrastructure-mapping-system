@@ -1283,9 +1283,9 @@ export default function SurveyForm({
                     <Loader2 className="w-5 h-5 animate-spin" />
                     <span>
                       {submitStage === 'UPLOADING_PHOTO'
-                        ? 'Mengunggah Foto ke Drive...'
+                        ? 'Mengunggah Foto Media...'
                         : submitStage === 'SAVING_SHEET'
-                        ? 'Menyimpan Data ke Google Sheets...'
+                        ? 'Menyimpan Data Survei ke Cloud...'
                         : 'Menyimpan Data...'}
                     </span>
                   </>
@@ -1297,7 +1297,7 @@ export default function SurveyForm({
                 ) : (
                   <>
                     <Save className="w-5 h-5" />
-                    <span>SIMPAN DATA KE GOOGLE SHEETS</span>
+                    <span>SIMPAN HASIL SURVEI LAPANGAN</span>
                   </>
                 )}
               </button>
