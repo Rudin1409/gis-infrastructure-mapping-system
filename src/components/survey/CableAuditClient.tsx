@@ -48,12 +48,16 @@ export type AuditFilterType =
   | 'ALL_POLES'
   | 'NORMAL_ONLY';
 
+import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
+
 export default function CableAuditClient({
-  poles,
+  poles: initialPoles,
   providers,
   initialFilter = 'ALL_ISSUES',
   initialQuery = '',
 }: CableAuditClientProps) {
+  const { poles, isLoading } = useSupabaseRealtimePoles(initialPoles);
+
   // Filter States
   const [activeIssueFilter, setActiveIssueFilter] = useState<AuditFilterType>(initialFilter);
   const [selectedProvider, setSelectedProvider] = useState<string>('ALL');

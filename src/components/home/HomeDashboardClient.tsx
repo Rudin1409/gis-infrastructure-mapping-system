@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { DEFAULT_ACCOUNTS } from '@/types/auth';
 import { Pole } from '@/types/pole';
-import { Provider } from '@/types/provider';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
 import { DashboardStats } from '@/services/DashboardService';
 import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
@@ -16,30 +15,23 @@ import {
   Activity,
   CheckCircle2,
   AlertTriangle,
-  XCircle,
   Building2,
   Calendar,
-  Layers,
   ArrowRight,
   MapPin,
   Clock,
-  Compass,
   Cable,
   Database,
   Sparkles,
-  ShieldCheck,
   ShieldAlert,
   Camera,
   Navigation,
   ChevronRight,
   Search,
-  AlertCircle,
   Lightbulb,
   BarChart3,
-  TrendingUp,
-  Radio,
-  Zap,
-  Flame,
+  RefreshCw,
+  Wifi,
 } from 'lucide-react';
 
 interface HomeDashboardClientProps {
@@ -51,16 +43,12 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
   const { user } = useAuth();
   const currentUser = user || DEFAULT_ACCOUNTS[0];
 
-  const [liveStats, setLiveStats] = useState<DashboardStats>(stats);
-  const { poles: livePoles } = useSupabaseRealtimePoles(allPoles, async (freshPoles) => {
-    try {
-      const dashRes = await fetch('/api/dashboard', { cache: 'no-store' });
-      if (dashRes.ok) {
-        const dashJson = await dashRes.json();
-        if (dashJson.success && dashJson.data) setLiveStats(dashJson.data);
-      }
-    } catch (_) {}
-  });
+  const {
+    poles: livePoles,
+    isLoading,
+    isSyncing,
+    refreshPoles,
+  } = useSupabaseRealtimePoles(allPoles);
 
   // Dynamic Indonesian time greeting
   const [greeting, setGreeting] = useState('Halo');
@@ -84,74 +72,93 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
   }, []);
 
   // Compute 5 Most Recent Surveys
-  const recentPoles = [...livePoles].reverse().slice(0, 5);
+  const recentPoles = useMemo(() => {
+    return [...livePoles].reverse().slice(0, 5);
+  }, [livePoles]);
 
-  // Compute Provider Distribution
-  const providerCountMap: Record<string, { name: string; count: number; colorHex: string; code: string }> = {};
-  DEFAULT_PROVIDERS.forEach((prov) => {
-    providerCountMap[prov.id] = {
-      name: prov.name.replace(/^\d+\.\s*/, ''),
-      count: 0,
-      colorHex: prov.colorHex || '#3b82f6',
-      code: prov.code,
-    };
-  });
+  // Today string in Indonesian time (WIB = UTC+7)
+  const todayStr = useMemo(() => {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+  }, []);
 
-  livePoles.forEach((pole) => {
-    const provId = pole.providerId || 'UNKNOWN';
-    if (providerCountMap[provId]) {
-      providerCountMap[provId].count += 1;
-    } else {
-      providerCountMap[provId] = {
-        name: pole.providerName || provId,
-        count: 1,
-        colorHex: '#64748b',
-        code: 'ISP',
-      };
-    }
-  });
-
-  const sortedProviders = Object.values(providerCountMap)
-    .filter((p) => p.count > 0)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 4);
+  // Compute Today's Survey Count
+  const todayCount = useMemo(() => {
+    return livePoles.filter((pole) => {
+      const sDate = pole.surveyDate || (pole.createdAt ? pole.createdAt.split('T')[0] : '');
+      return sDate === todayStr;
+    }).length;
+  }, [livePoles, todayStr]);
 
   // Problematic & Hazard Poles Count
-  const hazardPolesCount = livePoles.filter(
-    (p) =>
-      p.condition === 'NEEDS_REPAIR' ||
-      p.condition === 'DAMAGED' ||
-      p.isTilted ||
-      p.isHazardous ||
-      p.isMessyCable ||
-      p.isLowCable
-  ).length;
+  const hazardPolesCount = useMemo(() => {
+    return livePoles.filter(
+      (p) =>
+        p.condition === 'NEEDS_REPAIR' ||
+        p.condition === 'DAMAGED' ||
+        p.isTilted ||
+        p.isHazardous ||
+        p.isMessyCable ||
+        p.isLowCable
+    ).length;
+  }, [livePoles]);
 
   // Infrastructure Breakdown
-  const pjuCount = livePoles.filter(
-    (p) =>
-      p.infrastructureCategory === 'PJU_MANDIRI' ||
-      p.infrastructureCategory === 'GABUNG_PLN_PJU' ||
-      p.providerId === 'PRV_PJU_PEMKOT' ||
-      p.providerId === 'PRV_PLN_PJU_GABUNG'
-  ).length;
+  const pjuCount = useMemo(() => {
+    return livePoles.filter(
+      (p) =>
+        p.infrastructureCategory === 'PJU_MANDIRI' ||
+        p.infrastructureCategory === 'GABUNG_PLN_PJU' ||
+        p.providerId === 'PRV_PJU_PEMKOT' ||
+        p.providerId === 'PRV_PLN_PJU_GABUNG'
+    ).length;
+  }, [livePoles]);
 
-  const foCount = livePoles.filter(
-    (p) => !p.infrastructureCategory || p.infrastructureCategory === 'FO_WIFI'
-  ).length;
+  const foCount = useMemo(() => {
+    return livePoles.filter(
+      (p) => !p.infrastructureCategory || p.infrastructureCategory === 'FO_WIFI'
+    ).length;
+  }, [livePoles]);
 
-  const plnCount = livePoles.filter(
-    (p) => p.infrastructureCategory === 'PLN_MURNI' || p.providerId === 'PRV_PLN_DISTRIBUSI'
-  ).length;
+  const undergroundCount = useMemo(() => {
+    return livePoles.filter(
+      (p) =>
+        p.cableInstallationType === 'BAWAH_TANAH' ||
+        p.cableInstallationType === 'TRANSISI_RISER'
+    ).length;
+  }, [livePoles]);
 
-  const undergroundCount = livePoles.filter(
-    (p) =>
-      p.cableInstallationType === 'BAWAH_TANAH' ||
-      p.cableInstallationType === 'TRANSISI_RISER'
-  ).length;
+  // Compute Provider Distribution
+  const sortedProviders = useMemo(() => {
+    const providerCountMap: Record<string, { name: string; count: number; colorHex: string; code: string }> = {};
 
-  const ductingPercentage =
-    livePoles.length > 0 ? Math.round((undergroundCount / livePoles.length) * 100) : 0;
+    DEFAULT_PROVIDERS.forEach((prov) => {
+      providerCountMap[prov.id] = {
+        name: prov.name.replace(/^\d+\.\s*/, ''),
+        count: 0,
+        colorHex: prov.colorHex || '#3b82f6',
+        code: prov.code,
+      };
+    });
+
+    livePoles.forEach((pole) => {
+      const provId = pole.providerId || 'UNKNOWN';
+      if (providerCountMap[provId]) {
+        providerCountMap[provId].count += 1;
+      } else {
+        providerCountMap[provId] = {
+          name: pole.providerName || provId,
+          count: 1,
+          colorHex: '#64748b',
+          code: 'ISP',
+        };
+      }
+    });
+
+    return Object.values(providerCountMap)
+      .filter((p) => p.count > 0)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4);
+  }, [livePoles]);
 
   // 8 Quick Menus
   const surveyorMenus = [
@@ -172,7 +179,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
     },
     {
       label: 'Data Tiang',
-      desc: `${liveStats.totalPoles} Titik`,
+      desc: `${livePoles.length} Titik`,
       href: '/poles',
       icon: Database,
       bgColor: 'bg-cyan-50 text-cyan-600 border-cyan-100',
@@ -295,54 +302,70 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
       {/* 2. FLOATING EXECUTIVE SPATIAL STATS CARDS                   */}
       {/* ============================================================ */}
       <div className="px-4 -mt-6 relative z-20">
-        <div className="grid grid-cols-3 gap-2">
-          {/* Total Tiang */}
-          <Link
-            href="/poles"
-            className="bg-white rounded-2xl p-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)] border border-slate-100 text-center hover:border-blue-200 transition-all group"
-          >
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-              TOTAL TIANG
-            </span>
-            <span className="text-xl font-black text-slate-900 font-mono block mt-0.5 group-hover:text-blue-600 transition-colors">
-              {liveStats.totalPoles}
-            </span>
-            <span className="text-[9px] text-blue-600 font-bold">
-              🌐 {foCount} • 💡 {pjuCount}
-            </span>
-          </Link>
-
-          {/* Hari Ini */}
-          <div className="bg-white rounded-2xl p-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)] border border-slate-100 text-center">
-            <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider block">
-              HARI INI
-            </span>
-            <span className="text-xl font-black text-emerald-600 font-mono block mt-0.5">
-              +{liveStats.todayCount}
-            </span>
-            <span className="text-[9px] text-slate-400 font-medium">terinput</span>
+        {isLoading ? (
+          /* SKELETON LOADING ANIMATION UNTUK KARTU STATISTIK */
+          <div className="grid grid-cols-3 gap-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl p-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)] border border-slate-100 text-center flex flex-col items-center justify-center space-y-2 animate-pulse"
+              >
+                <div className="h-2.5 w-14 bg-slate-200 rounded-full" />
+                <div className="h-6 w-10 bg-slate-300 rounded-md" />
+                <div className="h-2 w-16 bg-slate-100 rounded-full" />
+              </div>
+            ))}
           </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            {/* Total Tiang */}
+            <Link
+              href="/poles"
+              className="bg-white rounded-2xl p-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)] border border-slate-100 text-center hover:border-blue-200 transition-all group"
+            >
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                TOTAL TIANG
+              </span>
+              <span className="text-xl font-black text-slate-900 font-mono block mt-0.5 group-hover:text-blue-600 transition-colors">
+                {livePoles.length}
+              </span>
+              <span className="text-[9px] text-blue-600 font-bold">
+                🌐 {foCount} • 💡 {pjuCount}
+              </span>
+            </Link>
 
-          {/* Perlu Penataan / Bahaya */}
-          <Link
-            href="/segments"
-            className="bg-white rounded-2xl p-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)] border border-slate-100 text-center hover:border-amber-200 transition-all group"
-          >
-            <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider block">
-              PENATAAN
-            </span>
-            <span className="text-xl font-black text-amber-600 font-mono block mt-0.5 group-hover:scale-105 transition-transform">
-              {hazardPolesCount}
-            </span>
-            <span className="text-[9px] text-amber-700 font-bold">miring/bahaya</span>
-          </Link>
-        </div>
+            {/* Hari Ini */}
+            <div className="bg-white rounded-2xl p-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)] border border-slate-100 text-center">
+              <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider block">
+                HARI INI
+              </span>
+              <span className="text-xl font-black text-emerald-600 font-mono block mt-0.5">
+                +{todayCount}
+              </span>
+              <span className="text-[9px] text-slate-400 font-medium">terinput</span>
+            </div>
+
+            {/* Perlu Penataan / Bahaya */}
+            <Link
+              href="/segments"
+              className="bg-white rounded-2xl p-3 shadow-[0_4px_20px_rgba(15,23,42,0.06)] border border-slate-100 text-center hover:border-amber-200 transition-all group"
+            >
+              <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider block">
+                PENATAAN
+              </span>
+              <span className="text-xl font-black text-amber-600 font-mono block mt-0.5 group-hover:scale-105 transition-transform">
+                {hazardPolesCount}
+              </span>
+              <span className="text-[9px] text-amber-700 font-bold">miring/bahaya</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* ============================================================ */}
       {/* 2.5 HAZARD ALERT BANNER (IF PROBLEMATIC POLES EXIST)         */}
       {/* ============================================================ */}
-      {hazardPolesCount > 0 && (
+      {!isLoading && hazardPolesCount > 0 && (
         <div className="px-4">
           <Link
             href="/segments"
@@ -396,100 +419,135 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
           <span className="text-[10px] text-slate-400 font-medium">8 Akses Terpadu</span>
         </div>
 
-        <div className="grid grid-cols-4 gap-2.5">
-          {surveyorMenus.map((menu, idx) => {
-            const Icon = menu.icon;
-            return (
-              <Link
+        {isLoading ? (
+          /* SKELETON LOADING UNTUK 8 MENU CEPAT */
+          <div className="grid grid-cols-4 gap-2.5">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div
                 key={idx}
-                href={menu.href}
-                className="bg-white rounded-2xl p-2.5 shadow-[0_2px_12px_rgba(15,23,42,0.04)] border border-slate-100/90 active:scale-95 hover:shadow-md transition-all flex flex-col items-center text-center relative group"
+                className="bg-white rounded-2xl p-2.5 shadow-[0_2px_12px_rgba(15,23,42,0.04)] border border-slate-100 flex flex-col items-center text-center space-y-2 animate-pulse"
               >
-                {menu.isHot && (
-                  <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-blue-600 text-white font-black text-[8px] rounded-full uppercase shadow">
-                    Hot
-                  </span>
-                )}
-                {menu.badge && (
-                  <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-amber-500 text-white font-black text-[8px] rounded-full shadow">
-                    {menu.badge}
-                  </span>
-                )}
-
-                {/* Squircle Icon Container */}
-                <div
-                  className={`w-11 h-11 rounded-2xl ${menu.bgColor} border flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform`}
+                <div className="w-11 h-11 rounded-2xl bg-slate-100" />
+                <div className="h-2.5 w-12 bg-slate-200 rounded-full" />
+                <div className="h-2 w-10 bg-slate-100 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-2.5">
+            {surveyorMenus.map((menu, idx) => {
+              const Icon = menu.icon;
+              return (
+                <Link
+                  key={idx}
+                  href={menu.href}
+                  className="bg-white rounded-2xl p-2.5 shadow-[0_2px_12px_rgba(15,23,42,0.04)] border border-slate-100/90 active:scale-95 hover:shadow-md transition-all flex flex-col items-center text-center relative group"
                 >
-                  <Icon className="w-5 h-5 stroke-[2.2]" />
-                </div>
+                  {menu.isHot && (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-blue-600 text-white font-black text-[8px] rounded-full uppercase shadow">
+                      Hot
+                    </span>
+                  )}
+                  {menu.badge && (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-amber-500 text-white font-black text-[8px] rounded-full shadow">
+                      {menu.badge}
+                    </span>
+                  )}
 
-                <span className="text-[11px] font-bold text-slate-800 leading-tight block line-clamp-1">
-                  {menu.label}
-                </span>
-                <span className="text-[9px] text-slate-400 block line-clamp-1 mt-0.5">
-                  {menu.desc}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+                  {/* Squircle Icon Container */}
+                  <div
+                    className={`w-11 h-11 rounded-2xl ${menu.bgColor} border flex items-center justify-center mb-1.5 group-hover:scale-110 transition-transform`}
+                  >
+                    <Icon className="w-5 h-5 stroke-[2.2]" />
+                  </div>
+
+                  <span className="text-[11px] font-bold text-slate-800 leading-tight block line-clamp-1">
+                    {menu.label}
+                  </span>
+                  <span className="text-[9px] text-slate-400 block line-clamp-1 mt-0.5">
+                    {menu.desc}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ============================================================ */}
       {/* 5. SEBARAN KEPEMILIKAN PROVIDER TERATAS                     */}
       {/* ============================================================ */}
-      {sortedProviders.length > 0 && (
+      {isLoading ? (
         <div className="px-4">
-          <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
-                <span>Pangsa Kepemilikan Tiang Provider</span>
-              </h3>
-              <Link href="/providers" className="text-[10px] font-bold text-blue-600 hover:underline">
-                Lihat Semua ({DEFAULT_PROVIDERS.length}) &rarr;
-              </Link>
-            </div>
-
-            <div className="space-y-2.5">
-              {sortedProviders.map((prov) => {
-                const percentage = livePoles.length
-                  ? Math.round((prov.count / livePoles.length) * 100)
-                  : 0;
-
-                return (
-                  <div key={prov.code} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span
-                          className="w-2 h-2 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: prov.colorHex }}
-                        />
-                        <span className="font-bold text-slate-800 truncate text-[11px]">
-                          {prov.name}
-                        </span>
-                      </div>
-                      <span className="font-mono font-bold text-slate-600 text-[10px]">
-                        {prov.count} Tiang ({percentage}%)
-                      </span>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.max(percentage, 6)}%`,
-                          backgroundColor: prov.colorHex,
-                        }}
-                      />
-                    </div>
+          <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3 animate-pulse">
+            <div className="h-3 w-44 bg-slate-200 rounded-full" />
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <div className="h-2.5 w-24 bg-slate-200 rounded-full" />
+                    <div className="h-2.5 w-16 bg-slate-100 rounded-full" />
                   </div>
-                );
-              })}
+                  <div className="h-2 w-full bg-slate-100 rounded-full" />
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      ) : (
+        sortedProviders.length > 0 && (
+          <div className="px-4">
+            <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Pangsa Kepemilikan Tiang Provider</span>
+                </h3>
+                <Link href="/providers" className="text-[10px] font-bold text-blue-600 hover:underline">
+                  Lihat Semua ({DEFAULT_PROVIDERS.length}) &rarr;
+                </Link>
+              </div>
+
+              <div className="space-y-2.5">
+                {sortedProviders.map((prov) => {
+                  const percentage = livePoles.length
+                    ? Math.round((prov.count / livePoles.length) * 100)
+                    : 0;
+
+                  return (
+                    <div key={prov.code} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: prov.colorHex }}
+                          />
+                          <span className="font-bold text-slate-800 truncate text-[11px]">
+                            {prov.name}
+                          </span>
+                        </div>
+                        <span className="font-mono font-bold text-slate-600 text-[10px]">
+                          {prov.count} Tiang ({percentage}%)
+                        </span>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.max(percentage, 6)}%`,
+                            backgroundColor: prov.colorHex,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )
       )}
 
       {/* ============================================================ */}
@@ -525,11 +583,27 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
               <span>Data Input Lapangan Terkini</span>
             </h3>
             <Link href="/poles" className="text-[10px] font-bold text-blue-600 hover:underline">
-              Lihat Semua &rarr;
+              Lihat Semua ({livePoles.length}) &rarr;
             </Link>
           </div>
 
-          {recentPoles.length === 0 ? (
+          {isLoading ? (
+            /* SKELETON LOADING UNTUK DAFTAR TIANG TERBARU */
+            <div className="space-y-2.5 py-1">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-2 rounded-2xl bg-slate-50 animate-pulse">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-slate-200" />
+                    <div className="space-y-1.5">
+                      <div className="h-3 w-28 bg-slate-200 rounded-full" />
+                      <div className="h-2.5 w-40 bg-slate-100 rounded-full" />
+                    </div>
+                  </div>
+                  <div className="h-5 w-14 bg-slate-200 rounded-full" />
+                </div>
+              ))}
+            </div>
+          ) : recentPoles.length === 0 ? (
             <p className="text-xs text-slate-400 text-center py-4">
               Belum ada data tiang yang disurvei.
             </p>

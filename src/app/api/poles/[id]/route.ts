@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { updatePoleSchema } from '@/lib/validation/poleSchema';
+import { sheetsBackupService } from '@/services/sheetsBackupService';
 
 export async function GET(
   request: NextRequest,
@@ -52,6 +53,9 @@ export async function PUT(
 
     const updated = await poleService.updatePole(id, validationResult.data as any);
 
+    // Fire-and-forget: backup update ke Google Sheets
+    sheetsBackupService.backupUpdatePoleToSheets(updated).catch(() => {});
+
     return NextResponse.json({
       success: true,
       message: 'Data tiang berhasil diperbarui',
@@ -80,6 +84,9 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Fire-and-forget: backup delete dari Google Sheets
+    sheetsBackupService.backupDeletePoleFromSheets(id).catch(() => {});
 
     return NextResponse.json({
       success: true,

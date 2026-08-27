@@ -44,7 +44,7 @@ export default function PoleListFilterClient({
   initialProvider,
   initialCondition,
 }: PoleListFilterClientProps) {
-  const { poles: livePoles } = useSupabaseRealtimePoles(initialPoles);
+  const { poles: livePoles, isLoading } = useSupabaseRealtimePoles(initialPoles);
 
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState(initialQuery || '');
@@ -187,7 +187,7 @@ export default function PoleListFilterClient({
       return true;
     });
   }, [
-    initialPoles,
+    livePoles,
     searchQuery,
     selectedCategory,
     selectedProvider,
@@ -214,12 +214,16 @@ export default function PoleListFilterClient({
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari ID, kode wilayah, provider, PJU, jalan..."
-            className="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-900 placeholder-slate-400 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all font-medium"
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Cari ID, kode fisik, nama jalan, provider..."
+            className="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-800 placeholder-slate-400 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
             >
@@ -228,17 +232,18 @@ export default function PoleListFilterClient({
           )}
         </div>
 
+        {/* Filter Drawer Button */}
         <button
           type="button"
           onClick={() => setIsFilterModalOpen(true)}
-          className={`px-3 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs border cursor-pointer flex-shrink-0 ${
+          className={`py-2.5 px-3.5 rounded-2xl border text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
             activeFiltersCount > 0
-              ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
-              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+              ? 'bg-blue-600 border-blue-600 text-white shadow-blue-500/20'
+              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
           }`}
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
-          <span>Filter</span>
+          <span className="hidden sm:inline">Filter</span>
           {activeFiltersCount > 0 && (
             <span className="w-4 h-4 rounded-full bg-white text-blue-700 text-[10px] font-black flex items-center justify-center">
               {activeFiltersCount}
@@ -258,7 +263,7 @@ export default function PoleListFilterClient({
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
           }`}
         >
-          Semua ({initialPoles.length})
+          Semua ({livePoles.length})
         </button>
 
         {/* Quick Category Chips */}
@@ -443,7 +448,30 @@ export default function PoleListFilterClient({
 
       {/* 4. Results List of Poles */}
       <div className="space-y-2.5">
-        {filteredPoles.length === 0 ? (
+        {isLoading ? (
+          /* SKELETON LOADING UNTUK DAFTAR TIANG */
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-3xl p-4 shadow-[0_2px_12px_rgba(15,23,42,0.04)] border border-slate-100 space-y-3 animate-pulse"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-28 bg-slate-200 rounded-xl" />
+                    <div className="h-5 w-16 bg-slate-100 rounded-md" />
+                  </div>
+                  <div className="h-5 w-20 bg-slate-200 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3.5 w-48 bg-slate-200 rounded-full" />
+                  <div className="h-3 w-64 bg-slate-100 rounded-full" />
+                </div>
+                <div className="h-8 w-full bg-slate-50 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        ) : filteredPoles.length === 0 ? (
           <div className="bg-white rounded-3xl p-8 border border-slate-100 text-center space-y-2 shadow-xs">
             <span className="text-3xl block">🔍</span>
             <h3 className="text-sm font-black text-slate-800">

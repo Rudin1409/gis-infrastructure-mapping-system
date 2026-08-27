@@ -22,7 +22,8 @@ export class DashboardService {
     const providers = await getProviderRepository().findAll();
     const segments = await getSegmentRepository().findAll();
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Indonesian Timezone (WIB = UTC+7) for today's survey count
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
 
     let goodCount = 0;
     let needsRepairCount = 0;
@@ -43,7 +44,8 @@ export class DashboardService {
       else if (pole.condition === 'DAMAGED') damagedCount++;
       else unknownCount++;
 
-      if (pole.surveyDate === todayStr || (pole.createdAt && pole.createdAt.startsWith(todayStr))) {
+      const surveyDate = pole.surveyDate || (pole.createdAt ? pole.createdAt.split('T')[0] : '');
+      if (surveyDate === todayStr) {
         todayCount++;
       }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { createPoleSchema } from '@/lib/validation/poleSchema';
+import { sheetsBackupService } from '@/services/sheetsBackupService';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -55,6 +56,9 @@ export async function POST(request: NextRequest) {
     }
 
     const newPole = await poleService.createPole(validationResult.data as any);
+
+    // Fire-and-forget: backup ke Google Sheets sebagai cadangan
+    sheetsBackupService.backupPoleToSheets(newPole).catch(() => {});
 
     return NextResponse.json(
       {

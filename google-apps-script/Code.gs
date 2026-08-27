@@ -570,6 +570,106 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 6. Full Sync: Clear & Write Semua Data Tiang dari Supabase ke Sheet
+    if (action === 'clearAndWritePoles') {
+      var poleSheet = ss.getSheetByName(POLE_SHEET_NAME) || ss.getSheetByName('POLES');
+      if (!poleSheet) {
+        initialSetup();
+        poleSheet = ss.getSheetByName(POLE_SHEET_NAME);
+      }
+
+      // Clear semua data kecuali header (baris 1)
+      if (poleSheet.getLastRow() > 1) {
+        poleSheet.deleteRows(2, poleSheet.getLastRow() - 1);
+      }
+
+      var poles = contents.data || [];
+      if (poles.length > 0) {
+        var rows = poles.map(function(p) { return poleToRowArray(p); });
+        poleSheet.getRange(2, 1, rows.length, POLE_HEADERS.length).setValues(rows);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        message: 'Berhasil sync ' + poles.length + ' data tiang ke Google Sheets',
+        count: poles.length
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 7. Full Sync: Clear & Write Semua Data Provider dari Supabase ke Sheet
+    if (action === 'clearAndWriteProviders') {
+      var provSheet = ss.getSheetByName(PROVIDER_SHEET_NAME);
+      if (!provSheet) {
+        initialSetup();
+        provSheet = ss.getSheetByName(PROVIDER_SHEET_NAME);
+      }
+
+      if (provSheet.getLastRow() > 1) {
+        provSheet.deleteRows(2, provSheet.getLastRow() - 1);
+      }
+
+      var providers = contents.data || [];
+      if (providers.length > 0) {
+        var provRows = providers.map(function(p) {
+          return [
+            p.id || '',
+            p.name || '',
+            p.code || '',
+            p.colorHex || p.color_hex || '#3b82f6',
+            p.status || 'ACTIVE'
+          ];
+        });
+        provSheet.getRange(2, 1, provRows.length, PROVIDER_HEADERS.length).setValues(provRows);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        message: 'Berhasil sync ' + providers.length + ' data provider ke Google Sheets',
+        count: providers.length
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 8. Full Sync: Clear & Write Semua Data Segmen dari Supabase ke Sheet
+    if (action === 'clearAndWriteSegments') {
+      var segSheet = ss.getSheetByName(SEGMENT_SHEET_NAME);
+      if (!segSheet) {
+        initialSetup();
+        segSheet = ss.getSheetByName(SEGMENT_SHEET_NAME);
+      }
+
+      if (segSheet.getLastRow() > 1) {
+        segSheet.deleteRows(2, segSheet.getLastRow() - 1);
+      }
+
+      var segments = contents.data || [];
+      if (segments.length > 0) {
+        var segRows = segments.map(function(s) {
+          return [
+            s.id || '',
+            s.segmentCode || s.segment_code || '',
+            s.fromNodeId || s.from_node_id || '',
+            s.toNodeId || s.to_node_id || '',
+            s.providerId || s.provider_id || '',
+            s.providerName || s.provider_name || '',
+            s.networkType || s.network_type || 'FIBER_OPTIC',
+            s.installationType || s.installation_type || 'AERIAL',
+            s.estimatedDistance || s.estimated_distance || 0,
+            s.status || 'ACTIVE',
+            s.description || '',
+            s.createdAt || s.created_at || new Date().toISOString(),
+            s.updatedAt || s.updated_at || new Date().toISOString()
+          ];
+        });
+        segSheet.getRange(2, 1, segRows.length, SEGMENT_HEADERS.length).setValues(segRows);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        message: 'Berhasil sync ' + segments.length + ' data segmen ke Google Sheets',
+        count: segments.length
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {

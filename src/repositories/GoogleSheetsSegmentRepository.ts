@@ -12,38 +12,7 @@ import { generateSegmentId } from '@/lib/utils/idGenerator';
 import { isSupabaseConfigured } from './PoleRepositoryFactory';
 import { supabase } from '@/lib/supabase';
 
-let MOCK_SEGMENTS: NetworkSegment[] = [
-  {
-    id: 'SEG-0001',
-    segmentCode: 'FO-MJP-01',
-    fromNodeId: 'LL-0001',
-    toNodeId: 'LL-0002',
-    providerId: 'PRV_TELKOM',
-    providerName: '1. TELKOM INDONESIA',
-    networkType: 'FIBER_OPTIC',
-    installationType: 'AERIAL',
-    estimatedDistance: 45.2,
-    status: 'ACTIVE',
-    description: 'Jalur kabel FO 24 core Jl. Majapahit',
-    createdAt: '2026-08-25T03:00:00.000Z',
-    updatedAt: '2026-08-25T03:00:00.000Z',
-  },
-  {
-    id: 'SEG-0002',
-    segmentCode: 'FO-MJP-02',
-    fromNodeId: 'LL-0002',
-    toNodeId: 'LL-0003',
-    providerId: 'PRV_TELKOM',
-    providerName: '1. TELKOM INDONESIA',
-    networkType: 'FIBER_OPTIC',
-    installationType: 'AERIAL',
-    estimatedDistance: 49.0,
-    status: 'ACTIVE',
-    description: 'Jalur kabel FO Jl. Majapahit No. 2 ke No. 3',
-    createdAt: '2026-08-25T03:05:00.000Z',
-    updatedAt: '2026-08-25T03:05:00.000Z',
-  },
-];
+let MOCK_SEGMENTS: NetworkSegment[] = [];
 
 export class SupabaseSegmentRepository implements ISegmentRepository {
   async findAll(): Promise<NetworkSegment[]> {
