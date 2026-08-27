@@ -44,6 +44,7 @@ import {
 } from '@/lib/gis/haversine';
 import { findPolesPath } from '@/lib/gis/pathfinding';
 import { interpolatePolesAlongPath } from '@/lib/gis/corridorInterpolation';
+import { reverseGeocodeLocation } from '@/lib/gis/geocoding';
 import { Coordinates } from '@/types/gis';
 import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
 
@@ -84,6 +85,7 @@ export default function GISOverviewMap({
 
   const [corridorWaypoints, setCorridorWaypoints] = useState<Coordinates[]>([]);
   const [corridorInterval, setCorridorInterval] = useState<number>(35);
+  const [corridorEqualSpacing, setCorridorEqualSpacing] = useState<boolean>(true);
   const [corridorProviderId, setCorridorProviderId] = useState<string>('PRV_TELKOM');
   const [corridorPoleType, setCorridorPoleType] = useState<string>('BETON');
   const [corridorHeight, setCorridorHeight] = useState<string>('7m');
@@ -154,7 +156,7 @@ export default function GISOverviewMap({
     // Map Click Listener for Corridor Waypoint placement
     map.on('click', (e: L.LeafletMouseEvent) => {
       if (isCorridorModeRef.current) {
-        setCorridorWaypoints((prev) => [...prev, { lat: e.latlng.lat, lng: e.latlng.lng }]);
+        addCorridorWaypoint({ lat: e.latlng.lat, lng: e.latlng.lng });
       }
     });
 
@@ -194,11 +196,41 @@ export default function GISOverviewMap({
     };
   }, [leafletLib]);
 
+  // Add waypoint with auto reverse-geocoding for Point A
+  const addCorridorWaypoint = React.useCallback((coord: Coordinates) => {
+    setCorridorWaypoints((prev) => {
+      const next = [...prev, coord];
+      if (next.length === 1) {
+        // Auto reverse-geocode Point A (Pangkal)
+        reverseGeocodeLocation(coord)
+          .then((geo) => {
+            if (geo.road) setCorridorRoad(geo.road);
+            if (geo.kecamatan) setCorridorKecamatan(geo.kecamatan);
+            if (geo.kelurahan) setCorridorKelurahan(geo.kelurahan);
+          })
+          .catch(() => {});
+      }
+      return next;
+    });
+  }, []);
+
   // Compute interpolated poles along corridor
   const interpolatedCorridor = React.useMemo(() => {
     if (corridorWaypoints.length < 2) return null;
-    return interpolatePolesAlongPath(corridorWaypoints, corridorInterval);
-  }, [corridorWaypoints, corridorInterval]);
+    return interpolatePolesAlongPath(
+      corridorWaypoints,
+      corridorInterval,
+      corridorEqualSpacing
+    );
+  }, [corridorWaypoints, corridorInterval, corridorEqualSpacing]);
+
+  // Auto zoom/fit bounds when Point B (2 waypoints) is placed
+  useEffect(() => {
+    if (isCorridorMode && corridorWaypoints.length >= 2 && mapInstanceRef.current && leafletLib) {
+      const bounds = leafletLib.latLngBounds(corridorWaypoints.map((p) => [p.lat, p.lng]));
+      mapInstanceRef.current.fitBounds(bounds, { maxZoom: 19, padding: [70, 70] });
+    }
+  }, [corridorWaypoints.length, isCorridorMode, leafletLib]);
 
   // Render Corridor Preview Layer
   useEffect(() => {
@@ -220,18 +252,19 @@ export default function GISOverviewMap({
       polyline.addTo(corridorLayerGroupRef.current);
 
       // 2. Interpolated Preview Markers
-      interpolatedCorridor.poles.forEach((p, idx) => {
-        const isStart = idx === 0;
-        const isEnd = idx === interpolatedCorridor.poles.length - 1;
-        const color = isStart ? '#10b981' : isEnd ? '#f59e0b' : '#2563eb';
+      interpolatedCorridor.poles.forEach((p) => {
+        const isStart = p.isEndpoint === 'START';
+        const isEnd = p.isEndpoint === 'END';
+        const badgeColor = isStart ? '#10b981' : isEnd ? '#ef4444' : '#2563eb';
+        const label = isStart ? 'A' : isEnd ? 'B' : `${p.index}`;
 
         const icon = L.divIcon({
           className: 'corridor-preview-marker',
           html: `
             <div style="
-              width: 26px;
-              height: 26px;
-              background: ${color};
+              width: ${isStart || isEnd ? '30px' : '26px'};
+              height: ${isStart || isEnd ? '30px' : '26px'};
+              background: ${badgeColor};
               border: 2.5px solid #ffffff;
               border-radius: 50%;
               display: flex;
@@ -239,20 +272,25 @@ export default function GISOverviewMap({
               justify-content: center;
               color: #ffffff;
               font-weight: 900;
-              font-size: 11px;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+              font-size: ${isStart || isEnd ? '12px' : '11px'};
+              box-shadow: 0 4px 14px rgba(0,0,0,0.4);
             ">
-              ${p.index}
+              ${label}
             </div>
           `,
-          iconSize: [26, 26],
-          iconAnchor: [13, 13],
+          iconSize: isStart || isEnd ? [30, 30] : [26, 26],
+          iconAnchor: isStart || isEnd ? [15, 15] : [13, 13],
         });
 
         const marker = L.marker([p.coord.lat, p.coord.lng], { icon });
         marker.bindTooltip(
-          `<b>Tiang ${p.index}</b> (${p.distanceFromStart}m)<br/>Kode: <code>${p.poleCode}</code>`,
-          { direction: 'top', offset: [0, -10] }
+          `<b>Tiang ${p.index} ${
+            isStart ? '(Titik Pangkal A)' : isEnd ? '(Titik Ujung B)' : '(Tiang Tengah)'
+          }</b><br/>` +
+            `📍 Jarak Bentang: <b>+${p.spanFromPrevious} m</b><br/>` +
+            `📏 Jarak Kumulatif: <b>${p.distanceFromStart} m</b><br/>` +
+            `🏷️ Kode: <code>${p.poleCode}</code>`,
+          { direction: 'top', offset: [0, -12] }
         );
         marker.addTo(corridorLayerGroupRef.current!);
       });
@@ -262,8 +300,8 @@ export default function GISOverviewMap({
         className: 'corridor-start-marker',
         html: `
           <div style="
-            width: 26px;
-            height: 26px;
+            width: 28px;
+            height: 28px;
             background: #10b981;
             border: 2.5px solid #ffffff;
             border-radius: 50%;
@@ -272,20 +310,24 @@ export default function GISOverviewMap({
             justify-content: center;
             color: #ffffff;
             font-weight: 900;
-            font-size: 11px;
+            font-size: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.35);
           ">
             A
           </div>
         `,
-        iconSize: [26, 26],
-        iconAnchor: [13, 13],
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
       });
       const marker = L.marker([pt.lat, pt.lng], { icon });
-      marker.bindTooltip('Titik Awal (A) — Klik titik kedua di jalan', { permanent: true, direction: 'top' });
+      marker.bindTooltip('📍 <b>Titik Awal (A)</b><br/>Klik titik kedua (B) di jalan untuk otomatis memasang tiang tengah', {
+        permanent: true,
+        direction: 'top',
+        offset: [0, -14],
+      });
       marker.addTo(corridorLayerGroupRef.current);
     }
-  }, [leafletLib, isCorridorMode, corridorWaypoints, corridorInterval, interpolatedCorridor]);
+  }, [leafletLib, isCorridorMode, corridorWaypoints, corridorInterval, corridorEqualSpacing, interpolatedCorridor]);
 
   // Toggle Corridor Generator Mode
   const toggleCorridorMode = () => {
@@ -1055,23 +1097,62 @@ export default function GISOverviewMap({
             </div>
           </div>
 
-          {/* Interval Quick Selector */}
+          {/* Mode Selector: Bagi Rata Presisi vs Interval Tetap */}
+          <div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+              Metode Penempatan Tiang Tengah:
+            </span>
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setCorridorEqualSpacing(true)}
+                className={`py-1.5 px-2 rounded-xl text-[11px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  corridorEqualSpacing
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>⚖️ Bagi Rata Presisi</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCorridorEqualSpacing(false)}
+                className={`py-1.5 px-2 rounded-xl text-[11px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  !corridorEqualSpacing
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>📏 Interval Tetap</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Interval Quick Selector & Custom Input */}
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="text-[10px] font-bold text-slate-600 uppercase">
-                Jarak Antar-Tiang (Interval):
+                Target Jarak Antar-Tiang:
               </span>
-              <span className="font-mono font-black text-blue-700 text-xs">
-                {corridorInterval} Meter
-              </span>
+              <div className="flex items-center gap-1 font-mono font-black text-blue-700 text-xs">
+                <input
+                  type="number"
+                  min="5"
+                  max="200"
+                  value={corridorInterval}
+                  onChange={(e) => setCorridorInterval(Math.max(5, parseInt(e.target.value) || 5))}
+                  className="w-14 px-1.5 py-0.5 bg-blue-50 border border-blue-200 rounded-lg text-center font-bold text-blue-900 outline-none"
+                />
+                <span>Meter</span>
+              </div>
             </div>
-            <div className="grid grid-cols-5 gap-1.5">
-              {[25, 30, 35, 40, 50].map((dist) => (
+            <div className="grid grid-cols-6 gap-1">
+              {[20, 25, 30, 35, 40, 50].map((dist) => (
                 <button
                   key={dist}
                   type="button"
                   onClick={() => setCorridorInterval(dist)}
-                  className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center ${
                     corridorInterval === dist
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200/80'
@@ -1083,24 +1164,32 @@ export default function GISOverviewMap({
             </div>
           </div>
 
-          {/* Live Calculated Stats Banner */}
+          {/* Live Calculated Stats Banner with Span Breakdown */}
           {interpolatedCorridor && interpolatedCorridor.poles.length > 0 && (
-            <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-2 text-xs">
-              <div>
-                <span className="text-[10px] font-bold text-blue-600 uppercase block">
-                  Hasil Kalkulasi:
-                </span>
-                <span className="text-sm font-black text-blue-950 font-mono">
-                  {interpolatedCorridor.poles.length} Tiang Otomatis
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">
-                  Total Panjang:
-                </span>
-                <span className="text-xs font-black text-slate-800 font-mono">
-                  {formatDistance(interpolatedCorridor.totalDistance)}
-                </span>
+            <div className="p-3 bg-gradient-to-r from-blue-50 via-indigo-50 to-cyan-50 border border-blue-200 rounded-2xl space-y-2 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] font-bold text-blue-600 uppercase block">
+                    Hasil Kalkulasi Spasial:
+                  </span>
+                  <span className="text-sm font-black text-blue-950 font-mono">
+                    {interpolatedCorridor.poles.length} Tiang Total
+                  </span>
+                  <span className="text-[10px] text-slate-500 block">
+                    (2 Titik Ujung + {Math.max(0, interpolatedCorridor.poles.length - 2)} Tiang Tengah)
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">
+                    Panjang Jalur:
+                  </span>
+                  <span className="text-sm font-black text-slate-900 font-mono">
+                    {formatDistance(interpolatedCorridor.totalDistance)}
+                  </span>
+                  <span className="text-[10px] text-emerald-700 font-bold block">
+                    {interpolatedCorridor.segmentCount} bentang @ ~{interpolatedCorridor.averageSpan}m
+                  </span>
+                </div>
               </div>
             </div>
           )}
