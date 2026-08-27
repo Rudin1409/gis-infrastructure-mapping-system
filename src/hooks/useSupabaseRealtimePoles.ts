@@ -41,14 +41,25 @@ export function useSupabaseRealtimePoles(initialPoles: Pole[], onPolesChange?: (
         }
       });
 
-    // 2. Heartbeat Polling Fallback (setiap 6 detik) untuk jaringan HP tidak stabil
+    // 2. Heartbeat Polling Fallback (setiap 5 detik) untuk jaringan HP tidak stabil
     const heartbeat = setInterval(() => {
       fetchFreshPoles();
-    }, 6000);
+    }, 5000);
+
+    // 3. Global Hard-Refresh Event Listener (Tombol Reload Header)
+    const handleHardRefresh = () => {
+      fetchFreshPoles();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('gis:hard-refresh', handleHardRefresh);
+    }
 
     return () => {
       supabase.removeChannel(channel);
       clearInterval(heartbeat);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('gis:hard-refresh', handleHardRefresh);
+      }
     };
   }, []);
 

@@ -92,12 +92,21 @@ export default function TopHeader() {
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('gis:hard-refresh'));
+    }
     router.refresh();
+    try {
+      await Promise.all([
+        fetch('/api/poles', { cache: 'no-store' }),
+        fetch('/api/dashboard', { cache: 'no-store' }),
+      ]);
+    } catch (_) {}
     setTimeout(() => {
       setIsRefreshing(false);
-    }, 800);
+    }, 600);
   };
 
   const meta = getHeaderMeta();
