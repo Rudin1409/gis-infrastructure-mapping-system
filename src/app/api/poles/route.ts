@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { createPoleSchema } from '@/lib/validation/poleSchema';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

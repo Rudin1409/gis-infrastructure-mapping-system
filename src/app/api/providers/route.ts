@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     const repo = getProviderRepository();

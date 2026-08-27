@@ -50,6 +50,9 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
   const { user } = useAuth();
   const currentUser = user || DEFAULT_ACCOUNTS[0];
 
+  const [liveStats, setLiveStats] = useState<DashboardStats>(stats);
+  const [livePoles, setLivePoles] = useState<Pole[]>(allPoles);
+
   // Dynamic Indonesian time greeting
   const [greeting, setGreeting] = useState('Halo');
   const [timeEmoji, setTimeEmoji] = useState('👋');
@@ -71,8 +74,29 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
     }
   }, []);
 
+  // Real-time Background Sync with Supabase (every 8 seconds)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const [dashRes, poleRes] = await Promise.all([
+          fetch('/api/dashboard', { cache: 'no-store' }),
+          fetch('/api/poles', { cache: 'no-store' }),
+        ]);
+        if (dashRes.ok && poleRes.ok) {
+          const dashJson = await dashRes.json();
+          const poleJson = await poleRes.json();
+          if (dashJson.success && dashJson.data) setLiveStats(dashJson.data);
+          if (poleJson.success && Array.isArray(poleJson.data)) setLivePoles(poleJson.data);
+        }
+      } catch (_) {
+        // Silent real-time sync
+      }
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Compute 5 Most Recent Surveys
-  const recentPoles = [...allPoles].reverse().slice(0, 5);
+  const recentPoles = [...livePoles].reverse().slice(0, 5);
 
   // Compute Provider Distribution
   const providerCountMap: Record<string, { name: string; count: number; colorHex: string; code: string }> = {};
@@ -85,7 +109,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
     };
   });
 
-  allPoles.forEach((pole) => {
+  livePoles.forEach((pole) => {
     const provId = pole.providerId || 'UNKNOWN';
     if (providerCountMap[provId]) {
       providerCountMap[provId].count += 1;
@@ -105,7 +129,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
     .slice(0, 4);
 
   // Problematic & Hazard Poles Count
-  const hazardPolesCount = allPoles.filter(
+  const hazardPolesCount = livePoles.filter(
     (p) =>
       p.condition === 'NEEDS_REPAIR' ||
       p.condition === 'DAMAGED' ||
@@ -116,7 +140,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
   ).length;
 
   // Infrastructure Breakdown
-  const pjuCount = allPoles.filter(
+  const pjuCount = livePoles.filter(
     (p) =>
       p.infrastructureCategory === 'PJU_MANDIRI' ||
       p.infrastructureCategory === 'GABUNG_PLN_PJU' ||
@@ -160,7 +184,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
     },
     {
       label: 'Data Tiang',
-      desc: `${stats.totalPoles} Titik`,
+      desc: `${liveStats.totalPoles} Titik`,
       href: '/poles',
       icon: Database,
       bgColor: 'bg-cyan-50 text-cyan-600 border-cyan-100',
@@ -293,7 +317,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
               TOTAL TIANG
             </span>
             <span className="text-xl font-black text-slate-900 font-mono block mt-0.5 group-hover:text-blue-600 transition-colors">
-              {stats.totalPoles}
+              {liveStats.totalPoles}
             </span>
             <span className="text-[9px] text-blue-600 font-bold">
               🌐 {foCount} • 💡 {pjuCount}
@@ -306,7 +330,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
               HARI INI
             </span>
             <span className="text-xl font-black text-emerald-600 font-mono block mt-0.5">
-              +{stats.todayCount}
+              +{liveStats.todayCount}
             </span>
             <span className="text-[9px] text-slate-400 font-medium">terinput</span>
           </div>
