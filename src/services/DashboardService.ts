@@ -17,14 +17,10 @@ export interface DashboardStats {
 }
 
 export class DashboardService {
-  private poleRepo = getPoleRepository();
-  private providerRepo = getProviderRepository();
-  private segmentRepo = getSegmentRepository();
-
   async getStats(): Promise<DashboardStats> {
-    const poles = await this.poleRepo.findAll();
-    const providers = await this.providerRepo.findAll();
-    const segments = await this.segmentRepo.findAll();
+    const poles = await getPoleRepository().findAll();
+    const providers = await getProviderRepository().findAll();
+    const segments = await getSegmentRepository().findAll();
 
     const todayStr = new Date().toISOString().split('T')[0];
 

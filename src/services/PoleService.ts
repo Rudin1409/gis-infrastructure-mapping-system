@@ -5,21 +5,18 @@ import { PoleFilterOptions } from '@/repositories/interfaces/IPoleRepository';
 import { evaluateLocationQC } from '@/lib/gis/haversine';
 
 export class PoleService {
-  private poleRepo = getPoleRepository();
-  private providerRepo = getProviderRepository();
-
   async getPoles(filters?: PoleFilterOptions): Promise<Pole[]> {
-    return this.poleRepo.findAll(filters);
+    return getPoleRepository().findAll(filters);
   }
 
   async getPoleById(id: string): Promise<Pole | null> {
-    return this.poleRepo.findById(id);
+    return getPoleRepository().findById(id);
   }
 
   async createPole(input: CreatePoleInput): Promise<Pole> {
     // Resolve provider name if not supplied
     if (!input.providerName && input.providerId) {
-      const provider = await this.providerRepo.findById(input.providerId);
+      const provider = await getProviderRepository().findById(input.providerId);
       if (provider) {
         input.providerName = provider.name;
       }
@@ -38,15 +35,15 @@ export class PoleService {
       input.distanceFromDevice = qc.distanceFromDevice;
     }
 
-    return this.poleRepo.create(input);
+    return getPoleRepository().create(input);
   }
 
   async updatePole(id: string, input: UpdatePoleInput): Promise<Pole> {
-    return this.poleRepo.update(id, input);
+    return getPoleRepository().update(id, input);
   }
 
   async deletePole(id: string): Promise<boolean> {
-    return this.poleRepo.delete(id);
+    return getPoleRepository().delete(id);
   }
 }
 

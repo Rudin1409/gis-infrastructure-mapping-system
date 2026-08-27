@@ -148,22 +148,22 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
       p.providerId === 'PRV_PLN_PJU_GABUNG'
   ).length;
 
-  const foCount = allPoles.filter(
+  const foCount = livePoles.filter(
     (p) => !p.infrastructureCategory || p.infrastructureCategory === 'FO_WIFI'
   ).length;
 
-  const plnCount = allPoles.filter(
+  const plnCount = livePoles.filter(
     (p) => p.infrastructureCategory === 'PLN_MURNI' || p.providerId === 'PRV_PLN_DISTRIBUSI'
   ).length;
 
-  const undergroundCount = allPoles.filter(
+  const undergroundCount = livePoles.filter(
     (p) =>
       p.cableInstallationType === 'BAWAH_TANAH' ||
       p.cableInstallationType === 'TRANSISI_RISER'
   ).length;
 
   const ductingPercentage =
-    allPoles.length > 0 ? Math.round((undergroundCount / allPoles.length) * 100) : 0;
+    livePoles.length > 0 ? Math.round((undergroundCount / livePoles.length) * 100) : 0;
 
   // 8 Quick Menus
   const surveyorMenus = [
@@ -465,8 +465,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
 
             <div className="space-y-2.5">
               {sortedProviders.map((prov) => {
-                const percentage = allPoles.length
-                  ? Math.round((prov.count / allPoles.length) * 100)
+                const percentage = livePoles.length
+                  ? Math.round((prov.count / livePoles.length) * 100)
                   : 0;
 
                 return (
