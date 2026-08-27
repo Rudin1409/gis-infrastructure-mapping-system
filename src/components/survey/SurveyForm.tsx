@@ -1308,89 +1308,237 @@ export default function SurveyForm({
         {activeTab === 'REVIEW' && (
           <div className="space-y-3 animate-in fade-in">
             <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              {/* Review Header */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
                 <div>
                   <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block">
-                    Review Survei Lapangan
+                    Review Lengkap Survei Lapangan
                   </span>
                   <h3 className="text-sm font-black text-slate-900 font-mono">
-                    {poleCode || 'LLG-T1-TJ-463'}
+                    {poleCode || '(Auto Generated)'}
                   </h3>
                 </div>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                    condition === 'GOOD'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : condition === 'NEEDS_REPAIR'
-                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                      : 'bg-rose-50 text-rose-700 border border-rose-200'
-                  }`}
-                >
-                  {condition === 'GOOD' ? '🟢 Baik' : condition === 'NEEDS_REPAIR' ? '🟡 Perlu Cek' : '🔴 Rusak'}
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      condition === 'GOOD'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : condition === 'NEEDS_REPAIR'
+                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                    }`}
+                  >
+                    {condition === 'GOOD' ? '🟢 Kondisi Baik' : condition === 'NEEDS_REPAIR' ? '🟡 Perlu Servis' : '🔴 Rusak'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Category Badge Banner */}
+              <div className="p-2 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-center justify-between text-xs">
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Kategori Infrastruktur:</span>
+                <span className="font-black text-blue-800">
+                  {infrastructureCategory === 'PJU_MANDIRI'
+                    ? '💡 Penerangan Jalan Umum (PJU Mandiri)'
+                    : infrastructureCategory === 'GABUNG_PLN_PJU'
+                    ? '⚡💡 Tiang Gabungan (PLN Distribusi + PJU)'
+                    : infrastructureCategory === 'PLN_MURNI'
+                    ? '⚡ Tiang Distribusi Jaringan Listrik PLN'
+                    : '🌐 Fiber Optik / Provider WiFi Internet'}
                 </span>
               </div>
 
               {/* Photo Thumbnail if uploaded */}
               {photoPreviewUrl && (
-                <div className="rounded-2xl overflow-hidden h-36 border border-slate-100 bg-slate-900">
+                <div className="rounded-2xl overflow-hidden h-40 border border-slate-100 bg-slate-900 relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={photoPreviewUrl} alt="Foto Lapangan" className="w-full h-full object-cover" />
-                </div>
-              )}
-
-              {/* Data Summary Grid */}
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                  <span className="text-slate-400 block text-[9px] uppercase font-bold">Provider</span>
-                  <span className="font-bold text-slate-800 truncate block mt-0.5">
-                    {selectedProviderObj?.name || 'Unknown'}
-                  </span>
-                </div>
-
-                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                  <span className="text-slate-400 block text-[9px] uppercase font-bold">Material &amp; Tinggi</span>
-                  <span className="font-bold text-slate-800 block mt-0.5">
-                    {poleType} • {height}
-                  </span>
-                </div>
-
-                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
-                  <span className="text-slate-400 block text-[9px] uppercase font-bold">Alamat Spasial</span>
-                  <span className="font-bold text-slate-900 block mt-0.5">
-                    {road}
-                  </span>
-                  <span className="text-[10px] text-slate-500">
-                    Kel. {kelurahan}, Kec. {kecamatan}
-                  </span>
-                </div>
-
-                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
-                  <span className="text-slate-400 block text-[9px] uppercase font-bold">Koordinat &amp; Akurasi</span>
-                  <span className="font-mono text-emerald-600 font-bold block mt-0.5 text-[10px]">
-                    {confirmedCoord.lat.toFixed(6)}, {confirmedCoord.lng.toFixed(6)}
-                  </span>
-                  <span className="text-[10px] text-slate-500">
-                    Akurasi: {gpsAccuracy ? `±${gpsAccuracy.toFixed(1)}m` : 'Presisi'} • Deviasi: {formatDistance(distanceFromDevice || 0)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Hazard flags tags */}
-              {(isTilted || isMessyCable || isLowCable || isCorroded || isObstructing || isHazardous) && (
-                <div className="pt-2 border-t border-slate-100">
-                  <span className="text-[9px] font-bold text-amber-700 uppercase block mb-1">
-                    Temuan Masalah di Lapangan:
-                  </span>
-                  <div className="flex flex-wrap gap-1">
-                    {isTilted && <span className="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-md text-[9px] font-bold">Miring</span>}
-                    {isMessyCable && <span className="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-md text-[9px] font-bold">Kabel Semrawut</span>}
-                    {isLowCable && <span className="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-md text-[9px] font-bold">Kabel Rendah</span>}
-                    {isCorroded && <span className="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-md text-[9px] font-bold">Karat/Retak</span>}
-                    {isObstructing && <span className="px-2 py-0.5 bg-amber-50 text-amber-800 rounded-md text-[9px] font-bold">Ganggu Jalan</span>}
-                    {isHazardous && <span className="px-2 py-0.5 bg-rose-50 text-rose-800 rounded-md text-[9px] font-bold">Bahaya</span>}
+                  <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-xs text-white rounded-md text-[9px] font-mono">
+                    📷 Foto Lapangan Terlampir
                   </div>
                 </div>
               )}
+
+              {/* 1. Spesifikasi Teknis Tiang & Aset */}
+              <div>
+                <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1.5">
+                  1. Spesifikasi Teknis Tiang &amp; Kepemilikan:
+                </span>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Instansi / Provider</span>
+                    <span className="font-bold text-slate-800 truncate block mt-0.5">
+                      {selectedProviderObj?.name || providerId}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Material &amp; Tinggi</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">
+                      {poleType} • {height}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Status Kepemilikan</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">
+                      {ownershipStatus === 'SENDIRI'
+                        ? 'Aset Sendiri'
+                        : ownershipStatus === 'SEWA'
+                        ? 'Sewa Tiang'
+                        : ownershipStatus === 'BERSAMA_PLN'
+                        ? 'Joint PLN'
+                        : 'Tidak Tahu'}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Instalasi Kabel</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">
+                      {cableInstallationType === 'BAWAH_TANAH'
+                        ? '🕳️ Kabel Bawah Tanah'
+                        : cableInstallationType === 'TRANSISI_RISER'
+                        ? '↕️ Riser Transisi'
+                        : '🌐 Kabel Udara (Aerial)'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Spesifikasi Khusus PJU (Jika PJU) */}
+              {(infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') && (
+                <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                      <span>💡</span>
+                      <span>Spesifikasi Teknis Penerangan Jalan (PJU)</span>
+                    </span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-200 text-amber-950 rounded-full">
+                      {pjuLampCondition === 'MENYALA_NORMAL'
+                        ? '🟢 Menyala Normal'
+                        : pjuLampCondition === 'REDUP'
+                        ? '🟡 Redup'
+                        : pjuLampCondition === 'MATI_TOTAL'
+                        ? '🔴 Mati Total'
+                        : '💥 Pecah/Rusak'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[8px] font-bold uppercase">Tipe Lampu</span>
+                      <span className="font-bold text-slate-800 block mt-0.5">{pjuLampType || 'LED'}</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[8px] font-bold uppercase">Daya Lampu</span>
+                      <span className="font-bold text-slate-800 block mt-0.5">{pjuLampPower || '90 Watt'}</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[8px] font-bold uppercase">KWh Meter</span>
+                      <span className="font-bold text-slate-800 block mt-0.5">{hasKwhMeter ? 'Ada Meter' : 'Non-Meter'}</span>
+                    </div>
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[8px] font-bold uppercase">Kabel Jaringan</span>
+                      <span className={`font-bold block mt-0.5 ${hasNetworkCable ? 'text-blue-700 font-black' : 'text-slate-700'}`}>
+                        {hasNetworkCable ? '🌐 Ada Kabel FO' : '🚫 PJU Murni'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Alamat & Posisi Spasial */}
+              <div>
+                <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1.5">
+                  2. Lokasi Spasial &amp; Posisi Jalan:
+                </span>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Ruas Jalan</span>
+                    <span className="font-bold text-slate-900 block mt-0.5 text-xs">{road}</span>
+                    {patokanLokasi && (
+                      <span className="text-[10px] text-slate-600 block mt-0.5">
+                        Patokan: <strong>{patokanLokasi}</strong>
+                      </span>
+                    )}
+                    <span className="text-[10px] text-slate-500 block mt-0.5">
+                      Kel. {kelurahan}, Kec. {kecamatan}, Kota Lubuklinggau
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Sisi Jalan</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">
+                      {sisiJalan === 'MEDIAN'
+                        ? '● Median Tengah'
+                        : sisiJalan === 'KANAN'
+                        ? 'Sisi Kanan ▶'
+                        : sisiJalan === 'KIRI'
+                        ? '◀ Sisi Kiri'
+                        : 'Tidak Ditentukan'}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Metode Penentuan</span>
+                    <span className="font-bold text-slate-800 block mt-0.5">
+                      {distanceFromDevice && distanceFromDevice > 0.5 ? '📌 Geser Pin Peta' : '🛰️ GPS Device'}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Koordinat WGS84 &amp; Akurasi</span>
+                      <span className="text-[9px] font-bold text-emerald-600">Presisi GPS</span>
+                    </div>
+                    <span className="font-mono text-emerald-600 font-bold block mt-0.5 text-xs">
+                      {confirmedCoord.lat.toFixed(6)}, {confirmedCoord.lng.toFixed(6)}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5">
+                      Akurasi: {gpsAccuracy ? `±${gpsAccuracy.toFixed(1)}m` : 'Presisi'} • Deviasi ke Tiang: {formatDistance(distanceFromDevice || 0)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Temuan Masalah di Lapangan */}
+              <div>
+                <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1.5">
+                  3. Temuan Masalah &amp; Bahaya Lapangan:
+                </span>
+                {(isTilted || isMessyCable || isLowCable || isCorroded || isObstructing || isHazardous) ? (
+                  <div className="flex flex-wrap gap-1">
+                    {isTilted && <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">⚠️ Tiang Miring</span>}
+                    {isMessyCable && <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">🔌 Kabel Semrawut</span>}
+                    {isLowCable && <span className="px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-[10px] font-bold">🚨 Kabel Rendah</span>}
+                    {isCorroded && <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">⚙️ Karat/Retak</span>}
+                    {isObstructing && <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">🚷 Ganggu Jalan</span>}
+                    {isHazardous && <span className="px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-[10px] font-bold">💥 Bahaya Listrik</span>}
+                  </div>
+                ) : (
+                  <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-[10px] font-bold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Tidak ditemukan potensi bahaya / Tiang dalam kondisi aman</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 5. Catatan Lapangan & Petugas Surveyor */}
+              <div className="grid grid-cols-2 gap-1.5 text-[10px] pt-1 border-t border-slate-100">
+                <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 col-span-2">
+                  <span className="text-slate-400 block text-[8px] font-bold uppercase">Catatan Keterangan Lapangan</span>
+                  <span className="font-medium text-slate-700 block mt-0.5 text-[11px] italic">
+                    {description || 'Tidak ada catatan tambahan'}
+                  </span>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                  <span className="text-slate-400 block text-[8px] font-bold uppercase">Petugas Surveyor</span>
+                  <span className="font-bold text-slate-800 block mt-0.5 truncate">{surveyorName}</span>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                  <span className="text-slate-400 block text-[8px] font-bold uppercase">Waktu Survei</span>
+                  <span className="font-bold text-slate-800 block mt-0.5">{surveyDate} • {surveyTime}</span>
+                </div>
+              </div>
             </div>
 
             {/* Error message */}
