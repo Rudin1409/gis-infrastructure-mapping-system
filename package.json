@@ -10,6 +10,7 @@
     "setup:sheets": "node scripts/setup-sheets.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "clsx": "^2.1.1",
     "googleapis": "^144.0.0",
     "leaflet": "^1.9.4",

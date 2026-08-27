@@ -1,0 +1,24 @@
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = 'https://qdiswcejzxwrrbirzstv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function testConnection() {
+  console.log('🚀 Menguji koneksi ke Supabase Project: qdiswcejzxwrrbirzstv...');
+  try {
+    const { data, error } = await supabase.from('poles').select('count', { count: 'exact', head: true });
+    if (error) {
+      console.log('⚠️ Tabel poles belum dibuat atau memerlukan eksekusi SQL di Supabase SQL Editor:', error.message);
+      return false;
+    }
+    console.log('✅ KONEKSI SUPABASE BERHASIL! Total data saat ini:', data);
+    return true;
+  } catch (err) {
+    console.error('Error:', err);
+    return false;
+  }
+}
+
+testConnection();
