@@ -25,6 +25,7 @@ export interface CreateSegmentInput {
   fromNodeId: string;
   toNodeId: string;
   providerId: string;
+  providerName?: string;
   networkType: NetworkType;
   installationType: InstallationType;
   estimatedDistance?: number;

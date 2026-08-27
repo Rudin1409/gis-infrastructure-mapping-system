@@ -104,6 +104,7 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
       from_node_id: input.fromNodeId,
       to_node_id: input.toNodeId,
       provider_id: input.providerId,
+      provider_name: input.providerName || undefined,
       network_type: input.networkType || 'FIBER_OPTIC',
       installation_type: input.installationType || 'AERIAL',
       estimated_distance: input.estimatedDistance || 0,

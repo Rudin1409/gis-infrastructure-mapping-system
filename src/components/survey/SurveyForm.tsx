@@ -44,6 +44,7 @@ import {
   Check,
   Zap,
   Lightbulb,
+  Plus,
 } from 'lucide-react';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
 import PoleVisualGuideModal, { PoleMiniGraphic } from './PoleVisualGuideModal';
@@ -118,6 +119,8 @@ export default function SurveyForm({
 
   const [isAutoDetecting, setIsAutoDetecting] = useState(true);
   const [showCodeInfoModal, setShowCodeInfoModal] = useState(false);
+  const [isSmartMemoryApplied, setIsSmartMemoryApplied] = useState(false);
+  const [smartMemoryNotice, setSmartMemoryNotice] = useState<string | null>(null);
 
   // --- SUBMISSION STATE ---
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,7 +129,37 @@ export default function SurveyForm({
   >('IDLE');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Auto-reverse geocode location from GPS coordinate
+  // 1. Smart Memory: Load previous pole attributes on initial mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('gis_smart_memory_pole');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.providerId) setProviderId(data.providerId);
+        if (data.poleType) setPoleType(data.poleType);
+        if (data.condition) setCondition(data.condition);
+        if (data.height) setHeight(data.height);
+        if (data.ownershipStatus) setOwnershipStatus(data.ownershipStatus);
+        if (data.road) setRoad(data.road);
+        if (data.kecamatan) setKecamatan(data.kecamatan);
+        if (data.kelurahan) setKelurahan(data.kelurahan);
+        if (data.sisiJalan) setSisiJalan(data.sisiJalan);
+        if (data.infrastructureCategory) setInfrastructureCategory(data.infrastructureCategory);
+        if (data.cableInstallationType) setCableInstallationType(data.cableInstallationType);
+        if (data.pjuLampType) setPjuLampType(data.pjuLampType);
+        if (data.pjuLampPower) setPjuLampPower(data.pjuLampPower);
+
+        setIsSmartMemoryApplied(true);
+        setSmartMemoryNotice(
+          `${data.road || 'Jalan'} • ${data.providerName || data.providerId || 'Provider'}`
+        );
+      }
+    } catch (e) {
+      console.warn('Smart memory load notice:', e);
+    }
+  }, []);
+
+  // 2. Auto-reverse geocode location from GPS coordinate
   useEffect(() => {
     let isMounted = true;
     async function fetchSmartDetails() {
@@ -134,9 +167,10 @@ export default function SurveyForm({
       try {
         const geo = await reverseGeocodeLocation(confirmedCoord);
         if (isMounted) {
-          if (geo.road) setRoad(geo.road);
-          if (geo.kecamatan) setKecamatan(geo.kecamatan);
-          if (geo.kelurahan) setKelurahan(geo.kelurahan);
+          // If smart memory has road, only override if geocode found a specific road
+          if (geo.road && (!road || !isSmartMemoryApplied)) setRoad(geo.road);
+          if (geo.kecamatan && !isSmartMemoryApplied) setKecamatan(geo.kecamatan);
+          if (geo.kelurahan && !isSmartMemoryApplied) setKelurahan(geo.kelurahan);
           if (geo.smartPoleCode) setPoleCode(geo.smartPoleCode);
           if (geo.smartSegmentCode) setSegmentCode(geo.smartSegmentCode);
         }
@@ -150,7 +184,7 @@ export default function SurveyForm({
     return () => {
       isMounted = false;
     };
-  }, [confirmedCoord]);
+  }, [confirmedCoord, isSmartMemoryApplied]);
 
   // Available kelurahan for current selected kecamatan
   const currentKecamatanObj = KECAMATAN_LUBUKLINGGAU.find((k) => k.name === kecamatan);
@@ -175,7 +209,7 @@ export default function SurveyForm({
     setPhotoPreviewUrl(undefined);
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent, continueNext: boolean = false) => {
     if (e) e.preventDefault();
     setErrorMessage(null);
 
@@ -211,7 +245,7 @@ export default function SurveyForm({
         }
       }
 
-      // Step 2: Save record to Google Sheets / API
+      // Step 2: Save record to Supabase API
       setSubmitStage('SAVING_SHEET');
 
       const selectedProviderObj = providers.find((p) => p.id === providerId);
@@ -269,13 +303,42 @@ export default function SurveyForm({
         throw new Error(json.error || 'Gagal menyimpan data tiang ke server.');
       }
 
+      // Save to Smart Memory for next poles
+      try {
+        const smartMemoryData = {
+          providerId,
+          providerName: selectedProviderObj?.name,
+          poleType,
+          condition,
+          height,
+          ownershipStatus,
+          road: road.trim(),
+          kelurahan,
+          kecamatan,
+          sisiJalan,
+          infrastructureCategory,
+          cableInstallationType,
+          pjuLampType,
+          pjuLampPower,
+        };
+        localStorage.setItem('gis_smart_memory_pole', JSON.stringify(smartMemoryData));
+      } catch (smErr) {
+        console.warn('Smart memory save notice:', smErr);
+      }
+
       setSubmitStage('SUCCESS');
 
-      // Auto redirect to pole detail or home after brief confirmation
-      setTimeout(() => {
-        router.push(`/poles/${json.data.id}`);
-        router.refresh();
-      }, 1200);
+      // Auto redirect or Continue next pole
+      if (continueNext) {
+        setTimeout(() => {
+          onBackToMap();
+        }, 700);
+      } else {
+        setTimeout(() => {
+          router.push(`/poles/${json.data.id}`);
+          router.refresh();
+        }, 1200);
+      }
     } catch (err: any) {
       console.error('Survey submission error:', err);
       setErrorMessage(err.message || 'Terjadi kesalahan saat menyimpan data survei.');
@@ -288,6 +351,36 @@ export default function SurveyForm({
 
   return (
     <div className="space-y-3 font-sans pb-4">
+      {/* Smart Memory Banner Notice */}
+      {isSmartMemoryApplied && smartMemoryNotice && (
+        <div className="p-2.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-xs flex items-center justify-between gap-2 text-xs animate-in fade-in">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0 font-bold text-[10px]">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[11px] font-bold text-blue-950 block leading-tight truncate">
+                Smart Memory Aktif
+              </span>
+              <span className="text-[10px] text-blue-700 block truncate">
+                Otomatis menyalin atribut: {smartMemoryNotice}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.removeItem('gis_smart_memory_pole');
+              setIsSmartMemoryApplied(false);
+              setSmartMemoryNotice(null);
+            }}
+            className="px-2 py-1 rounded-lg bg-white/80 hover:bg-white text-blue-800 text-[10px] font-bold border border-blue-200 transition-colors flex-shrink-0 cursor-pointer shadow-2xs"
+          >
+            Reset
+          </button>
+        </div>
+      )}
+
       {/* 4-Step Segmented Tab Bar */}
       <div className="grid grid-cols-4 gap-1 p-1 bg-slate-200/80 rounded-2xl shadow-inner select-none">
         <button
@@ -1271,11 +1364,12 @@ export default function SurveyForm({
               </div>
             )}
 
-            {/* Final Submit Button */}
-            <div className="space-y-2 pt-1">
+            {/* Final Submit Buttons */}
+            <div className="space-y-2.5 pt-1">
               <button
-                type="submit"
+                type="button"
                 disabled={isSubmitting}
+                onClick={(e) => handleSubmit(e, false)}
                 className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] disabled:opacity-60 text-white font-black text-sm rounded-2xl shadow-xl shadow-blue-500/30 flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 {isSubmitting ? (
@@ -1302,10 +1396,21 @@ export default function SurveyForm({
                 )}
               </button>
 
+              {!isSubmitting && submitStage !== 'SUCCESS' && (
+                <button
+                  type="button"
+                  onClick={(e) => handleSubmit(e, true)}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-[0.99] text-white font-black text-xs rounded-2xl shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>SIMPAN &amp; LANJUT TIANG BERIKUTNYA (+)</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setActiveTab('SPECS')}
-                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-colors"
+                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-colors cursor-pointer"
               >
                 Ubah / Koreksi Isian
               </button>
