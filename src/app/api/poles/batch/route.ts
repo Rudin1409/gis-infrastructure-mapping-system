@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 interface BatchCreateCorridorPayload {
   poles: Array<{
+    existingPoleId?: string;
     poleLatitude: number;
     poleLongitude: number;
     poleCode?: string;
@@ -48,9 +49,19 @@ export async function POST(request: NextRequest) {
     const segmentRepo = getSegmentRepository();
     const createdSegments: NetworkSegment[] = [];
 
-    // 1. Create all poles sequentially in Supabase
+    // 1. Create or resolve all poles sequentially in Supabase
     for (let i = 0; i < body.poles.length; i++) {
       const p = body.poles[i];
+
+      // If this waypoint is already an existing pole, reuse it!
+      if (p.existingPoleId) {
+        const existing = await poleService.getPoleById(p.existingPoleId);
+        if (existing) {
+          createdPoles.push(existing);
+          continue;
+        }
+      }
+
       const newPole = await poleService.createPole({
         poleLatitude: p.poleLatitude,
         poleLongitude: p.poleLongitude,
