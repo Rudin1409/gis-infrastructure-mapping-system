@@ -173,7 +173,7 @@ export default async function PoleDetailPage({
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
             <span className="text-slate-400 block text-[9px] uppercase font-bold">Material &amp; Tinggi</span>
             <span className="font-bold text-slate-800 block mt-0.5 capitalize">
-              {pole.poleType} • {pole.height || '7m'}
+              {pole.poleType} • {pole.height || '5m'}
             </span>
           </div>
 
@@ -266,7 +266,7 @@ export default async function PoleDetailPage({
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
               <div className="bg-white p-2 rounded-xl border border-amber-200">
                 <span className="text-slate-400 block text-[8px] font-bold uppercase">Tipe Lampu</span>
                 <span className="font-bold text-slate-800 block mt-0.5">
@@ -283,6 +283,12 @@ export default async function PoleDetailPage({
                 <span className="text-slate-400 block text-[8px] font-bold uppercase">KWh Meter</span>
                 <span className="font-bold text-slate-800 block mt-0.5">
                   {pole.hasKwhMeter ? 'Ada Meter' : 'Non-Meter'}
+                </span>
+              </div>
+              <div className="bg-white p-2 rounded-xl border border-amber-200">
+                <span className="text-slate-400 block text-[8px] font-bold uppercase">Kabel Jaringan</span>
+                <span className={`font-bold block mt-0.5 ${pole.hasNetworkCable ? 'text-blue-700 font-black' : 'text-slate-700'}`}>
+                  {pole.hasNetworkCable ? '🌐 Ada Kabel FO' : '🚫 PJU Murni'}
                 </span>
               </div>
             </div>

@@ -53,6 +53,7 @@ export const POLE_HEADERS = [
   'Kondisi_Lampu_PJU',
   'Ada_Kwh_Meter',
   'Tipe_Pemasangan_Kabel',
+  'Kabel_Jaringan_Menumpang',
 ];
 
 export const PROVIDER_HEADERS = [
@@ -132,7 +133,7 @@ export function poleToSheetRow(pole: Pole): (string | number)[] {
     pole.kota || 'Kota Lubuklinggau',
     pole.patokanLokasi || '',
     pole.sisiJalan || 'TIDAK_DITENTUKAN',
-    pole.height || '7m',
+    pole.height || '5m',
     pole.ownershipStatus || 'SENDIRI',
     pole.isTilted ? 'YA' : 'TIDAK',
     pole.isMessyCable ? 'YA' : 'TIDAK',
@@ -157,6 +158,7 @@ export function poleToSheetRow(pole: Pole): (string | number)[] {
     pole.pjuLampCondition || '',
     pole.hasKwhMeter ? 'YA' : 'TIDAK',
     pole.cableInstallationType || 'UDARA',
+    pole.hasNetworkCable ? 'YA' : 'TIDAK',
   ];
 }
 
@@ -186,7 +188,7 @@ export function sheetRowToPole(row: any[]): Pole | null {
     kota: row[16] ? String(row[16]) : 'Kota Lubuklinggau',
     patokanLokasi: row[17] ? String(row[17]) : undefined,
     sisiJalan: row[18] || 'TIDAK_DITENTUKAN',
-    height: row[19] ? String(row[19]) : '7m',
+    height: row[19] ? String(row[19]) : '5m',
     ownershipStatus: row[20] || 'SENDIRI',
     isTilted: row[21] === 'YA' || row[21] === 'TRUE' || row[21] === true,
     isMessyCable: row[22] === 'YA' || row[22] === 'TRUE' || row[22] === true,
@@ -213,6 +215,7 @@ export function sheetRowToPole(row: any[]): Pole | null {
     pjuLampCondition: row[41] || undefined,
     hasKwhMeter: row[42] === 'YA' || row[42] === 'TRUE' || row[42] === true,
     cableInstallationType: row[43] || 'UDARA',
+    hasNetworkCable: row[44] === 'YA' || row[44] === 'TRUE' || row[44] === true,
   };
 }
 

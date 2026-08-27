@@ -515,11 +515,11 @@ export default function PoleListFilterClient({
                     {/* Category Badge */}
                     {pole.infrastructureCategory === 'PJU_MANDIRI' ? (
                       <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-md text-[9px] font-bold">
-                        💡 PJU Mandiri
+                        💡 PJU Mandiri {pole.hasNetworkCable ? '• 🌐 Ada FO' : ''}
                       </span>
                     ) : pole.infrastructureCategory === 'GABUNG_PLN_PJU' ? (
                       <span className="px-2 py-0.5 bg-cyan-50 text-cyan-900 border border-cyan-200 rounded-md text-[9px] font-bold">
-                        ⚡💡 PLN+PJU
+                        ⚡💡 PLN+PJU {pole.hasNetworkCable ? '• 🌐 Ada FO' : ''}
                       </span>
                     ) : pole.infrastructureCategory === 'PLN_MURNI' ? (
                       <span className="px-2 py-0.5 bg-sky-50 text-sky-900 border border-sky-200 rounded-md text-[9px] font-bold">
@@ -539,7 +539,7 @@ export default function PoleListFilterClient({
                     ) : null}
 
                     <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[9px] font-bold uppercase">
-                      {pole.poleType} ({pole.height || '7m'})
+                      {pole.poleType} ({pole.height || '5m'})
                     </span>
                   </div>
 
