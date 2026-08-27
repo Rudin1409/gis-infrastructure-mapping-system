@@ -33,6 +33,11 @@ import {
   Sliders,
   Settings2,
   Share2,
+  Trash2,
+  CheckSquare,
+  Square,
+  Route,
+  Navigation,
 } from 'lucide-react';
 import Link from 'next/link';
 import { LUBUKLINGGAU_KELURAHAN_BOUNDARIES } from '@/lib/gis/boundaries';
@@ -45,6 +50,7 @@ import {
 import { findPolesPath } from '@/lib/gis/pathfinding';
 import { interpolatePolesAlongPath } from '@/lib/gis/corridorInterpolation';
 import { reverseGeocodeLocation } from '@/lib/gis/geocoding';
+import { fetchRoadGeometry, offsetCoordinatePerpendicular } from '@/lib/gis/roadRouting';
 import { Coordinates } from '@/types/gis';
 import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
 
@@ -86,6 +92,10 @@ export default function GISOverviewMap({
   const [corridorWaypoints, setCorridorWaypoints] = useState<Coordinates[]>([]);
   const [corridorInterval, setCorridorInterval] = useState<number>(35);
   const [corridorEqualSpacing, setCorridorEqualSpacing] = useState<boolean>(true);
+  const [corridorSnapToRoad, setCorridorSnapToRoad] = useState<boolean>(true);
+  const [corridorRoadSide, setCorridorRoadSide] = useState<'KIRI' | 'KANAN' | 'TENGAH'>('KIRI');
+  const [corridorRoadCoords, setCorridorRoadCoords] = useState<Coordinates[]>([]);
+  const [isLoadingRoadGeometry, setIsLoadingRoadGeometry] = useState<boolean>(false);
   const [corridorProviderId, setCorridorProviderId] = useState<string>('PRV_TELKOM');
   const [corridorPoleType, setCorridorPoleType] = useState<string>('BETON');
   const [corridorHeight, setCorridorHeight] = useState<string>('7m');
@@ -95,6 +105,11 @@ export default function GISOverviewMap({
   const [corridorWithCable, setCorridorWithCable] = useState<boolean>(true);
   const [isGeneratingCorridor, setIsGeneratingCorridor] = useState<boolean>(false);
   const [corridorResultToast, setCorridorResultToast] = useState<string | null>(null);
+
+  // 🗑️ MULTI-SELECT BATCH DELETE POLES STATE
+  const [isBatchDeleteMode, setIsBatchDeleteMode] = useState<boolean>(false);
+  const [selectedDeleteIds, setSelectedDeleteIds] = useState<string[]>([]);
+  const [isDeletingBatch, setIsDeletingBatch] = useState<boolean>(false);
 
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -214,15 +229,82 @@ export default function GISOverviewMap({
     });
   }, []);
 
-  // Compute interpolated poles along corridor
+  // Fetch OSRM Road Geometry when waypoints change
+  useEffect(() => {
+    if (corridorWaypoints.length >= 2 && corridorSnapToRoad) {
+      setIsLoadingRoadGeometry(true);
+      fetchRoadGeometry(corridorWaypoints)
+        .then(({ coordinates }) => {
+          setCorridorRoadCoords(coordinates);
+        })
+        .finally(() => {
+          setIsLoadingRoadGeometry(false);
+        });
+    } else {
+      setCorridorRoadCoords(corridorWaypoints);
+    }
+  }, [corridorWaypoints, corridorSnapToRoad]);
+
+  // Compute interpolated poles along road corridor with roadside offset
   const interpolatedCorridor = React.useMemo(() => {
-    if (corridorWaypoints.length < 2) return null;
-    return interpolatePolesAlongPath(
-      corridorWaypoints,
+    const rawPts = corridorRoadCoords.length >= 2 ? corridorRoadCoords : corridorWaypoints;
+    if (rawPts.length < 2) return null;
+
+    const baseResult = interpolatePolesAlongPath(
+      rawPts,
       corridorInterval,
       corridorEqualSpacing
     );
-  }, [corridorWaypoints, corridorInterval, corridorEqualSpacing]);
+
+    // Apply roadside perpendicular offset if requested (-2.5m for KIRI, +2.5m for KANAN)
+    const offsetMeters =
+      corridorRoadSide === 'KIRI' ? -2.5 : corridorRoadSide === 'KANAN' ? 2.5 : 0;
+
+    if (offsetMeters === 0 || baseResult.poles.length === 0) {
+      return baseResult;
+    }
+
+    const offsetPoles = baseResult.poles.map((p, idx) => {
+      let bearing = 0;
+      if (idx < baseResult.poles.length - 1) {
+        const next = baseResult.poles[idx + 1].coord;
+        const dLng = ((next.lng - p.coord.lng) * Math.PI) / 180;
+        const lat1 = (p.coord.lat * Math.PI) / 180;
+        const lat2 = (next.lat * Math.PI) / 180;
+        const y = Math.sin(dLng) * Math.cos(lat2);
+        const x =
+          Math.cos(lat1) * Math.sin(lat2) -
+          Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+        bearing = (Math.atan2(y, x) * 180) / Math.PI;
+      } else if (idx > 0) {
+        const prev = baseResult.poles[idx - 1].coord;
+        const dLng = ((p.coord.lng - prev.lng) * Math.PI) / 180;
+        const lat1 = (prev.lat * Math.PI) / 180;
+        const lat2 = (p.coord.lat * Math.PI) / 180;
+        const y = Math.sin(dLng) * Math.cos(lat2);
+        const x =
+          Math.cos(lat1) * Math.sin(lat2) -
+          Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+        bearing = (Math.atan2(y, x) * 180) / Math.PI;
+      }
+
+      return {
+        ...p,
+        coord: offsetCoordinatePerpendicular(p.coord, bearing, offsetMeters),
+      };
+    });
+
+    return {
+      ...baseResult,
+      poles: offsetPoles,
+    };
+  }, [
+    corridorRoadCoords,
+    corridorWaypoints,
+    corridorInterval,
+    corridorEqualSpacing,
+    corridorRoadSide,
+  ]);
 
   // Auto zoom/fit bounds when Point B (2 waypoints) is placed
   useEffect(() => {
@@ -241,8 +323,9 @@ export default function GISOverviewMap({
     if (!isCorridorMode) return;
 
     if (corridorWaypoints.length >= 2 && interpolatedCorridor) {
-      // 1. Dotted guide line
-      const latlngs: [number, number][] = corridorWaypoints.map((p) => [p.lat, p.lng]);
+      // 1. Dotted guide line along actual road geometry
+      const guidePoints = corridorRoadCoords.length >= 2 ? corridorRoadCoords : corridorWaypoints;
+      const latlngs: [number, number][] = guidePoints.map((p) => [p.lat, p.lng]);
       const polyline = L.polyline(latlngs, {
         color: '#2563eb',
         weight: 4,
@@ -289,6 +372,7 @@ export default function GISOverviewMap({
           }</b><br/>` +
             `📍 Jarak Bentang: <b>+${p.spanFromPrevious} m</b><br/>` +
             `📏 Jarak Kumulatif: <b>${p.distanceFromStart} m</b><br/>` +
+            `🛣️ Posisi: <b>Sisi ${corridorRoadSide} Jalan</b><br/>` +
             `🏷️ Kode: <code>${p.poleCode}</code>`,
           { direction: 'top', offset: [0, -12] }
         );
@@ -327,7 +411,16 @@ export default function GISOverviewMap({
       });
       marker.addTo(corridorLayerGroupRef.current);
     }
-  }, [leafletLib, isCorridorMode, corridorWaypoints, corridorInterval, corridorEqualSpacing, interpolatedCorridor]);
+  }, [
+    leafletLib,
+    isCorridorMode,
+    corridorWaypoints,
+    corridorRoadCoords,
+    corridorInterval,
+    corridorEqualSpacing,
+    corridorRoadSide,
+    interpolatedCorridor,
+  ]);
 
   // Toggle Corridor Generator Mode
   const toggleCorridorMode = () => {
@@ -408,6 +501,55 @@ export default function GISOverviewMap({
     }
   };
 
+  // Toggle Batch Delete Mode
+  const toggleBatchDeleteMode = () => {
+    if (isBatchDeleteMode) {
+      setIsBatchDeleteMode(false);
+      setSelectedDeleteIds([]);
+    } else {
+      setIsBatchDeleteMode(true);
+      setIsCorridorMode(false);
+      setIsMeasuring(false);
+      setSelectedPole(null);
+      setSelectedDeleteIds([]);
+    }
+  };
+
+  // Execute Batch Delete from Supabase & Google Sheets
+  const handleExecuteBatchDelete = async () => {
+    if (selectedDeleteIds.length === 0) return;
+
+    const confirmMsg = `Yakin ingin menghapus ${selectedDeleteIds.length} tiang terpilih beserta segmen kabelnya dari database Supabase dan Google Sheets?`;
+    if (!confirm(confirmMsg)) return;
+
+    setIsDeletingBatch(true);
+    try {
+      const res = await fetch('/api/poles/batch-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedDeleteIds }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Gagal menghapus tiang');
+      }
+
+      setCorridorResultToast(`🗑️ ${json.message}`);
+      setSelectedDeleteIds([]);
+      setIsBatchDeleteMode(false);
+      refreshPoles();
+
+      setTimeout(() => {
+        setCorridorResultToast(null);
+      }, 4000);
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat menghapus tiang');
+    } finally {
+      setIsDeletingBatch(false);
+    }
+  };
+
   // Toggle Tile Layer
   const toggleTileMode = () => {
     if (!leafletLib || !mapInstanceRef.current) return;
@@ -456,6 +598,7 @@ export default function GISOverviewMap({
     } else {
       setIsMeasuring(true);
       setIsCorridorMode(false);
+      setIsBatchDeleteMode(false);
       setSelectedPole(null);
       setMeasuredPoles([]);
     }
@@ -465,6 +608,7 @@ export default function GISOverviewMap({
     setSelectedPole(null);
     setIsMeasuring(true);
     setIsCorridorMode(false);
+    setIsBatchDeleteMode(false);
     setMeasuredPoles([pole]);
   };
 
@@ -488,10 +632,17 @@ export default function GISOverviewMap({
     return true;
   });
 
-  // Handle Pole Marker Clicks with Smart Auto-Routing
+  // Handle Pole Marker Clicks with Smart Auto-Routing & Batch Delete
   const handlePoleClick = (pole: Pole) => {
+    if (isBatchDeleteMode) {
+      setSelectedDeleteIds((prev) =>
+        prev.includes(pole.id) ? prev.filter((id) => id !== pole.id) : [...prev, pole.id]
+      );
+      return;
+    }
+
     if (isCorridorMode) {
-      setCorridorWaypoints((prev) => [...prev, { lat: pole.poleLatitude, lng: pole.poleLongitude }]);
+      addCorridorWaypoint({ lat: pole.poleLatitude, lng: pole.poleLongitude });
       return;
     }
 
@@ -584,6 +735,8 @@ export default function GISOverviewMap({
         providers.find((pr) => pr.id === pole.providerId) ||
         DEFAULT_PROVIDERS.find((pr) => pr.id === pole.providerId);
 
+      const isSelectedForDelete = isBatchDeleteMode && selectedDeleteIds.includes(pole.id);
+
       const markerIcon = createProviderPoleMarkerIcon(L, {
         colorHex: provObj?.colorHex || '#2563eb',
         condition: pole.condition,
@@ -601,6 +754,19 @@ export default function GISOverviewMap({
       });
 
       marker.addTo(markersLayerGroupRef.current!);
+
+      // If selected for batch delete, render pulsing red selection halo
+      if (isSelectedForDelete) {
+        const deleteRing = L.circleMarker([pole.poleLatitude, pole.poleLongitude], {
+          radius: 18,
+          color: '#ef4444',
+          fillColor: '#ef4444',
+          fillOpacity: 0.4,
+          weight: 3,
+          dashArray: '3, 3',
+        });
+        deleteRing.addTo(markersLayerGroupRef.current!);
+      }
     });
 
     // Auto fit bounds if search query is entered
@@ -610,7 +776,17 @@ export default function GISOverviewMap({
       );
       mapInstanceRef.current.fitBounds(bounds, { maxZoom: 16, padding: [50, 50] });
     }
-  }, [filteredPoles, segments, leafletLib, searchQuery, isMeasuring, measuredPoles, autoRouteMode]);
+  }, [
+    filteredPoles,
+    segments,
+    leafletLib,
+    searchQuery,
+    isMeasuring,
+    measuredPoles,
+    autoRouteMode,
+    isBatchDeleteMode,
+    selectedDeleteIds,
+  ]);
 
   // Render Multi-Pole Measurement Route & Distance Badges
   useEffect(() => {
@@ -777,6 +953,21 @@ export default function GISOverviewMap({
           >
             <Zap className={`w-3.5 h-3.5 ${isCorridorMode ? 'text-amber-300 fill-amber-300' : 'text-blue-600 fill-blue-600'}`} />
             <span>{isCorridorMode ? 'Mode Jalur Aktif' : 'Tarik Jalur Otomatis'}</span>
+          </button>
+
+          {/* 0.5 🗑️ Batch Delete Poles Mode Toggle */}
+          <button
+            type="button"
+            onClick={toggleBatchDeleteMode}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold border shadow-md backdrop-blur-md whitespace-nowrap transition-all cursor-pointer ${
+              isBatchDeleteMode
+                ? 'bg-red-600 text-white border-red-600 ring-2 ring-red-300 shadow-red-500/30'
+                : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
+            }`}
+            title="Pilih beberapa pin tiang di peta untuk dihapus massal"
+          >
+            <Trash2 className={`w-3.5 h-3.5 ${isBatchDeleteMode ? 'text-white' : 'text-red-500'}`} />
+            <span>{isBatchDeleteMode ? `Pilih Hapus (${selectedDeleteIds.length})` : 'Pilih & Hapus'}</span>
           </button>
 
           {/* 1. Ruler Tool Toggle */}
@@ -1309,18 +1500,58 @@ export default function GISOverviewMap({
             </div>
           </div>
 
-          {/* Cable Interconnect Toggle */}
-          <label className="flex items-center gap-2 pt-1 text-xs text-slate-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={corridorWithCable}
-              onChange={(e) => setCorridorWithCable(e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded-md border-slate-300"
-            />
-            <span className="font-bold text-[11px]">
-              🔗 Hubungkan kabel antar-tiang sekaligus (Topologi Fiber Optic)
-            </span>
-          </label>
+          {/* Sisi Jalan (Side of Road) Selector */}
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+              Posisi Sisi Jalan (Mencegah Tiang Menyebrang):
+            </label>
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-2xl text-center">
+              {(['KIRI', 'TENGAH', 'KANAN'] as const).map((side) => (
+                <button
+                  key={side}
+                  type="button"
+                  onClick={() => setCorridorRoadSide(side)}
+                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                    corridorRoadSide === side
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {side === 'KIRI' ? '◀ Sisi Kiri' : side === 'KANAN' ? 'Sisi Kanan ▶' : '● As Jalan'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Road Snapping & Cable Interconnect Options */}
+          <div className="space-y-1.5 pt-1">
+            <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={corridorSnapToRoad}
+                onChange={(e) => setCorridorSnapToRoad(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded-md border-slate-300"
+              />
+              <span className="font-bold text-[11px] flex items-center gap-1">
+                🛣️ Ikuti Kelokan Garis Jalan Otomatis (OSRM Road Snapping)
+                {isLoadingRoadGeometry && (
+                  <span className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin ml-1" />
+                )}
+              </span>
+            </label>
+
+            <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={corridorWithCable}
+                onChange={(e) => setCorridorWithCable(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded-md border-slate-300"
+              />
+              <span className="font-bold text-[11px]">
+                🔗 Hubungkan kabel antar-tiang sekaligus (Topologi Fiber Optic)
+              </span>
+            </label>
+          </div>
 
           {/* Action Apply Button */}
           <div className="pt-1 flex gap-2">
@@ -1357,6 +1588,80 @@ export default function GISOverviewMap({
               className="px-3.5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition-colors cursor-pointer"
             >
               Reset Titik
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Multi-Select Batch Delete Bar */}
+      {isBatchDeleteMode && (
+        <div className="absolute bottom-20 sm:bottom-24 left-3.5 right-3.5 z-[490] bg-slate-950/95 text-white border border-red-500/60 rounded-3xl p-4 shadow-[0_12px_40px_rgba(239,68,68,0.25)] backdrop-blur-xl flex flex-col gap-3 animate-in slide-in-from-bottom-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-2xl bg-red-600 text-white flex items-center justify-center font-bold shadow-md shadow-red-600/30">
+                <Trash2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="font-black text-xs uppercase tracking-wider text-white">
+                  Mode Pilih &amp; Hapus Massal
+                </h4>
+                <p className="text-[11px] text-slate-300 leading-tight">
+                  {selectedDeleteIds.length === 0
+                    ? 'Ketuk pin tiang di peta untuk memilih tiang yang ingin dihapus'
+                    : `${selectedDeleteIds.length} tiang terpilih untuk dihapus`}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsBatchDeleteMode(false);
+                setSelectedDeleteIds([]);
+              }}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white cursor-pointer"
+              title="Tutup Mode Hapus"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10 text-xs">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setSelectedDeleteIds(filteredPoles.map((p) => p.id))}
+                className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-slate-200 font-bold rounded-xl text-[10px] cursor-pointer"
+              >
+                Pilih Semua ({filteredPoles.length})
+              </button>
+              {selectedDeleteIds.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDeleteIds([])}
+                  className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-slate-400 font-bold rounded-xl text-[10px] cursor-pointer"
+                >
+                  Kosongkan
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              disabled={selectedDeleteIds.length === 0 || isDeletingBatch}
+              onClick={handleExecuteBatchDelete}
+              className="py-2.5 px-4 bg-red-600 hover:bg-red-700 active:scale-95 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-lg shadow-red-600/30 flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              {isDeletingBatch ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Menghapus...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Hapus {selectedDeleteIds.length} Tiang Terpilih</span>
+                </>
+              )}
             </button>
           </div>
         </div>
