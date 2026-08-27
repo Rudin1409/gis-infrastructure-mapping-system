@@ -9,6 +9,49 @@ import {
 import { IProviderRepository } from './interfaces/IProviderRepository';
 import { Provider } from '@/types/provider';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
+import { isSupabaseConfigured } from './PoleRepositoryFactory';
+import { supabase } from '@/lib/supabase';
+
+export class SupabaseProviderRepository implements IProviderRepository {
+  async findAll(): Promise<Provider[]> {
+    const { data, error } = await supabase.from('providers').select('*').order('name', { ascending: true });
+    if (error || !data || data.length === 0) {
+      return DEFAULT_PROVIDERS;
+    }
+    return data.map((d: any) => ({
+      id: d.id,
+      name: d.name,
+      code: d.code,
+      colorHex: d.color || d.colorHex || '#3b82f6',
+      status: d.status,
+    }));
+  }
+
+  async findById(id: string): Promise<Provider | null> {
+    const { data, error } = await supabase.from('providers').select('*').eq('id', id).single();
+    if (error || !data) {
+      return DEFAULT_PROVIDERS.find((p) => p.id === id) || null;
+    }
+    return {
+      id: data.id,
+      name: data.name,
+      code: data.code,
+      colorHex: data.color || data.colorHex || '#3b82f6',
+      status: data.status,
+    };
+  }
+
+  async create(provider: Provider): Promise<Provider> {
+    await supabase.from('providers').upsert({
+      id: provider.id,
+      name: provider.name,
+      code: provider.code,
+      color: provider.colorHex || '#3b82f6',
+      status: provider.status,
+    });
+    return provider;
+  }
+}
 
 export class GoogleSheetsProviderRepository implements IProviderRepository {
   private spreadsheetId: string;
@@ -33,7 +76,6 @@ export class GoogleSheetsProviderRepository implements IProviderRepository {
 
       const rows = response.data.values || [];
       if (rows.length === 0) {
-        // Seed default providers to Google Sheets if empty
         await this.seedDefaults(sheets);
         return DEFAULT_PROVIDERS;
       }
@@ -91,5 +133,8 @@ export class GoogleSheetsProviderRepository implements IProviderRepository {
 }
 
 export function getProviderRepository(): IProviderRepository {
+  if (isSupabaseConfigured()) {
+    return new SupabaseProviderRepository();
+  }
   return new GoogleSheetsProviderRepository();
 }
