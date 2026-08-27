@@ -2,7 +2,15 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import type L from 'leaflet';
-import { Pole } from '@/types/pole';
+import {
+  Pole,
+  InfrastructureCategory,
+  PoleCondition,
+  OwnershipStatus,
+  CableInstallationType,
+  LampuPjuType,
+  LampuPjuCondition,
+} from '@/types/pole';
 import { NetworkSegment } from '@/types/segment';
 import { Provider } from '@/types/provider';
 import { MAP_TILE_LAYERS } from '@/lib/gis/tiles';
@@ -98,8 +106,17 @@ export default function GISOverviewMap({
   const [corridorRoadCoords, setCorridorRoadCoords] = useState<Coordinates[]>([]);
   const [isLoadingRoadGeometry, setIsLoadingRoadGeometry] = useState<boolean>(false);
   const [corridorProviderId, setCorridorProviderId] = useState<string>('PRV_TELKOM');
+  const [corridorCategory, setCorridorCategory] = useState<InfrastructureCategory>('FO_WIFI');
   const [corridorPoleType, setCorridorPoleType] = useState<string>('BETON');
   const [corridorHeight, setCorridorHeight] = useState<string>('5m');
+  const [corridorCondition, setCorridorCondition] = useState<PoleCondition>('GOOD');
+  const [corridorOwnershipStatus, setCorridorOwnershipStatus] = useState<OwnershipStatus>('SENDIRI');
+  const [corridorCableInstallationType, setCorridorCableInstallationType] = useState<CableInstallationType>('UDARA');
+  const [corridorHasNetworkCable, setCorridorHasNetworkCable] = useState<boolean>(false);
+  const [corridorPjuLampType, setCorridorPjuLampType] = useState<LampuPjuType>('LED');
+  const [corridorPjuLampPower, setCorridorPjuLampPower] = useState<string>('90W');
+  const [corridorPjuLampCondition, setCorridorPjuLampCondition] = useState<LampuPjuCondition>('MENYALA_NORMAL');
+  const [corridorHasKwhMeter, setCorridorHasKwhMeter] = useState<boolean>(false);
   const [corridorRoad, setCorridorRoad] = useState<string>('Jalan Garuda');
   const [corridorKecamatan, setCorridorKecamatan] = useState<string>(KECAMATAN_LUBUKLINGGAU[0].name);
   const [corridorKelurahan, setCorridorKelurahan] = useState<string>(KECAMATAN_LUBUKLINGGAU[0].kelurahan[0]);
@@ -468,14 +485,35 @@ export default function GISOverviewMap({
           providerName: selectedProv?.name || 'Provider',
           poleType: corridorPoleType,
           height: corridorHeight,
-          condition: 'GOOD',
-          sisiJalan: 'KIRI',
-          infrastructureCategory: 'FO_WIFI',
-          cableInstallationType: 'UDARA',
+          condition: corridorCondition,
+          sisiJalan: corridorRoadSide,
+          infrastructureCategory: corridorCategory,
+          ownershipStatus: corridorOwnershipStatus,
+          cableInstallationType: corridorCableInstallationType,
+          hasNetworkCable:
+            corridorCategory === 'PJU_MANDIRI' || corridorCategory === 'GABUNG_PLN_PJU'
+              ? corridorHasNetworkCable
+              : undefined,
+          pjuLampType:
+            corridorCategory === 'PJU_MANDIRI' || corridorCategory === 'GABUNG_PLN_PJU'
+              ? corridorPjuLampType
+              : undefined,
+          pjuLampPower:
+            corridorCategory === 'PJU_MANDIRI' || corridorCategory === 'GABUNG_PLN_PJU'
+              ? corridorPjuLampPower
+              : undefined,
+          pjuLampCondition:
+            corridorCategory === 'PJU_MANDIRI' || corridorCategory === 'GABUNG_PLN_PJU'
+              ? corridorPjuLampCondition
+              : undefined,
+          hasKwhMeter:
+            corridorCategory === 'PJU_MANDIRI' || corridorCategory === 'GABUNG_PLN_PJU'
+              ? corridorHasKwhMeter
+              : false,
         })),
         createSegments: corridorWithCable,
-        networkType: 'FIBER_OPTIC',
-        installationType: 'AERIAL',
+        networkType: corridorCategory === 'FO_WIFI' ? 'FIBER_OPTIC' : 'JARINGAN_KABEL',
+        installationType: corridorCableInstallationType,
       };
 
       const res = await fetch('/api/poles/batch', {
@@ -1749,7 +1787,112 @@ export default function GISOverviewMap({
             </div>
           )}
 
-          {/* Attributes Setup (Grid) */}
+          {/* 1. Kategori Infrastruktur (Seragam dengan SurveyForm) */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">
+              Kategori Infrastruktur Tiang:
+            </label>
+            <div className="grid grid-cols-2 gap-1 text-[11px]">
+              {[
+                { id: 'FO_WIFI', label: '🌐 Fiber Optic / WiFi' },
+                { id: 'PJU_MANDIRI', label: '💡 PJU Mandiri' },
+                { id: 'GABUNG_PLN_PJU', label: '⚡💡 Gabung PLN+PJU' },
+                { id: 'PLN_MURNI', label: '⚡ PLN Listrik' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCorridorCategory(cat.id as any)}
+                  className={`py-2 px-2 rounded-xl font-bold transition-all text-left truncate cursor-pointer ${
+                    corridorCategory === cat.id
+                      ? 'bg-blue-600 text-white shadow-xs ring-2 ring-blue-400/40'
+                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. Khusus PJU: Spesifikasi Lampu & Kabel Menumpang */}
+          {(corridorCategory === 'PJU_MANDIRI' || corridorCategory === 'GABUNG_PLN_PJU') && (
+            <div className="p-3 bg-amber-50/90 border border-amber-200 rounded-2xl space-y-2">
+              <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                <span>💡</span>
+                <span>Spesifikasi Penerangan Jalan (PJU):</span>
+              </span>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <label className="block text-[9px] font-bold text-amber-800 uppercase mb-0.5">
+                    Tipe Lampu
+                  </label>
+                  <select
+                    value={corridorPjuLampType}
+                    onChange={(e) => setCorridorPjuLampType(e.target.value as any)}
+                    className="w-full px-2 py-1.5 bg-white border border-amber-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+                  >
+                    <option value="LED">Lampu LED (Hemat Energi)</option>
+                    <option value="SON_T">Lampu Kuning (SON-T / Sodium)</option>
+                    <option value="SOLAR_CELL">Lampu Tenaga Surya (Solar Cell)</option>
+                    <option value="MERCURY">Lampu Mercury</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-bold text-amber-800 uppercase mb-0.5">
+                    Daya Lampu
+                  </label>
+                  <select
+                    value={corridorPjuLampPower}
+                    onChange={(e) => setCorridorPjuLampPower(e.target.value)}
+                    className="w-full px-2 py-1.5 bg-white border border-amber-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+                  >
+                    <option value="40W">40 Watt</option>
+                    <option value="60W">60 Watt</option>
+                    <option value="90W">90 Watt (Standar)</option>
+                    <option value="120W">120 Watt</option>
+                    <option value="150W">150 Watt</option>
+                    <option value="250W">250 Watt</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Tumpangan Kabel Jaringan FO pada PJU */}
+              <div>
+                <label className="block text-[9px] font-bold text-amber-800 uppercase mb-1">
+                  Status Tumpangan Kabel Jaringan / FO:
+                </label>
+                <div className="grid grid-cols-2 gap-1 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setCorridorHasNetworkCable(false)}
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition-all text-center cursor-pointer ${
+                      !corridorHasNetworkCable
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                        : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100'
+                    }`}
+                  >
+                    🚫 PJU Murni (Tanpa FO)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCorridorHasNetworkCable(true)}
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition-all text-center cursor-pointer ${
+                      corridorHasNetworkCable
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100'
+                    }`}
+                  >
+                    🌐 Ada Kabel FO Menumpang
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. Spesifikasi Teknis Tiang & Kepemilikan */}
           <div className="grid grid-cols-2 gap-2 text-xs">
             {/* Provider Selector */}
             <div>
@@ -1769,7 +1912,7 @@ export default function GISOverviewMap({
               </select>
             </div>
 
-            {/* Pole Type */}
+            {/* Material Tiang */}
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                 Jenis Tiang
@@ -1801,6 +1944,54 @@ export default function GISOverviewMap({
                 <option value="9m">9 Meter</option>
                 <option value="11m">11 Meter</option>
                 <option value="12m">12 Meter</option>
+              </select>
+            </div>
+
+            {/* Kondisi Fisik Tiang */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Kondisi Fisik Tiang
+              </label>
+              <select
+                value={corridorCondition}
+                onChange={(e) => setCorridorCondition(e.target.value as any)}
+                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="GOOD">🟢 Kondisi Baik</option>
+                <option value="NEEDS_REPAIR">🟡 Perlu Servis</option>
+                <option value="DAMAGED">🔴 Rusak Berat</option>
+              </select>
+            </div>
+
+            {/* Status Kepemilikan */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Kepemilikan
+              </label>
+              <select
+                value={corridorOwnershipStatus}
+                onChange={(e) => setCorridorOwnershipStatus(e.target.value as any)}
+                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="SENDIRI">Aset Sendiri</option>
+                <option value="SEWA">Sewa Tiang</option>
+                <option value="BERSAMA_PLN">Joint Bersama PLN</option>
+              </select>
+            </div>
+
+            {/* Tipe Jalur Kabel */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Instalasi Kabel
+              </label>
+              <select
+                value={corridorCableInstallationType}
+                onChange={(e) => setCorridorCableInstallationType(e.target.value as any)}
+                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="UDARA">Kabel Udara (Aerial)</option>
+                <option value="BAWAH_TANAH">🕳️ Bawah Tanah (Tanam)</option>
+                <option value="TRANSISI_RISER">↕️ Riser Transisi</option>
               </select>
             </div>
 

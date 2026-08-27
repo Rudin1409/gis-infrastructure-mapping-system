@@ -23,7 +23,12 @@ interface BatchCreateCorridorPayload {
     condition?: string;
     height?: string;
     infrastructureCategory?: string;
+    pjuLampType?: string;
+    pjuLampPower?: string;
+    pjuLampCondition?: string;
+    hasKwhMeter?: boolean;
     hasNetworkCable?: boolean;
+    ownershipStatus?: string;
     cableInstallationType?: string;
     sisiJalan?: string;
     surveyorId?: string;
@@ -79,6 +84,11 @@ export async function POST(request: NextRequest) {
         sisiJalan: (p.sisiJalan as any) || 'KIRI',
         infrastructureCategory: (p.infrastructureCategory as any) || 'FO_WIFI',
         hasNetworkCable: p.hasNetworkCable !== undefined ? p.hasNetworkCable : undefined,
+        pjuLampType: (p.pjuLampType as any) || undefined,
+        pjuLampPower: p.pjuLampPower || undefined,
+        pjuLampCondition: (p.pjuLampCondition as any) || undefined,
+        hasKwhMeter: p.hasKwhMeter !== undefined ? p.hasKwhMeter : undefined,
+        ownershipStatus: (p.ownershipStatus as any) || 'SENDIRI',
         cableInstallationType: (p.cableInstallationType as any) || 'UDARA',
         locationMethod: 'MANUAL_MAP_PIN',
         surveyorId: p.surveyorId || 'USR-KOMINFO-ADMIN',
