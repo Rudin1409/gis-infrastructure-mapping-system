@@ -417,7 +417,7 @@ export default function SurveyForm({
               : 'text-slate-600 font-bold hover:text-slate-900'
           }`}
         >
-          <span className="text-[10px] block leading-none">3. Kondisi</span>
+          <span className="text-[10px] block leading-none">3. Spesifikasi</span>
         </button>
 
         <button
@@ -1379,6 +1379,21 @@ export default function SurveyForm({
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Kondisi Fisik Tiang</span>
+                    <span
+                      className={`font-bold block mt-0.5 ${
+                        condition === 'GOOD'
+                          ? 'text-emerald-700 font-black'
+                          : condition === 'NEEDS_REPAIR'
+                          ? 'text-amber-700 font-black'
+                          : 'text-rose-700 font-black'
+                      }`}
+                    >
+                      {condition === 'GOOD' ? '🟢 Kondisi Baik' : condition === 'NEEDS_REPAIR' ? '🟡 Perlu Servis' : '🔴 Rusak Berat'}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
                     <span className="text-slate-400 block text-[9px] uppercase font-bold">Status Kepemilikan</span>
                     <span className="font-bold text-slate-800 block mt-0.5">
                       {ownershipStatus === 'SENDIRI'
@@ -1399,6 +1414,13 @@ export default function SurveyForm({
                         : cableInstallationType === 'TRANSISI_RISER'
                         ? '↕️ Riser Transisi'
                         : '🌐 Kabel Udara (Aerial)'}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Kode Segmen Kabel</span>
+                    <span className="font-bold text-slate-800 block mt-0.5 font-mono text-xs truncate">
+                      {segmentCode || '-'}
                     </span>
                   </div>
                 </div>

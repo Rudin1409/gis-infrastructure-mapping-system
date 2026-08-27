@@ -53,66 +53,51 @@ export default function NewPoleSurveyPage() {
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       {/* Visual Step Progress Tracker Header */}
-      <div className="bg-white px-4 py-2 border-b border-slate-200 shadow-sm z-30 flex-shrink-0">
-        <div className="flex items-center justify-between max-w-md mx-auto">
-          {/* Step 1 Pill */}
-          <button
-            type="button"
-            onClick={() => setStep('MAP_PIN')}
-            className={`flex items-center gap-1.5 transition-all text-left ${
-              step === 'MAP_PIN'
-                ? 'opacity-100 scale-100'
-                : 'opacity-70 hover:opacity-100'
-            }`}
-          >
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-                step === 'MAP_PIN'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                  : 'bg-emerald-500 text-white'
-              }`}
-            >
-              {confirmedLocation && step === 'FORM' ? '✓' : '1'}
-            </div>
-            <div>
-              <span className="text-[9px] uppercase font-bold text-slate-400 block leading-none">
-                Langkah 1
-              </span>
-              <span className={`text-xs font-bold ${step === 'MAP_PIN' ? 'text-blue-600' : 'text-slate-700'}`}>
-                Kunci Titik Peta
+      <div className="bg-white px-3.5 py-2 border-b border-slate-200 shadow-2xs z-30 flex-shrink-0">
+        <div className="flex items-center justify-between max-w-lg mx-auto">
+          {step === 'MAP_PIN' ? (
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                  1
+                </div>
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-blue-600 block leading-none">
+                    Tahap 1 dari 2
+                  </span>
+                  <h2 className="text-xs font-black text-slate-900 leading-tight">
+                    Kunci Posisi Titik Tiang di Peta
+                  </h2>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-slate-400">
+                Geser Pin / GPS
               </span>
             </div>
-          </button>
-
-          {/* Connector Arrow */}
-          <div className="w-6 h-[2px] bg-slate-200 mx-1 flex-shrink-0" />
-
-          {/* Step 2 Pill */}
-          <div
-            className={`flex items-center gap-1.5 transition-all text-left ${
-              step === 'FORM'
-                ? 'opacity-100 scale-100'
-                : 'opacity-40'
-            }`}
-          >
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-                step === 'FORM'
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
-                  : 'bg-slate-200 text-slate-600'
-              }`}
-            >
-              2
+          ) : (
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-black shadow-xs">
+                  ✓
+                </div>
+                <div>
+                  <span className="text-[9px] uppercase font-bold text-emerald-600 block leading-none">
+                    Tahap 2: Pengisian Data
+                  </span>
+                  <h2 className="text-xs font-black text-slate-900 leading-tight">
+                    Formulir Survei Teknis Tiang
+                  </h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleBackToMap}
+                className="py-1 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+              >
+                <span>🗺️ Ubah Titik Peta</span>
+              </button>
             </div>
-            <div>
-              <span className="text-[9px] uppercase font-bold text-slate-400 block leading-none">
-                Langkah 2
-              </span>
-              <span className={`text-xs font-bold ${step === 'FORM' ? 'text-blue-600' : 'text-slate-600'}`}>
-                Data &amp; Foto
-              </span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
