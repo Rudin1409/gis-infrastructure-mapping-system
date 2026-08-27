@@ -17,7 +17,12 @@ import { Provider } from '@/types/provider';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
 import PhotoUploader from './PhotoUploader';
 import { formatDistance } from '@/lib/gis/haversine';
-import { reverseGeocodeLocation } from '@/lib/gis/geocoding';
+import {
+  reverseGeocodeLocation,
+  getNextSequentialPoleCode,
+  getKecamatanCode,
+  getKelurahanCode,
+} from '@/lib/gis/geocoding';
 import {
   MapPin,
   Locate,
@@ -194,9 +199,21 @@ export default function SurveyForm({
     const newKec = e.target.value;
     setKecamatan(newKec);
     const found = KECAMATAN_LUBUKLINGGAU.find((k) => k.name === newKec);
+    const newKel = found && found.kelurahan.length > 0 ? found.kelurahan[0] : kelurahan;
     if (found && found.kelurahan.length > 0) {
-      setKelurahan(found.kelurahan[0]);
+      setKelurahan(newKel);
     }
+    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(newKec, newKel);
+    setPoleCode(smartPoleCode);
+    setSegmentCode(smartSegmentCode);
+  };
+
+  const handleKelurahanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newKel = e.target.value;
+    setKelurahan(newKel);
+    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(kecamatan, newKel);
+    setPoleCode(smartPoleCode);
+    setSegmentCode(smartSegmentCode);
   };
 
   const handlePhotoSelected = (file: File, previewUrl: string) => {
@@ -323,6 +340,17 @@ export default function SurveyForm({
           pjuLampPower,
         };
         localStorage.setItem('gis_smart_memory_pole', JSON.stringify(smartMemoryData));
+
+        // Save last sequence number for this kecamatan & kelurahan
+        const kecCode = getKecamatanCode(kecamatan);
+        const kelCode = getKelurahanCode(kelurahan);
+        const matchNum = (poleCode || '').match(/-(\d+)$/);
+        if (matchNum && matchNum[1]) {
+          const parsedNum = parseInt(matchNum[1], 10);
+          if (!isNaN(parsedNum)) {
+            localStorage.setItem(`gis_last_seq_${kecCode}_${kelCode}`, String(parsedNum));
+          }
+        }
       } catch (smErr) {
         console.warn('Smart memory save notice:', smErr);
       }
@@ -526,7 +554,7 @@ export default function SurveyForm({
                   </label>
                   <select
                     value={kelurahan}
-                    onChange={(e) => setKelurahan(e.target.value)}
+                    onChange={handleKelurahanChange}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-900 font-medium focus:border-blue-500 outline-none"
                   >
                     {availableKelurahan.map((kel) => (
@@ -1651,10 +1679,10 @@ export default function SurveyForm({
             {/* Current Generated Code Box */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-3 mb-3 text-center">
               <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider block mb-1">
-                Format Standar Instansi
+                Format Standar Nomor Seri Aset GIS
               </span>
               <div className="font-mono text-base font-black text-blue-900 tracking-wider">
-                {poleCode || 'LLG-T1-TJ-463'}
+                {poleCode || 'LLG-T1-TJ-001'}
               </div>
             </div>
 
@@ -1689,10 +1717,10 @@ export default function SurveyForm({
 
               <div className="flex items-center gap-2.5 bg-slate-50 p-2 rounded-2xl border border-slate-100">
                 <span className="w-11 px-1.5 py-0.5 bg-amber-500 text-white font-mono font-bold rounded-lg text-center text-[10px]">
-                  {poleCode.split('-')[3] || '463'}
+                  {poleCode.split('-')[3] || '001'}
                 </span>
                 <div className="text-[11px] text-slate-700 leading-tight">
-                  <strong>Nomor Urut / Seri Aset</strong> di Lapangan
+                  <strong>Nomor Urut Tiang (001, 002, 003...):</strong> Berurutan otomatis per kelurahan
                 </div>
               </div>
             </div>

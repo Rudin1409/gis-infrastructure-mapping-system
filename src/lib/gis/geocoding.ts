@@ -32,7 +32,7 @@ function isPointInPolygon(point: Coordinates, polygon: [number, number][]): bool
 }
 
 // Generate standard acronym code for Kecamatan (e.g. Lubuklinggau Timur I -> T1)
-function getKecamatanCode(kecName: string): string {
+export function getKecamatanCode(kecName: string): string {
   if (kecName.includes('Timur I') || kecName.includes('Timur 1')) return 'T1';
   if (kecName.includes('Timur II') || kecName.includes('Timur 2')) return 'T2';
   if (kecName.includes('Barat I') || kecName.includes('Barat 1')) return 'B1';
@@ -45,7 +45,7 @@ function getKecamatanCode(kecName: string): string {
 }
 
 // Generate standard acronym code for Kelurahan (e.g. Taba Jemekeh -> TJ, Majapahit -> MP, Bandung Kiri -> BK)
-function getKelurahanCode(kelName: string): string {
+export function getKelurahanCode(kelName: string): string {
   const clean = kelName.replace(/^Kel\.\s*/i, '').trim();
   const words = clean.split(/\s+/);
   if (words.length >= 2) {
@@ -55,13 +55,64 @@ function getKelurahanCode(kelName: string): string {
 }
 
 /**
+ * Generate sequential, structured asset code (e.g. LLG-T1-TJ-001, LLG-T1-TJ-002)
+ * based on highest existing number in the database / session counter.
+ */
+export function getNextSequentialPoleCode(
+  kecName: string,
+  kelName: string,
+  existingCodes: string[] = []
+): { smartPoleCode: string; smartSegmentCode: string; nextNumber: number } {
+  const kecCode = getKecamatanCode(kecName);
+  const kelCode = getKelurahanCode(kelName);
+  const prefix = `LLG-${kecCode}-${kelCode}-`;
+
+  let maxSeq = 0;
+  for (const code of existingCodes) {
+    if (code && code.startsWith(prefix)) {
+      const numPart = code.slice(prefix.length);
+      const parsed = parseInt(numPart, 10);
+      if (!isNaN(parsed) && parsed > maxSeq) {
+        maxSeq = parsed;
+      }
+    }
+  }
+
+  // Also check local session memory for sequential field surveying
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(`gis_last_seq_${kecCode}_${kelCode}`);
+      if (stored) {
+        const storedNum = parseInt(stored, 10);
+        if (!isNaN(storedNum) && storedNum > maxSeq) {
+          maxSeq = storedNum;
+        }
+      }
+    } catch {}
+  }
+
+  const nextNumber = maxSeq + 1;
+  const formattedNumber = String(nextNumber).padStart(3, '0');
+
+  const smartPoleCode = `${prefix}${formattedNumber}`;
+  const smartSegmentCode = `SEG-${kecCode}-${kelCode}-${formattedNumber}`;
+
+  return {
+    smartPoleCode,
+    smartSegmentCode,
+    nextNumber,
+  };
+}
+
+/**
  * Universal & Dynamic Reverse Geocoding Engine for Kota Lubuklinggau.
  * Combines high-resolution OSM Reverse Geocoding (Zoom 19) with Spatial Point-in-Polygon (PIP)
  * and the complete master database of all 72 Kelurahan across 8 Kecamatan.
  */
-export async function reverseGeocodeLocation(coord: Coordinates): Promise<GeocodedAddress> {
-  const randomSeq = Math.floor(100 + Math.random() * 900);
-
+export async function reverseGeocodeLocation(
+  coord: Coordinates,
+  existingCodes: string[] = []
+): Promise<GeocodedAddress> {
   // 1. Precise Spatial Detection: Check if point falls inside an official Kelurahan Boundary Polygon
   let spatialKelurahan = '';
   let spatialKecamatan = '';
@@ -167,12 +218,12 @@ export async function reverseGeocodeLocation(coord: Coordinates): Promise<Geocod
     detectedRoad = `Jl. Area Kel. ${spatialKelurahan}`;
   }
 
-  // Generate standardized municipal GIS codes
-  const kecCode = getKecamatanCode(spatialKecamatan);
-  const kelCode = getKelurahanCode(spatialKelurahan);
-
-  const smartPoleCode = `LLG-${kecCode}-${kelCode}-${randomSeq}`;
-  const smartSegmentCode = `SEG-${kecCode}-${randomSeq}`;
+  // Generate standardized sequential municipal GIS codes (e.g. LLG-T1-TJ-001)
+  const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(
+    spatialKecamatan,
+    spatialKelurahan,
+    existingCodes
+  );
 
   return {
     road: detectedRoad,
