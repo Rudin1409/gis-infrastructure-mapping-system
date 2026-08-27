@@ -17,8 +17,39 @@ export async function POST(request: NextRequest) {
     }
 
     const trimmedEmail = email.trim().toLowerCase();
+    const cleanPhoneQuery = trimmedEmail.replace(/[^0-9]/g, '');
 
-    // 1. Verifikasi kredensial langsung via Google Apps Script (DATA_SURVEYOR)
+    // 1. Verifikasi kredensial langsung via Database Supabase (Instant <10ms)
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data: dbUser, error: dbErr } = await supabase
+        .from('users')
+        .select('*')
+        .or(`email.ilike.${trimmedEmail},phone.ilike.%${cleanPhoneQuery.length >= 8 ? cleanPhoneQuery : 'NOMATCH'}%`)
+        .eq('password', password)
+        .single();
+
+      if (!dbErr && dbUser) {
+        return NextResponse.json({
+          success: true,
+          user: {
+            id: dbUser.id,
+            name: dbUser.name,
+            email: dbUser.email,
+            role: dbUser.role,
+            roleLabel: dbUser.role === 'ADMIN_KOMINFO' ? 'Administrator DISKOMINFOTIKSAN' : 'Petugas Survei Spasial',
+            agency: dbUser.agency || 'DISKOMINFOTIKSAN Kota Lubuklinggau',
+            phone: dbUser.phone,
+            avatar: dbUser.role === 'ADMIN_KOMINFO' ? '🏢' : '👨‍💼',
+          },
+          source: 'SUPABASE_POSTGRESQL',
+        });
+      }
+    } catch (supaErr) {
+      console.warn('Supabase auth notice:', supaErr);
+    }
+
+    // 2. Fallback Apps Script
     if (isAppsScriptConfigured()) {
       try {
         const res = await fetch(APPS_SCRIPT_URL, {
@@ -46,8 +77,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. Fallback: Verifikasi dengan master akun dinas Lubuklinggau
-    const cleanPhoneQuery = trimmedEmail.replace(/[^0-9]/g, '');
+    // 3. Fallback: Verifikasi dengan master akun dinas Lubuklinggau
     const matched = DEFAULT_ACCOUNTS.find((acc) => {
       if (acc.password !== password) return false;
       const accCleanPhone = (acc.phone || '').replace(/[^0-9]/g, '');
