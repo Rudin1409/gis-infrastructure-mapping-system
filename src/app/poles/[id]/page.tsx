@@ -8,6 +8,7 @@ import { formatDistance } from '@/lib/gis/haversine';
 import { PoleMiniGraphic } from '@/components/survey/PoleVisualGuideModal';
 import { formatGoogleDriveImageUrl, getGoogleDriveThumbnailUrl } from '@/lib/utils/driveImage';
 import { formatIndonesianDate } from '@/lib/utils/formatDate';
+import PoleDetailActions from '@/components/survey/PoleDetailActions';
 import {
   ChevronLeft,
   MapPin,
@@ -75,23 +76,7 @@ export default async function PoleDetailPage({
           <span>Kembali</span>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/poles/${pole.id}/edit`}
-            className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 shadow-2xs transition-all"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            <span>Edit Data &amp; Titik</span>
-          </Link>
-
-          <Link
-            href={`/map?search=${pole.id}`}
-            className="inline-flex items-center gap-1 text-xs font-bold text-white py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-2xs transition-all"
-          >
-            <Map className="w-3.5 h-3.5" />
-            <span>Peta</span>
-          </Link>
-        </div>
+        <PoleDetailActions poleId={pole.id} poleCode={pole.poleCode} />
       </div>
 
       {/* Main Review-Style Pole Summary Card */}
