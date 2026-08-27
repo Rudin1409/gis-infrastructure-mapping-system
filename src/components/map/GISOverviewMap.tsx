@@ -39,6 +39,7 @@ import {
   formatDistance,
 } from '@/lib/gis/haversine';
 import { findPolesPath } from '@/lib/gis/pathfinding';
+import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
 
 interface GISOverviewMapProps {
   poles: Pole[];
@@ -51,6 +52,7 @@ export default function GISOverviewMap({
   segments = [],
   providers = [],
 }: GISOverviewMapProps) {
+  const { poles: livePoles } = useSupabaseRealtimePoles(poles);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -219,7 +221,7 @@ export default function GISOverviewMap({
   };
 
   // Filter Poles
-  const filteredPoles = poles.filter((pole) => {
+  const filteredPoles = livePoles.filter((pole) => {
     if (selectedProvider !== 'ALL' && pole.providerId !== selectedProvider) return false;
     if (selectedCondition !== 'ALL' && pole.condition !== selectedCondition) return false;
     if (selectedKecamatan !== 'ALL' && pole.kecamatan !== selectedKecamatan) return false;
@@ -248,7 +250,7 @@ export default function GISOverviewMap({
 
         if (autoRouteMode) {
           // Smart Pathfinding: find intermediate poles automatically
-          const fullPath = findPolesPath(measuredPoles[0], pole, poles, segments);
+          const fullPath = findPolesPath(measuredPoles[0], pole, livePoles, segments);
           setMeasuredPoles(fullPath);
         } else {
           setMeasuredPoles([measuredPoles[0], pole]);
@@ -264,7 +266,7 @@ export default function GISOverviewMap({
 
         if (autoRouteMode) {
           // Find path from the current last pole to the newly clicked pole
-          const extension = findPolesPath(lastPole, pole, poles, segments);
+          const extension = findPolesPath(lastPole, pole, livePoles, segments);
           // Avoid duplicate start
           setMeasuredPoles((prev) => [...prev, ...extension.slice(1)]);
         } else {
@@ -289,7 +291,7 @@ export default function GISOverviewMap({
     }
 
     const poleMapById: Record<string, Pole> = {};
-    poles.forEach((p) => {
+    livePoles.forEach((p) => {
       poleMapById[p.id] = p;
     });
 

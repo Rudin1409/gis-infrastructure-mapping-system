@@ -8,6 +8,7 @@ import { Pole } from '@/types/pole';
 import { Provider } from '@/types/provider';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
 import { DashboardStats } from '@/services/DashboardService';
+import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
 import {
   Map,
   Plus,
@@ -51,7 +52,15 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
   const currentUser = user || DEFAULT_ACCOUNTS[0];
 
   const [liveStats, setLiveStats] = useState<DashboardStats>(stats);
-  const [livePoles, setLivePoles] = useState<Pole[]>(allPoles);
+  const { poles: livePoles } = useSupabaseRealtimePoles(allPoles, async (freshPoles) => {
+    try {
+      const dashRes = await fetch('/api/dashboard', { cache: 'no-store' });
+      if (dashRes.ok) {
+        const dashJson = await dashRes.json();
+        if (dashJson.success && dashJson.data) setLiveStats(dashJson.data);
+      }
+    } catch (_) {}
+  });
 
   // Dynamic Indonesian time greeting
   const [greeting, setGreeting] = useState('Halo');
@@ -72,27 +81,6 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
       setGreeting('Selamat Malam');
       setTimeEmoji('🌙');
     }
-  }, []);
-
-  // Real-time Background Sync with Supabase (every 8 seconds)
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const [dashRes, poleRes] = await Promise.all([
-          fetch('/api/dashboard', { cache: 'no-store' }),
-          fetch('/api/poles', { cache: 'no-store' }),
-        ]);
-        if (dashRes.ok && poleRes.ok) {
-          const dashJson = await dashRes.json();
-          const poleJson = await poleRes.json();
-          if (dashJson.success && dashJson.data) setLiveStats(dashJson.data);
-          if (poleJson.success && Array.isArray(poleJson.data)) setLivePoles(poleJson.data);
-        }
-      } catch (_) {
-        // Silent real-time sync
-      }
-    }, 8000);
-    return () => clearInterval(interval);
   }, []);
 
   // Compute 5 Most Recent Surveys

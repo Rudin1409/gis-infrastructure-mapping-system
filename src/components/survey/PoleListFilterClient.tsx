@@ -6,6 +6,7 @@ import { Pole } from '@/types/pole';
 import { Provider } from '@/types/provider';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
 import { formatIndonesianDate } from '@/lib/utils/formatDate';
+import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
 import {
   Search,
   Filter,
@@ -43,6 +44,8 @@ export default function PoleListFilterClient({
   initialProvider,
   initialCondition,
 }: PoleListFilterClientProps) {
+  const { poles: livePoles } = useSupabaseRealtimePoles(initialPoles);
+
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState(initialQuery || '');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -107,7 +110,7 @@ export default function PoleListFilterClient({
 
   // Filtered Poles Computation
   const filteredPoles = useMemo(() => {
-    return initialPoles.filter((pole) => {
+    return livePoles.filter((pole) => {
       // 1. Search Query Filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
