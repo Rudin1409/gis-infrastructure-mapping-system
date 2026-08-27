@@ -1052,9 +1052,61 @@ export default function GISOverviewMap({
         </div>
       )}
 
-      {/* Floating Auto-Corridor Generator Card */}
-      {isCorridorMode && (
-        <div className="absolute bottom-20 sm:bottom-24 left-3.5 right-3.5 z-[480] bg-white/98 backdrop-blur-xl border border-blue-300 rounded-3xl p-4 shadow-[0_12px_45px_rgba(15,23,42,0.28)] text-slate-800 animate-in slide-in-from-bottom-3 max-h-[62vh] flex flex-col overflow-y-auto space-y-3.5">
+      {/* 1. SLIM INSTRUCTION BANNER (When picking Point A or Point B) */}
+      {isCorridorMode && corridorWaypoints.length < 2 && (
+        <div className="absolute top-24 left-3.5 right-3.5 z-[450] bg-slate-900/95 text-white border border-blue-500/60 rounded-3xl p-3.5 shadow-2xl backdrop-blur-xl flex items-center justify-between animate-in fade-in slide-in-from-top-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-sm text-white shadow-md ${
+              corridorWaypoints.length === 0 ? 'bg-blue-600 animate-pulse' : 'bg-emerald-600 animate-pulse'
+            }`}>
+              {corridorWaypoints.length === 0 ? '1' : '2'}
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h4 className="font-black text-xs uppercase tracking-wider text-white">
+                  {corridorWaypoints.length === 0
+                    ? 'Langkah 1: Ketuk Titik Pangkal (A)'
+                    : 'Langkah 2: Ketuk Titik Ujung (B)'}
+                </h4>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-blue-500/30 text-blue-300 border border-blue-400/30">
+                  ⚡ Auto-Corridor
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-tight mt-0.5">
+                {corridorWaypoints.length === 0
+                  ? 'Sentuh posisi awal jalur tiang di peta jalan'
+                  : 'Titik A terkunci! Sentuh titik ujung jalan untuk memasang tiang tengah otomatis'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {corridorWaypoints.length === 1 && (
+              <button
+                type="button"
+                onClick={() => setCorridorWaypoints([])}
+                className="px-2.5 py-1.5 bg-white/15 hover:bg-white/25 text-amber-300 font-bold text-[10px] rounded-xl flex items-center gap-1 cursor-pointer"
+                title="Reset Titik A"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                <span>Reset A</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={toggleCorridorMode}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white cursor-pointer"
+              title="Tutup Mode Jalur"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 2. FULL CORRIDOR CONFIGURATION DRAWER (Only appears AFTER Point A and Point B are clicked!) */}
+      {isCorridorMode && corridorWaypoints.length >= 2 && (
+        <div className="absolute bottom-20 sm:bottom-24 left-3.5 right-3.5 z-[480] bg-white/98 backdrop-blur-xl border border-blue-300 rounded-3xl p-4 shadow-[0_12px_45px_rgba(15,23,42,0.28)] text-slate-800 animate-in slide-in-from-bottom-3 max-h-[64vh] flex flex-col overflow-y-auto space-y-3.5">
           {/* Header */}
           <div className="flex items-start justify-between gap-2 pb-2 border-b border-slate-100 flex-shrink-0">
             <div className="flex items-center gap-2.5">
@@ -1063,34 +1115,28 @@ export default function GISOverviewMap({
               </div>
               <div>
                 <h4 className="font-black text-xs text-slate-900 uppercase tracking-wider">
-                  Generator Jalur &amp; Interval Tiang Otomatis
+                  Pengaturan Interval &amp; Tiang Tengah
                 </h4>
-                <span className="text-[10px] text-slate-500 block leading-tight">
-                  {corridorWaypoints.length === 0
-                    ? '👉 Ketuk titik awal (A) di peta/jalan'
-                    : corridorWaypoints.length === 1
-                    ? '👉 Ketuk titik akhir (B) di peta/jalan'
-                    : `Terhubung: ${corridorWaypoints.length} Titik Acuan • Est. ${formatDistance(interpolatedCorridor?.totalDistance || 0)}`}
+                <span className="text-[10px] text-slate-500 block leading-tight font-medium">
+                  Titik A &amp; B Terhubung • Est. {formatDistance(interpolatedCorridor?.totalDistance || 0)}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
-              {corridorWaypoints.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setCorridorWaypoints((prev) => prev.slice(0, -1))}
-                  className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold flex items-center gap-1"
-                  title="Hapus Titik Terakhir"
-                >
-                  <Undo2 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Undo</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setCorridorWaypoints((prev) => prev.slice(0, -1))}
+                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                title="Hapus Titik Terakhir (Undo)"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Ubah Titik B</span>
+              </button>
               <button
                 type="button"
                 onClick={toggleCorridorMode}
-                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800"
+                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
