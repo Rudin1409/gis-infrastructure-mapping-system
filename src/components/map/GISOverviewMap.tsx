@@ -116,8 +116,12 @@ export default function GISOverviewMap({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('ALL');
   const [selectedCondition, setSelectedCondition] = useState('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL'); // FO_WIFI, PJU_MANDIRI, GABUNG_PLN_PJU, PLN_MURNI, etc.
   const [selectedKecamatan, setSelectedKecamatan] = useState('ALL');
+  const [selectedKelurahan, setSelectedKelurahan] = useState('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
+  const [selectedCableType, setSelectedCableType] = useState('ALL'); // UDARA, BAWAH_TANAH, TRANSISI_RISER
+  const [selectedHazard, setSelectedHazard] = useState<'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'>('ALL');
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [showGoogleToolsMenu, setShowGoogleToolsMenu] = useState(false);
   const [selectedPole, setSelectedPole] = useState<Pole | null>(null);
@@ -614,21 +618,56 @@ export default function GISOverviewMap({
     setMeasuredPoles([pole]);
   };
 
-  // Filter Poles
+  // Comprehensive Multi-Parameter Pole Filtering
   const filteredPoles = livePoles.filter((pole) => {
+    // 1. Provider Filter
     if (selectedProvider !== 'ALL' && pole.providerId !== selectedProvider) return false;
+
+    // 2. Condition Filter
     if (selectedCondition !== 'ALL' && pole.condition !== selectedCondition) return false;
+
+    // 3. Infrastructure Category (PJU Mandiri, Gabung PLN+PJU, PLN Murni, FO/WiFi)
+    if (selectedCategory !== 'ALL') {
+      const poleCat = pole.infrastructureCategory || 'FO_WIFI';
+      if (poleCat !== selectedCategory) return false;
+    }
+
+    // 4. Kecamatan Filter
     if (selectedKecamatan !== 'ALL' && pole.kecamatan !== selectedKecamatan) return false;
+
+    // 5. Kelurahan Filter
+    if (selectedKelurahan !== 'ALL' && pole.kelurahan !== selectedKelurahan) return false;
+
+    // 6. Pole Material Type Filter (Beton, Besi, Kayu)
     if (selectedType !== 'ALL' && pole.poleType !== selectedType) return false;
 
+    // 7. Cable Installation Type (Udara, Bawah Tanah, Riser)
+    if (selectedCableType !== 'ALL') {
+      const cableType = pole.cableInstallationType || 'UDARA';
+      if (cableType !== selectedCableType) return false;
+    }
+
+    // 8. Hazard / Risk Filter
+    if (selectedHazard === 'HAZARD_ONLY') {
+      if (!pole.isTilted && !pole.isMessyCable && !pole.isLowCable) return false;
+    } else if (selectedHazard === 'TILTED') {
+      if (!pole.isTilted) return false;
+    } else if (selectedHazard === 'MESSY') {
+      if (!pole.isMessyCable) return false;
+    } else if (selectedHazard === 'LOW') {
+      if (!pole.isLowCable) return false;
+    }
+
+    // 9. Search Query Filter
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const matchId = pole.id.toLowerCase().includes(q);
+      const matchCode = (pole.poleCode || '').toLowerCase().includes(q);
       const matchRoad = pole.road.toLowerCase().includes(q);
       const matchKec = pole.kecamatan.toLowerCase().includes(q);
       const matchKel = pole.kelurahan.toLowerCase().includes(q);
       const matchProvider = (pole.providerName || '').toLowerCase().includes(q);
-      if (!matchId && !matchRoad && !matchKec && !matchKel && !matchProvider) return false;
+      if (!matchId && !matchCode && !matchRoad && !matchKec && !matchKel && !matchProvider) return false;
     }
 
     return true;
@@ -908,10 +947,23 @@ export default function GISOverviewMap({
   const handleResetFilters = () => {
     setSelectedProvider('ALL');
     setSelectedCondition('ALL');
+    setSelectedCategory('ALL');
     setSelectedKecamatan('ALL');
+    setSelectedKelurahan('ALL');
     setSelectedType('ALL');
+    setSelectedCableType('ALL');
+    setSelectedHazard('ALL');
     setSearchQuery('');
   };
+
+  // Dynamic Kelurahan list based on selected Kecamatan
+  const availableKelurahans = React.useMemo(() => {
+    if (selectedKecamatan === 'ALL') {
+      return KECAMATAN_LUBUKLINGGAU.flatMap((k) => k.kelurahan);
+    }
+    const found = KECAMATAN_LUBUKLINGGAU.find((k) => k.name === selectedKecamatan);
+    return found ? found.kelurahan : [];
+  }, [selectedKecamatan]);
 
   return (
     <div className="relative w-full h-full flex flex-col bg-slate-100 overflow-hidden">
@@ -1201,48 +1253,72 @@ export default function GISOverviewMap({
         </div>
       )}
 
-      {/* Filter Popover / Drawer */}
+      {/* Comprehensive Filter Popover / Drawer */}
       {showFilterDrawer && (
-        <div className="absolute top-24 left-3 right-3 z-[450] bg-white/98 border border-slate-200 rounded-3xl p-4 shadow-2xl backdrop-blur-xl text-slate-800 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-2.5">
-            <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
-              <Filter className="w-3.5 h-3.5 text-blue-600" /> Filter Titik Tiang GIS
-            </h3>
+        <div className="absolute top-20 left-3 right-3 z-[450] bg-white/98 border border-slate-200 rounded-3xl p-4 shadow-[0_16px_50px_rgba(15,23,42,0.28)] backdrop-blur-xl text-slate-800 animate-in fade-in slide-in-from-top-2 max-h-[78vh] overflow-y-auto space-y-3.5">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Filter className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                  Filter Titik Tiang GIS
+                </h3>
+                <span className="text-[10px] text-slate-400">
+                  Menampilkan {filteredPoles.length} dari {livePoles.length} tiang
+                </span>
+              </div>
+            </div>
             <button
+              type="button"
               onClick={() => setShowFilterDrawer(false)}
-              className="text-slate-400 hover:text-slate-700"
+              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {/* Condition Filter */}
-            <div>
-              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                Kondisi
-              </label>
-              <select
-                value={selectedCondition}
-                onChange={(e) => setSelectedCondition(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
-              >
-                <option value="ALL">Semua Kondisi</option>
-                <option value="GOOD">🟢 Baik</option>
-                <option value="NEEDS_REPAIR">🟡 Perlu Servis</option>
-                <option value="DAMAGED">🔴 Rusak</option>
-              </select>
+          {/* 1. Kategori Infrastruktur (PJU Mandiri, Gabung PLN+PJU, PLN, FO/WiFi) */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">
+              Kategori Infrastruktur:
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px]">
+              {[
+                { id: 'ALL', label: 'Semua Kategori' },
+                { id: 'PJU_MANDIRI', label: '💡 PJU Mandiri' },
+                { id: 'GABUNG_PLN_PJU', label: '⚡💡 Gabung PLN+PJU' },
+                { id: 'PLN_MURNI', label: '⚡ PLN Listrik' },
+                { id: 'FO_WIFI', label: '🌐 Fiber Optic / WiFi' },
+              ].map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`py-2 px-2.5 rounded-xl font-bold transition-all text-left truncate cursor-pointer ${
+                    selectedCategory === cat.id
+                      ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/40'
+                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
             </div>
+          </div>
 
+          {/* 2. Grid Fields (Provider, Kondisi, Kecamatan, Kelurahan) */}
+          <div className="grid grid-cols-2 gap-2.5 text-xs">
             {/* Provider Filter */}
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                Provider
+                Provider / Operator
               </label>
               <select
                 value={selectedProvider}
                 onChange={(e) => setSelectedProvider(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
               >
                 <option value="ALL">Semua Provider</option>
                 {providers.map((p) => (
@@ -1253,6 +1329,23 @@ export default function GISOverviewMap({
               </select>
             </div>
 
+            {/* Condition Filter */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Kondisi Fisik Tiang
+              </label>
+              <select
+                value={selectedCondition}
+                onChange={(e) => setSelectedCondition(e.target.value)}
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="ALL">Semua Kondisi</option>
+                <option value="GOOD">🟢 Kondisi Baik</option>
+                <option value="NEEDS_REPAIR">🟡 Perlu Servis</option>
+                <option value="DAMAGED">🔴 Rusak Berat</option>
+              </select>
+            </div>
+
             {/* Kecamatan Filter */}
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -1260,10 +1353,13 @@ export default function GISOverviewMap({
               </label>
               <select
                 value={selectedKecamatan}
-                onChange={(e) => setSelectedKecamatan(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+                onChange={(e) => {
+                  setSelectedKecamatan(e.target.value);
+                  setSelectedKelurahan('ALL');
+                }}
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
               >
-                <option value="ALL">Semua Kecamatan</option>
+                <option value="ALL">Semua Kecamatan (8 Kec)</option>
                 {KECAMATAN_LUBUKLINGGAU.map((k) => (
                   <option key={k.name} value={k.name}>
                     {k.name}
@@ -1272,41 +1368,105 @@ export default function GISOverviewMap({
               </select>
             </div>
 
+            {/* Kelurahan Filter (Dynamic) */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Kelurahan
+              </label>
+              <select
+                value={selectedKelurahan}
+                onChange={(e) => setSelectedKelurahan(e.target.value)}
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="ALL">Semua Kelurahan</option>
+                {availableKelurahans.map((kel) => (
+                  <option key={kel} value={kel}>
+                    {kel}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Pole Type Filter */}
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                Jenis Tiang
+                Material Tiang
               </label>
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
               >
-                <option value="ALL">Semua Jenis</option>
-                <option value="BETON">Beton</option>
-                <option value="BESI">Besi</option>
-                <option value="KAYU">Kayu</option>
-                <option value="LAINNYA">Lainnya</option>
+                <option value="ALL">Semua Material</option>
+                <option value="BETON">Tiang Beton</option>
+                <option value="BESI">Tiang Besi / Galvanis</option>
+                <option value="KAYU">Tiang Kayu</option>
+              </select>
+            </div>
+
+            {/* Cable Installation Type Filter */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Instalasi Kabel
+              </label>
+              <select
+                value={selectedCableType}
+                onChange={(e) => setSelectedCableType(e.target.value)}
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="ALL">Semua Tipe Kabel</option>
+                <option value="UDARA">Kabel Udara (Aerial)</option>
+                <option value="BAWAH_TANAH">🕳️ Kabel Bawah Tanah</option>
+                <option value="TRANSISI_RISER">↕️ Riser Pole (Transisi)</option>
               </select>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-3">
+          {/* 3. Hazard & Potensi Risiko Checklist */}
+          <div>
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5">
+              Filter Potensi Risiko &amp; Bahaya:
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
+              {[
+                { id: 'ALL', label: 'Semua Status' },
+                { id: 'TILTED', label: '⚠️ Tiang Miring' },
+                { id: 'MESSY', label: '🔌 Semrawut' },
+                { id: 'LOW', label: '⚡ Kabel Rendah' },
+              ].map((hz) => (
+                <button
+                  key={hz.id}
+                  type="button"
+                  onClick={() => setSelectedHazard(hz.id as any)}
+                  className={`py-1.5 px-2 rounded-xl font-bold transition-all text-center cursor-pointer ${
+                    selectedHazard === hz.id
+                      ? 'bg-amber-500 text-white shadow-xs ring-2 ring-amber-400/40'
+                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {hz.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer Reset & Apply */}
+          <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
             <button
               type="button"
               onClick={handleResetFilters}
-              className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1"
+              className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer py-1.5 px-2"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Filter</span>
+              <span>Reset Semua Filter</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowFilterDrawer(false)}
-              className="py-1.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm"
+              className="py-2.5 px-5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs rounded-xl shadow-lg shadow-blue-500/25 cursor-pointer transition-all"
             >
-              Terapkan Filter
+              Tampilkan ({filteredPoles.length} Tiang)
             </button>
           </div>
         </div>
