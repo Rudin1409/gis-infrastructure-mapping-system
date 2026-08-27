@@ -181,8 +181,10 @@ function initialSetup() {
   if (userSheet.getLastRow() <= 1) {
     var defaultUsers = [
       ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFOTIKSAN', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF', '2026-08-25'],
-      ['USR-SURVEYOR-01', 'Surveyor Lapangan 1', 'surveyor1@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0852-1122-3344', 'AKTIF', '2026-08-25'],
-      ['USR-SURVEYOR-02', 'Surveyor Lapangan 2', 'surveyor2@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0853-9988-7766', 'AKTIF', '2026-08-25']
+      ['USR-SURVEYOR-01', 'M. Tri Saputra', 'tri.saputra@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '083196589665', 'AKTIF', '2026-08-25'],
+      ['USR-SURVEYOR-02', 'Yodi Heropralaga', 'yodi.heropralaga@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '081373193335', 'AKTIF', '2026-08-25'],
+      ['USR-SURVEYOR-03', 'Andika Yulian Putra', 'andika.yulian@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '081373249228', 'AKTIF', '2026-08-25'],
+      ['USR-SURVEYOR-04', 'Pradigga Navigasi', 'pradigga.navigasi@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '082251654742', 'AKTIF', '2026-08-25']
     ];
     userSheet.getRange(2, 1, defaultUsers.length, USER_HEADERS.length).setValues(defaultUsers);
   }

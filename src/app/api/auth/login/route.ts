@@ -47,9 +47,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Fallback: Verifikasi dengan master akun dinas Lubuklinggau
-    const matched = DEFAULT_ACCOUNTS.find(
-      (acc) => acc.email.toLowerCase() === trimmedEmail && acc.password === password
-    );
+    const cleanPhoneQuery = trimmedEmail.replace(/[^0-9]/g, '');
+    const matched = DEFAULT_ACCOUNTS.find((acc) => {
+      if (acc.password !== password) return false;
+      const accCleanPhone = (acc.phone || '').replace(/[^0-9]/g, '');
+      return (
+        acc.email.toLowerCase() === trimmedEmail ||
+        (cleanPhoneQuery.length >= 8 && accCleanPhone === cleanPhoneQuery) ||
+        acc.alternativeEmails?.some((alt) => alt.toLowerCase() === trimmedEmail)
+      );
+    });
 
     if (matched) {
       const authUser = {
