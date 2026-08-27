@@ -941,16 +941,16 @@ export default function GISOverviewMap({
             )}
           </div>
 
-          {/* 4-DOTS / GOOGLE APPS TOOLS MENU BUTTON */}
+          {/* 4-DOTS / GOOGLE APPS TOOLS MENU BUTTON (Toggle Open/Close) */}
           <button
             type="button"
-            onClick={() => setShowGoogleToolsMenu(true)}
+            onClick={() => setShowGoogleToolsMenu((prev) => !prev)}
             className={`p-2.5 rounded-2xl shadow-lg border backdrop-blur-md transition-all flex items-center justify-center cursor-pointer ${
               showGoogleToolsMenu
                 ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/30'
                 : 'bg-white/95 text-slate-700 hover:text-blue-600 border-slate-200 hover:bg-slate-50'
             }`}
-            title="Buka Menu Alat GIS (Titik 4)"
+            title={showGoogleToolsMenu ? 'Tutup Menu Alat' : 'Buka Menu Alat GIS (Titik 4)'}
           >
             <LayoutGrid className="w-5 h-5" />
           </button>
@@ -1022,234 +1022,243 @@ export default function GISOverviewMap({
             )}
           </div>
         )}
-      </div>
 
-      {/* ============================================================ */}
-      {/* GOOGLE-STYLE 4-DOTS TOOLS POPUP ACTION SHEET                 */}
-      {/* ============================================================ */}
-      {showGoogleToolsMenu && (
-        <div className="fixed inset-0 z-[500] bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in">
-          <div className="bg-white rounded-3xl p-5 shadow-2xl border border-slate-200 w-full max-w-sm max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom-4">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                  <LayoutGrid className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-black text-sm text-slate-900">Menu &amp; Alat GIS</h3>
-                  <p className="text-[10px] text-slate-400">Pilih fitur pemetaan &amp; alat survei</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowGoogleToolsMenu(false)}
-                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+        {/* ============================================================ */}
+        {/* GOOGLE-STYLE FLOATING DROPDOWN PANEL (TAMPIL KE BAWAH)        */}
+        {/* ============================================================ */}
+        {showGoogleToolsMenu && (
+          <div className="relative w-full">
+            {/* Click-outside backdrop to dismiss */}
+            <div
+              className="fixed inset-0 z-[440] bg-slate-900/20 backdrop-blur-[1px]"
+              onClick={() => setShowGoogleToolsMenu(false)}
+            />
 
-            {/* Grid Menu Cards (Google Style) */}
-            <div className="grid grid-cols-2 gap-2.5">
-              {/* 1. Auto-Corridor Generator */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowGoogleToolsMenu(false);
-                  toggleCorridorMode();
-                }}
-                className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
-                  isCorridorMode
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25'
-                    : 'bg-slate-50 hover:bg-blue-50/50 border-slate-200 hover:border-blue-300'
-                }`}
-              >
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 shadow-xs ${
-                    isCorridorMode ? 'bg-white/20 text-white' : 'bg-blue-600 text-white'
-                  }`}
-                >
-                  <Zap className="w-5 h-5 text-amber-300 fill-amber-300" />
-                </div>
-                <div>
-                  <h4
-                    className={`font-black text-xs ${
-                      isCorridorMode ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    Tarik Jalur Otomatis
-                  </h4>
-                  <p
-                    className={`text-[10px] leading-tight mt-0.5 ${
-                      isCorridorMode ? 'text-blue-100' : 'text-slate-500'
-                    }`}
-                  >
-                    Pasang tiang per interval 35m di jalan
-                  </p>
-                </div>
-              </button>
-
-              {/* 2. Batch Delete Tool */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowGoogleToolsMenu(false);
-                  toggleBatchDeleteMode();
-                }}
-                className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
-                  isBatchDeleteMode
-                    ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-500/25'
-                    : 'bg-slate-50 hover:bg-red-50/50 border-slate-200 hover:border-red-300'
-                }`}
-              >
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 shadow-xs ${
-                    isBatchDeleteMode ? 'bg-white/20 text-white' : 'bg-red-600 text-white'
-                  }`}
-                >
-                  <Trash2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4
-                    className={`font-black text-xs ${
-                      isBatchDeleteMode ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    Pilih &amp; Hapus Massal
-                  </h4>
-                  <p
-                    className={`text-[10px] leading-tight mt-0.5 ${
-                      isBatchDeleteMode ? 'text-red-100' : 'text-slate-500'
-                    }`}
-                  >
-                    Pilih beberapa pin tiang untuk dihapus
-                  </p>
-                </div>
-              </button>
-
-              {/* 3. Measurement Tool */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowGoogleToolsMenu(false);
-                  toggleMeasuring();
-                }}
-                className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
-                  isMeasuring
-                    ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/25'
-                    : 'bg-slate-50 hover:bg-amber-50/50 border-slate-200 hover:border-amber-300'
-                }`}
-              >
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 shadow-xs ${
-                    isMeasuring ? 'bg-white/20 text-white' : 'bg-amber-500 text-white'
-                  }`}
-                >
-                  <Ruler className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4
-                    className={`font-black text-xs ${
-                      isMeasuring ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    Ukur Jarak Spasial
-                  </h4>
-                  <p
-                    className={`text-[10px] leading-tight mt-0.5 ${
-                      isMeasuring ? 'text-amber-100' : 'text-slate-500'
-                    }`}
-                  >
-                    Hitung bentang kabel antar-tiang
-                  </p>
-                </div>
-              </button>
-
-              {/* 4. Filter Drawer */}
-              <button
-                type="button"
-                onClick={() => {
-                  setShowGoogleToolsMenu(false);
-                  setShowFilterDrawer(true);
-                }}
-                className="p-3 rounded-2xl border bg-slate-50 hover:bg-blue-50/50 border-slate-200 hover:border-blue-300 text-left flex flex-col justify-between transition-all cursor-pointer group"
-              >
-                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 shadow-xs">
-                  <Filter className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-black text-xs text-slate-900">
-                    Filter Data Tiang
-                  </h4>
-                  <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
-                    Provider, kondisi, &amp; kecamatan
-                  </p>
-                </div>
-              </button>
-            </div>
-
-            {/* Map Layers Section */}
-            <div className="pt-2 border-t border-slate-100 space-y-2">
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Pengaturan Layer Peta
-              </h4>
-
-              {/* Layer Mode Switch */}
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-2xl border border-slate-200">
+            {/* Dropdown Menu Box anchored under the top bar */}
+            <div className="absolute top-1 right-0 z-[450] w-full sm:w-[380px] bg-white/98 backdrop-blur-xl rounded-3xl p-4 shadow-[0_18px_50px_rgba(15,23,42,0.25)] border border-slate-200 animate-in fade-in zoom-in-95 slide-in-from-top-2 max-h-[72vh] overflow-y-auto space-y-3.5">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-blue-600" />
+                  <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <LayoutGrid className="w-4 h-4" />
+                  </div>
                   <div>
-                    <span className="text-xs font-bold text-slate-900 block">
-                      Tipe Layer Peta
-                    </span>
-                    <span className="text-[10px] text-slate-500 block capitalize">
-                      {tileMode === 'clean_satellite'
-                        ? 'Google Satelit Polos'
-                        : tileMode === 'hybrid_survey'
-                        ? 'Satelit + Jalan (Hybrid)'
-                        : 'Peta Jalan (Street)'}
-                    </span>
+                    <h3 className="font-black text-xs text-slate-900 uppercase tracking-wider">
+                      Menu &amp; Alat GIS
+                    </h3>
+                    <p className="text-[10px] text-slate-400">Pilih fitur untuk diaktifkan di peta</p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={toggleTileMode}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-blue-700 font-bold text-xs rounded-xl shadow-2xs cursor-pointer"
+                  onClick={() => setShowGoogleToolsMenu(false)}
+                  className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 cursor-pointer"
                 >
-                  Ganti Mode
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Boundaries Overlay Switch */}
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-2xl border border-slate-200">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-indigo-600" />
-                  <div>
-                    <span className="text-xs font-bold text-slate-900 block">
-                      Batas Kelurahan
-                    </span>
-                    <span className="text-[10px] text-slate-500 block">
-                      {showBoundaries ? 'Aktif (Terlihat)' : 'Nonaktif'}
-                    </span>
-                  </div>
-                </div>
+              {/* Grid Menu Cards (Google Style: 2 Kolom Nyamping) */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* 1. Auto-Corridor Generator */}
                 <button
                   type="button"
-                  onClick={toggleBoundaries}
-                  className={`px-2.5 py-1 font-bold text-xs rounded-xl shadow-2xs cursor-pointer transition-all ${
-                    showBoundaries
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
+                  onClick={() => {
+                    setShowGoogleToolsMenu(false);
+                    toggleCorridorMode();
+                  }}
+                  className={`p-2.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
+                    isCorridorMode
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25'
+                      : 'bg-slate-50 hover:bg-blue-50/50 border-slate-200 hover:border-blue-300'
                   }`}
                 >
-                  {showBoundaries ? 'Sembunyikan' : 'Tampilkan'}
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 shadow-xs ${
+                      isCorridorMode ? 'bg-white/20 text-white' : 'bg-blue-600 text-white'
+                    }`}
+                  >
+                    <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
+                  </div>
+                  <div>
+                    <h4
+                      className={`font-black text-xs ${
+                        isCorridorMode ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      Tarik Jalur Otomatis
+                    </h4>
+                    <p
+                      className={`text-[9px] leading-tight mt-0.5 ${
+                        isCorridorMode ? 'text-blue-100' : 'text-slate-500'
+                      }`}
+                    >
+                      Pasang tiang per 35m di jalan
+                    </p>
+                  </div>
                 </button>
+
+                {/* 2. Batch Delete Tool */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowGoogleToolsMenu(false);
+                    toggleBatchDeleteMode();
+                  }}
+                  className={`p-2.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
+                    isBatchDeleteMode
+                      ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-500/25'
+                      : 'bg-slate-50 hover:bg-red-50/50 border-slate-200 hover:border-red-300'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 shadow-xs ${
+                      isBatchDeleteMode ? 'bg-white/20 text-white' : 'bg-red-600 text-white'
+                    }`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4
+                      className={`font-black text-xs ${
+                        isBatchDeleteMode ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      Pilih &amp; Hapus Massal
+                    </h4>
+                    <p
+                      className={`text-[9px] leading-tight mt-0.5 ${
+                        isBatchDeleteMode ? 'text-red-100' : 'text-slate-500'
+                      }`}
+                    >
+                      Pilih beberapa pin untuk dihapus
+                    </p>
+                  </div>
+                </button>
+
+                {/* 3. Measurement Tool */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowGoogleToolsMenu(false);
+                    toggleMeasuring();
+                  }}
+                  className={`p-2.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
+                    isMeasuring
+                      ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/25'
+                      : 'bg-slate-50 hover:bg-amber-50/50 border-slate-200 hover:border-amber-300'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1.5 shadow-xs ${
+                      isMeasuring ? 'bg-white/20 text-white' : 'bg-amber-500 text-white'
+                    }`}
+                  >
+                    <Ruler className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4
+                      className={`font-black text-xs ${
+                        isMeasuring ? 'text-white' : 'text-slate-900'
+                      }`}
+                    >
+                      Ukur Jarak Spasial
+                    </h4>
+                    <p
+                      className={`text-[9px] leading-tight mt-0.5 ${
+                        isMeasuring ? 'text-amber-100' : 'text-slate-500'
+                      }`}
+                    >
+                      Hitung bentang kabel antar-tiang
+                    </p>
+                  </div>
+                </button>
+
+                {/* 4. Filter Drawer */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowGoogleToolsMenu(false);
+                    setShowFilterDrawer(true);
+                  }}
+                  className="p-2.5 rounded-2xl border bg-slate-50 hover:bg-blue-50/50 border-slate-200 hover:border-blue-300 text-left flex flex-col justify-between transition-all cursor-pointer group"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1.5 shadow-xs">
+                    <Filter className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-xs text-slate-900">
+                      Filter Data Tiang
+                    </h4>
+                    <p className="text-[9px] text-slate-500 leading-tight mt-0.5">
+                      Provider, kondisi, &amp; kecamatan
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Map Layers Section */}
+              <div className="pt-2 border-t border-slate-100 space-y-2">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Pengaturan Layer Peta
+                </h4>
+
+                {/* Layer Mode Switch */}
+                <div className="flex items-center justify-between p-2 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-3.5 h-3.5 text-blue-600" />
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-900 block">
+                        Tipe Layer Peta
+                      </span>
+                      <span className="text-[9px] text-slate-500 block capitalize">
+                        {tileMode === 'clean_satellite'
+                          ? 'Google Satelit Polos'
+                          : tileMode === 'hybrid_survey'
+                          ? 'Satelit + Jalan (Hybrid)'
+                          : 'Peta Jalan (Street)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleTileMode}
+                    className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-blue-700 font-bold text-[11px] rounded-xl shadow-2xs cursor-pointer"
+                  >
+                    Ganti Mode
+                  </button>
+                </div>
+
+                {/* Boundaries Overlay Switch */}
+                <div className="flex items-center justify-between p-2 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-3.5 h-3.5 text-indigo-600" />
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-900 block">
+                        Batas Kelurahan
+                      </span>
+                      <span className="text-[9px] text-slate-500 block">
+                        {showBoundaries ? 'Aktif (Terlihat)' : 'Nonaktif'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleBoundaries}
+                    className={`px-2.5 py-1 font-bold text-[11px] rounded-xl shadow-2xs cursor-pointer transition-all ${
+                      showBoundaries
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {showBoundaries ? 'Sembunyikan' : 'Tampilkan'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Multi-Pole Measurement Mode Prompt Banner */}
       {isMeasuring && (
