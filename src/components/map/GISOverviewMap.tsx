@@ -99,7 +99,7 @@ export default function GISOverviewMap({
   const [isLoadingRoadGeometry, setIsLoadingRoadGeometry] = useState<boolean>(false);
   const [corridorProviderId, setCorridorProviderId] = useState<string>('PRV_TELKOM');
   const [corridorPoleType, setCorridorPoleType] = useState<string>('BETON');
-  const [corridorHeight, setCorridorHeight] = useState<string>('7m');
+  const [corridorHeight, setCorridorHeight] = useState<string>('5m');
   const [corridorRoad, setCorridorRoad] = useState<string>('Jalan Garuda');
   const [corridorKecamatan, setCorridorKecamatan] = useState<string>(KECAMATAN_LUBUKLINGGAU[0].name);
   const [corridorKelurahan, setCorridorKelurahan] = useState<string>(KECAMATAN_LUBUKLINGGAU[0].kelurahan[0]);
@@ -117,9 +117,11 @@ export default function GISOverviewMap({
   const [selectedProvider, setSelectedProvider] = useState('ALL');
   const [selectedCondition, setSelectedCondition] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL'); // FO_WIFI, PJU_MANDIRI, GABUNG_PLN_PJU, PLN_MURNI, etc.
+  const [selectedPjuCableFilter, setSelectedPjuCableFilter] = useState<'ALL' | 'WITH_CABLE' | 'WITHOUT_CABLE'>('ALL');
   const [selectedKecamatan, setSelectedKecamatan] = useState('ALL');
   const [selectedKelurahan, setSelectedKelurahan] = useState('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
+  const [selectedHeight, setSelectedHeight] = useState('ALL'); // ALL, 5m, 6m, 7m, 9m, 12m
   const [selectedCableType, setSelectedCableType] = useState('ALL'); // UDARA, BAWAH_TANAH, TRANSISI_RISER
   const [selectedHazard, setSelectedHazard] = useState<'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'>('ALL');
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
@@ -632,6 +634,16 @@ export default function GISOverviewMap({
       if (poleCat !== selectedCategory) return false;
     }
 
+    // 3b. PJU Network Cable Tumpangan Filter (Khusus PJU)
+    if (selectedPjuCableFilter !== 'ALL') {
+      const isPju = pole.infrastructureCategory === 'PJU_MANDIRI' || pole.infrastructureCategory === 'GABUNG_PLN_PJU';
+      if (selectedPjuCableFilter === 'WITH_CABLE') {
+        if (!isPju || !pole.hasNetworkCable) return false;
+      } else if (selectedPjuCableFilter === 'WITHOUT_CABLE') {
+        if (!isPju || pole.hasNetworkCable) return false;
+      }
+    }
+
     // 4. Kecamatan Filter
     if (selectedKecamatan !== 'ALL' && pole.kecamatan !== selectedKecamatan) return false;
 
@@ -640,6 +652,12 @@ export default function GISOverviewMap({
 
     // 6. Pole Material Type Filter (Beton, Besi, Kayu)
     if (selectedType !== 'ALL' && pole.poleType !== selectedType) return false;
+
+    // 6b. Pole Height Filter (5m, 6m, 7m, 9m, 12m)
+    if (selectedHeight !== 'ALL') {
+      const pHeight = pole.height || '5m';
+      if (pHeight !== selectedHeight) return false;
+    }
 
     // 7. Cable Installation Type (Udara, Bawah Tanah, Riser)
     if (selectedCableType !== 'ALL') {
@@ -948,9 +966,11 @@ export default function GISOverviewMap({
     setSelectedProvider('ALL');
     setSelectedCondition('ALL');
     setSelectedCategory('ALL');
+    setSelectedPjuCableFilter('ALL');
     setSelectedKecamatan('ALL');
     setSelectedKelurahan('ALL');
     setSelectedType('ALL');
+    setSelectedHeight('ALL');
     setSelectedCableType('ALL');
     setSelectedHazard('ALL');
     setSearchQuery('');
@@ -1306,9 +1326,38 @@ export default function GISOverviewMap({
                 </button>
               ))}
             </div>
+
+            {/* 1b. Khusus PJU: Filter Tumpangan Kabel Jaringan / FO */}
+            {(selectedCategory === 'ALL' || selectedCategory === 'PJU_MANDIRI' || selectedCategory === 'GABUNG_PLN_PJU') && (
+              <div className="mt-2 p-2.5 bg-amber-50/70 border border-amber-200 rounded-2xl">
+                <label className="block text-[10px] font-black text-amber-900 uppercase tracking-wider mb-1">
+                  💡 Status Tumpangan Kabel Jaringan pada PJU:
+                </label>
+                <div className="grid grid-cols-3 gap-1 text-[10px]">
+                  {[
+                    { id: 'ALL', label: 'Semua PJU' },
+                    { id: 'WITH_CABLE', label: '🌐 Ada Kabel FO' },
+                    { id: 'WITHOUT_CABLE', label: '🚫 PJU Murni (Tanpa FO)' },
+                  ].map((pjuOpt) => (
+                    <button
+                      key={pjuOpt.id}
+                      type="button"
+                      onClick={() => setSelectedPjuCableFilter(pjuOpt.id as any)}
+                      className={`py-1.5 px-2 rounded-xl font-bold transition-all text-center cursor-pointer ${
+                        selectedPjuCableFilter === pjuOpt.id
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-white text-slate-700 border border-amber-200 hover:bg-amber-100'
+                      }`}
+                    >
+                      {pjuOpt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* 2. Grid Fields (Provider, Kondisi, Kecamatan, Kelurahan) */}
+          {/* 2. Grid Fields (Provider, Kondisi, Kecamatan, Kelurahan, Material, Tinggi, Kabel) */}
           <div className="grid grid-cols-2 gap-2.5 text-xs">
             {/* Provider Filter */}
             <div>
@@ -1387,6 +1436,26 @@ export default function GISOverviewMap({
               </select>
             </div>
 
+            {/* Pole Height Filter */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Tinggi Tiang
+              </label>
+              <select
+                value={selectedHeight}
+                onChange={(e) => setSelectedHeight(e.target.value)}
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="ALL">Semua Tinggi</option>
+                <option value="5m">5 Meter (PJU / FO Rendah)</option>
+                <option value="6m">6 Meter</option>
+                <option value="7m">7 Meter (Standar FO)</option>
+                <option value="9m">9 Meter</option>
+                <option value="11m">11 Meter</option>
+                <option value="12m">12 Meter (PLN)</option>
+              </select>
+            </div>
+
             {/* Pole Type Filter */}
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -1405,7 +1474,7 @@ export default function GISOverviewMap({
             </div>
 
             {/* Cable Installation Type Filter */}
-            <div>
+            <div className="col-span-2">
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                 Instalasi Kabel
               </label>
@@ -1710,9 +1779,28 @@ export default function GISOverviewMap({
                 onChange={(e) => setCorridorPoleType(e.target.value)}
                 className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
               >
-                <option value="BETON">Tiang Beton (7m)</option>
+                <option value="BETON">Tiang Beton</option>
                 <option value="BESI">Tiang Besi / Galvanis</option>
                 <option value="KAYU">Tiang Kayu</option>
+              </select>
+            </div>
+
+            {/* Height Selector (Default 5m) */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Tinggi Tiang
+              </label>
+              <select
+                value={corridorHeight}
+                onChange={(e) => setCorridorHeight(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="5m">5 Meter (PJU / Standar)</option>
+                <option value="6m">6 Meter</option>
+                <option value="7m">7 Meter</option>
+                <option value="9m">9 Meter</option>
+                <option value="11m">11 Meter</option>
+                <option value="12m">12 Meter</option>
               </select>
             </div>
 
@@ -2051,8 +2139,15 @@ export default function GISOverviewMap({
                 {selectedPole.id}
               </span>
               <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-[9px] font-bold uppercase">
-                {selectedPole.poleType}
+                {selectedPole.poleType} • {selectedPole.height || '5m'}
               </span>
+              {(selectedPole.infrastructureCategory === 'PJU_MANDIRI' || selectedPole.infrastructureCategory === 'GABUNG_PLN_PJU') && (
+                <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                  selectedPole.hasNetworkCable ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-900'
+                }`}>
+                  💡 {selectedPole.hasNetworkCable ? 'PJU + Kabel FO' : 'PJU Murni'}
+                </span>
+              )}
             </div>
             <button
               onClick={() => setSelectedPole(null)}

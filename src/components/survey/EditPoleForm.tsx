@@ -82,6 +82,7 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
     pole.pjuLampCondition || 'MENYALA_NORMAL'
   );
   const [hasKwhMeter, setHasKwhMeter] = useState(!!pole.hasKwhMeter);
+  const [hasNetworkCable, setHasNetworkCable] = useState(!!pole.hasNetworkCable);
 
   const [providerList, setProviderList] = useState<Provider[]>(DEFAULT_PROVIDERS);
   const [providerId, setProviderId] = useState(pole.providerId || DEFAULT_PROVIDERS[0]?.id);
@@ -89,7 +90,7 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   const [poleType, setPoleType] = useState<PoleType>(pole.poleType || 'BETON');
   const [condition, setCondition] = useState<PoleCondition>(pole.condition || 'GOOD');
   const [poleCode, setPoleCode] = useState(pole.poleCode || '');
-  const [height, setHeight] = useState(pole.height || '7m');
+  const [height, setHeight] = useState(pole.height || '5m');
   const [ownershipStatus, setOwnershipStatus] = useState<OwnershipStatus>(
     pole.ownershipStatus || 'SENDIRI'
   );
@@ -210,6 +211,7 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
         pjuLampPower: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampPower : undefined,
         pjuLampCondition: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampCondition : undefined,
         hasKwhMeter: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasKwhMeter : undefined,
+        hasNetworkCable: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasNetworkCable : undefined,
         isTilted,
         isMessyCable,
         isLowCable,
@@ -653,6 +655,42 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                   ))}
                 </div>
               </div>
+
+              {/* Tumpangan Kabel Jaringan / FO pada Tiang PJU */}
+              <div className="pt-2 border-t border-amber-200/80">
+                <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                  <span>Kabel Jaringan / Internet Menumpang</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                    hasNetworkCable ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {hasNetworkCable ? 'Ada Kabel FO' : 'PJU Murni'}
+                  </span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setHasNetworkCable(false)}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                      !hasNetworkCable
+                        ? 'bg-slate-800 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100'
+                    }`}
+                  >
+                    🚫 PJU Murni (Tanpa Kabel FO)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHasNetworkCable(true)}
+                    className={`p-2 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                      hasNetworkCable
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                        : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100'
+                    }`}
+                  >
+                    🌐 Ada Kabel FO / Internet Menumpang
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -755,6 +793,8 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                 onChange={(e) => setHeight(e.target.value)}
                 className="w-full px-2 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none focus:border-blue-500"
               >
+                <option value="5m">5 Meter</option>
+                <option value="6m">6 Meter</option>
                 <option value="7m">7 Meter</option>
                 <option value="9m">9 Meter</option>
                 <option value="11m">11 Meter</option>

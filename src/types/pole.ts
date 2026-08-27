@@ -68,6 +68,7 @@ export interface Pole {
   pjuLampPower?: string; // "40W", "60W", "90W", "120W", "150W", "250W"
   pjuLampCondition?: LampuPjuCondition;
   hasKwhMeter?: boolean; // Ada KWh Meter atau Non-Meter (Abonemen)
+  hasNetworkCable?: boolean; // Apakah ada kabel jaringan/FO yang menumpang di tiang PJU
   
   // Quick Safety & Condition Hazards (Yes/No flags)
   isTilted?: boolean; // Tiang Miring
@@ -122,6 +123,7 @@ export interface CreatePoleInput {
   pjuLampPower?: string;
   pjuLampCondition?: LampuPjuCondition;
   hasKwhMeter?: boolean;
+  hasNetworkCable?: boolean;
 
   isTilted?: boolean;
   isMessyCable?: boolean;

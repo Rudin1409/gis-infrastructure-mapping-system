@@ -29,7 +29,7 @@ export const createPoleSchema = z.object({
   kota: z.string().optional().default('Kota Lubuklinggau'),
   patokanLokasi: z.string().optional().default(''),
   sisiJalan: z.string().optional().default('TIDAK_DITENTUKAN'),
-  height: z.string().optional().default('7m'),
+  height: z.string().optional().default('5m'),
   ownershipStatus: z.string().optional().default('SENDIRI'),
   cableInstallationType: z.string().optional().default('UDARA'),
   isTilted: z.boolean().optional().default(false),
@@ -52,6 +52,7 @@ export const createPoleSchema = z.object({
   pjuLampPower: z.string().optional().default(''),
   pjuLampCondition: z.string().optional().default(''),
   hasKwhMeter: z.boolean().optional().default(false),
+  hasNetworkCable: z.boolean().optional().default(false),
 });
 
 export const updatePoleSchema = createPoleSchema.partial().extend({

@@ -23,6 +23,7 @@ interface BatchCreateCorridorPayload {
     condition?: string;
     height?: string;
     infrastructureCategory?: string;
+    hasNetworkCable?: boolean;
     cableInstallationType?: string;
     sisiJalan?: string;
     surveyorId?: string;
@@ -74,9 +75,10 @@ export async function POST(request: NextRequest) {
         providerName: p.providerName || 'PT Telkom Indonesia',
         poleType: (p.poleType as any) || 'BETON',
         condition: (p.condition as any) || 'GOOD',
-        height: p.height || '7m',
+        height: p.height || '5m',
         sisiJalan: (p.sisiJalan as any) || 'KIRI',
         infrastructureCategory: (p.infrastructureCategory as any) || 'FO_WIFI',
+        hasNetworkCable: p.hasNetworkCable !== undefined ? p.hasNetworkCable : undefined,
         cableInstallationType: (p.cableInstallationType as any) || 'UDARA',
         locationMethod: 'MANUAL_MAP_PIN',
         surveyorId: p.surveyorId || 'USR-KOMINFO-ADMIN',

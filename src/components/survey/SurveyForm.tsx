@@ -83,13 +83,13 @@ export default function SurveyForm({
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(undefined);
 
-  // --- 3. KATEGORI INFRASTRUKTUR & INFORMASI TIANG ---
   const [infrastructureCategory, setInfrastructureCategory] = useState<InfrastructureCategory>('FO_WIFI');
   const [cableInstallationType, setCableInstallationType] = useState<CableInstallationType>('UDARA');
   const [pjuLampType, setPjuLampType] = useState<LampuPjuType>('LED');
   const [pjuLampPower, setPjuLampPower] = useState('90W');
   const [pjuLampCondition, setPjuLampCondition] = useState<LampuPjuCondition>('MENYALA_NORMAL');
   const [hasKwhMeter, setHasKwhMeter] = useState(false);
+  const [hasNetworkCable, setHasNetworkCable] = useState(false);
 
   const [providerList, setProviderList] = useState<Provider[]>(DEFAULT_PROVIDERS);
   const [providerId, setProviderId] = useState(DEFAULT_PROVIDERS[0]?.id || 'PRV_TELKOM');
@@ -98,7 +98,7 @@ export default function SurveyForm({
   const [condition, setCondition] = useState<PoleCondition>('GOOD');
   const [poleCode, setPoleCode] = useState('');
   const [segmentCode, setSegmentCode] = useState('');
-  const [height, setHeight] = useState('7m');
+  const [height, setHeight] = useState('5m');
   const [ownershipStatus, setOwnershipStatus] = useState<OwnershipStatus>('SENDIRI');
 
   // --- 4. SAFETY & HAZARD QUICK TOGGLES (Hasil Pengamatan) ---
@@ -274,6 +274,7 @@ export default function SurveyForm({
         pjuLampPower: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampPower : undefined,
         pjuLampCondition: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampCondition : undefined,
         hasKwhMeter: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasKwhMeter : undefined,
+        hasNetworkCable: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasNetworkCable : undefined,
         isTilted,
         isMessyCable,
         isLowCable,
@@ -850,6 +851,42 @@ export default function SurveyForm({
                       ))}
                     </div>
                   </div>
+
+                  {/* Tumpangan Kabel Jaringan / FO pada Tiang PJU */}
+                  <div className="pt-2 border-t border-amber-200/80">
+                    <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
+                      <span>Kabel Jaringan / Internet Menumpang</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                        hasNetworkCable ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {hasNetworkCable ? 'Ada Kabel FO' : 'PJU Murni'}
+                      </span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setHasNetworkCable(false)}
+                        className={`p-2 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                          !hasNetworkCable
+                            ? 'bg-slate-800 text-white border-slate-900 shadow-xs'
+                            : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100'
+                        }`}
+                      >
+                        🚫 PJU Murni (Tanpa Kabel FO)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setHasNetworkCable(true)}
+                        className={`p-2 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                          hasNetworkCable
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                            : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100'
+                        }`}
+                      >
+                        🌐 Ada Kabel FO / Internet Menumpang
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -951,7 +988,7 @@ export default function SurveyForm({
                     Estimasi Tinggi Tiang
                   </label>
                   <div className="grid grid-cols-5 gap-1">
-                    {['3m', '6m', '7m', '9m', '12m'].map((h) => (
+                    {['5m', '6m', '7m', '9m', '12m'].map((h) => (
                       <button
                         key={h}
                         type="button"

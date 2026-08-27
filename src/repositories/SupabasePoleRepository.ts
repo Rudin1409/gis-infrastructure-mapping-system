@@ -31,6 +31,7 @@ function mapDbToPole(row: any): Pole {
     pjuLampPower: row.pju_lamp_power || undefined,
     pjuLampCondition: row.pju_lamp_condition || 'TIDAK_ADA',
     hasKwhMeter: Boolean(row.has_kwh_meter),
+    hasNetworkCable: Boolean(row.has_network_cable),
     isTilted: Boolean(row.is_tilted),
     isMessyCable: Boolean(row.is_messy_cable),
     isLowCable: Boolean(row.is_low_cable),
@@ -82,6 +83,7 @@ function mapPoleToDb(pole: Partial<Pole>): Record<string, any> {
   if (pole.pjuLampPower !== undefined) db.pju_lamp_power = pole.pjuLampPower;
   if (pole.pjuLampCondition !== undefined) db.pju_lamp_condition = pole.pjuLampCondition;
   if (pole.hasKwhMeter !== undefined) db.has_kwh_meter = pole.hasKwhMeter;
+  if (pole.hasNetworkCable !== undefined) db.has_network_cable = pole.hasNetworkCable;
   if (pole.isTilted !== undefined) db.is_tilted = pole.isTilted;
   if (pole.isMessyCable !== undefined) db.is_messy_cable = pole.isMessyCable;
   if (pole.isLowCable !== undefined) db.is_low_cable = pole.isLowCable;
