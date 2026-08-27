@@ -108,7 +108,6 @@ export function interpolatePolesAlongPath(
   }
 
   // 3. Interpolate geographic coordinates for each target distance
-  const baseCodeNumber = Math.floor(100 + Math.random() * 800);
   const resultPoles: InterpolatedPolePoint[] = [];
 
   targetDistances.forEach((targetD, idx) => {
@@ -137,13 +136,14 @@ export function interpolatePolesAlongPath(
     const span = Math.round((targetD - prevDistance) * 10) / 10;
     const isStart = idx === 0;
     const isEnd = idx === targetDistances.length - 1;
+    const seqFormatted = String(idx + 1).padStart(3, '0');
 
     resultPoles.push({
       index: idx + 1,
       coord: foundCoord,
       distanceFromStart: Math.round(targetD * 10) / 10,
       spanFromPrevious: span,
-      poleCode: `${codePrefix}-${baseCodeNumber + idx}`,
+      poleCode: `${codePrefix}-${seqFormatted}`,
       isEndpoint: isStart ? 'START' : isEnd ? 'END' : 'INTERMEDIATE',
     });
   });
