@@ -253,19 +253,30 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   // Handle Delete
   const handleDeletePole = async () => {
     setIsDeleting(true);
+    setErrorMessage(null);
     try {
       const res = await fetch(`/api/poles/${pole.id}`, {
         method: 'DELETE',
+        headers: { 'Cache-Control': 'no-cache' },
       });
 
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menghapus tiang');
+        throw new Error(json.error || 'Gagal menghapus data dari database Supabase');
       }
 
-      router.push('/poles');
-      router.refresh();
+      setShowDeleteModal(false);
+      setSuccessMessage(`Data tiang (${pole.poleCode || pole.id}) berhasil dihapus permanen dari database Supabase!`);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('gis:hard-refresh'));
+      }
+
+      setTimeout(() => {
+        router.push('/poles');
+        router.refresh();
+      }, 1000);
     } catch (err: any) {
       setErrorMessage(err.message || 'Gagal menghapus tiang');
       setIsDeleting(false);
