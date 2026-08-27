@@ -38,6 +38,7 @@ import {
   Square,
   Route,
   Navigation,
+  LayoutGrid,
 } from 'lucide-react';
 import Link from 'next/link';
 import { LUBUKLINGGAU_KELURAHAN_BOUNDARIES } from '@/lib/gis/boundaries';
@@ -118,6 +119,7 @@ export default function GISOverviewMap({
   const [selectedKecamatan, setSelectedKecamatan] = useState('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+  const [showGoogleToolsMenu, setShowGoogleToolsMenu] = useState(false);
   const [selectedPole, setSelectedPole] = useState<Pole | null>(null);
 
   // Load Leaflet dynamically
@@ -914,155 +916,340 @@ export default function GISOverviewMap({
   return (
     <div className="relative w-full h-full flex flex-col bg-slate-100 overflow-hidden">
       {/* ============================================================ */}
-      {/* TOP FLOATING CONTROLS: 2-TIER MODERN MOBILE MAP UI          */}
+      {/* TOP GOOGLE SEARCH & 4-DOTS TOOLS MENU BAR                   */}
       {/* ============================================================ */}
       <div className="absolute top-3 left-3 right-3 z-[400] space-y-2 pointer-events-auto select-none">
-        {/* Tier 1: Full-Width Clean Floating Search Bar */}
-        <div className="relative w-full shadow-lg rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 flex items-center">
-          <Search className="w-4 h-4 text-slate-400 ml-3.5 flex-shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari ID tiang, provider, nama jalan..."
-            className="w-full pl-2.5 pr-8 py-2.5 bg-transparent text-xs text-slate-800 placeholder-slate-400 font-medium outline-none"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="p-1 mr-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+        <div className="flex items-center gap-2">
+          {/* Full-Width Clean Floating Search Bar */}
+          <div className="relative flex-1 shadow-lg rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 flex items-center">
+            <Search className="w-4 h-4 text-slate-400 ml-3.5 flex-shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari ID tiang, provider, nama jalan..."
+              className="w-full pl-2.5 pr-8 py-2.5 bg-transparent text-xs text-slate-800 placeholder-slate-400 font-medium outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="p-1 mr-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* 4-DOTS / GOOGLE APPS TOOLS MENU BUTTON */}
+          <button
+            type="button"
+            onClick={() => setShowGoogleToolsMenu(true)}
+            className={`p-2.5 rounded-2xl shadow-lg border backdrop-blur-md transition-all flex items-center justify-center cursor-pointer ${
+              showGoogleToolsMenu
+                ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/30'
+                : 'bg-white/95 text-slate-700 hover:text-blue-600 border-slate-200 hover:bg-slate-50'
+            }`}
+            title="Buka Menu Alat GIS (Titik 4)"
+          >
+            <LayoutGrid className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Tier 2: Floating Quick Action Chips (Horizontal Scrollable) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
-          {/* 0. ⚡ Auto-Corridor Generator Tool Toggle */}
-          <button
-            type="button"
-            onClick={toggleCorridorMode}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl font-black border shadow-md backdrop-blur-md whitespace-nowrap transition-all cursor-pointer ${
-              isCorridorMode
-                ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 text-white border-blue-500 ring-2 ring-blue-300 shadow-blue-500/30'
-                : 'bg-white/95 text-slate-800 border-slate-200 hover:bg-slate-50'
-            }`}
-            title="Tarik jalur di peta dan pasang tiang otomatis per interval (misal 35m)"
-          >
-            <Zap className={`w-3.5 h-3.5 ${isCorridorMode ? 'text-amber-300 fill-amber-300' : 'text-blue-600 fill-blue-600'}`} />
-            <span>{isCorridorMode ? 'Mode Jalur Aktif' : 'Tarik Jalur Otomatis'}</span>
-          </button>
+        {/* Active Tool Badge Indicator (When a mode is running) */}
+        {(isCorridorMode ||
+          isBatchDeleteMode ||
+          isMeasuring ||
+          selectedProvider !== 'ALL' ||
+          selectedCondition !== 'ALL' ||
+          selectedKecamatan !== 'ALL' ||
+          selectedType !== 'ALL') && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            {isCorridorMode && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-[11px] rounded-xl shadow-md border border-blue-400/40 animate-in fade-in">
+                <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                <span>Mode Jalur Aktif</span>
+                <button
+                  type="button"
+                  onClick={toggleCorridorMode}
+                  className="p-0.5 hover:bg-white/20 rounded-md ml-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
-          {/* 0.5 🗑️ Batch Delete Poles Mode Toggle */}
-          <button
-            type="button"
-            onClick={toggleBatchDeleteMode}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold border shadow-md backdrop-blur-md whitespace-nowrap transition-all cursor-pointer ${
-              isBatchDeleteMode
-                ? 'bg-red-600 text-white border-red-600 ring-2 ring-red-300 shadow-red-500/30'
-                : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
-            title="Pilih beberapa pin tiang di peta untuk dihapus massal"
-          >
-            <Trash2 className={`w-3.5 h-3.5 ${isBatchDeleteMode ? 'text-white' : 'text-red-500'}`} />
-            <span>{isBatchDeleteMode ? `Pilih Hapus (${selectedDeleteIds.length})` : 'Pilih & Hapus'}</span>
-          </button>
+            {isBatchDeleteMode && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-600 text-white font-bold text-[11px] rounded-xl shadow-md border border-red-400/40 animate-in fade-in">
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Mode Hapus ({selectedDeleteIds.length})</span>
+                <button
+                  type="button"
+                  onClick={toggleBatchDeleteMode}
+                  className="p-0.5 hover:bg-white/20 rounded-md ml-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
-          {/* 1. Ruler Tool Toggle */}
-          <button
-            type="button"
-            onClick={toggleMeasuring}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold border shadow-md backdrop-blur-md whitespace-nowrap transition-all cursor-pointer ${
-              isMeasuring
-                ? 'bg-amber-500 text-white border-amber-600 ring-2 ring-amber-300 shadow-amber-500/25'
-                : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <Ruler className="w-3.5 h-3.5" />
-            <span>{isMeasuring ? 'Mode Ukur Jalur' : 'Ukur Jarak'}</span>
-          </button>
+            {isMeasuring && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500 text-white font-bold text-[11px] rounded-xl shadow-md border border-amber-400/40 animate-in fade-in">
+                <Ruler className="w-3.5 h-3.5" />
+                <span>Mode Ukur</span>
+                <button
+                  type="button"
+                  onClick={toggleMeasuring}
+                  className="p-0.5 hover:bg-white/20 rounded-md ml-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
 
-          {/* 2. Auto-Route Toggle (when measuring) */}
-          {isMeasuring && (
-            <button
-              type="button"
-              onClick={() => setAutoRouteMode(!autoRouteMode)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold border shadow-md backdrop-blur-md whitespace-nowrap transition-all cursor-pointer ${
-                autoRouteMode
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/25'
-                  : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
-              }`}
-              title="Otomatis sambungkan tiang perantara di sepanjang jalan"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>{autoRouteMode ? '⚡ Jalur Tiang Otomatis' : '📐 Garis Bebas'}</span>
-            </button>
-          )}
-
-          {/* 3. Filter Drawer Toggle */}
-          <button
-            type="button"
-            onClick={() => setShowFilterDrawer(!showFilterDrawer)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold border shadow-md backdrop-blur-md whitespace-nowrap transition-all cursor-pointer ${
-              selectedProvider !== 'ALL' ||
+            {(selectedProvider !== 'ALL' ||
               selectedCondition !== 'ALL' ||
               selectedKecamatan !== 'ALL' ||
-              selectedType !== 'ALL'
-                ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/25'
-                : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <Filter className="w-3.5 h-3.5" />
-            <span>Filter</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                selectedProvider !== 'ALL' ||
-                selectedCondition !== 'ALL' ||
-                selectedKecamatan !== 'ALL' ||
-                selectedType !== 'ALL'
-                  ? 'bg-white text-blue-700'
-                  : 'bg-slate-100 text-slate-700'
-              }`}
-            >
-              {filteredPoles.length}
-            </span>
-          </button>
-
-          {/* 4. Kelurahan Boundaries Toggle */}
-          <button
-            type="button"
-            onClick={toggleBoundaries}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold border shadow-md backdrop-blur-md whitespace-nowrap transition-all cursor-pointer ${
-              showBoundaries
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-500/25'
-                : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-slate-50'
-            }`}
-            title="Tampilkan / Sembunyikan Batas Kelurahan"
-          >
-            <Shield className="w-3.5 h-3.5" />
-            <span>Batas Wilayah</span>
-          </button>
-
-          {/* 5. Layer Map Toggle */}
-          <button
-            type="button"
-            onClick={toggleTileMode}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl font-bold border border-slate-200 bg-white/95 text-slate-700 hover:bg-slate-50 shadow-md backdrop-blur-md whitespace-nowrap transition-all cursor-pointer"
-            title="Ganti Mode Peta / Satelit"
-          >
-            <Layers className="w-3.5 h-3.5 text-blue-600" />
-            <span className="capitalize">
-              {tileMode === 'clean_satellite'
-                ? 'Satelit Polos'
-                : tileMode === 'hybrid_survey'
-                ? 'Satelit + Jalan'
-                : 'Peta Jalan'}
-            </span>
-          </button>
-        </div>
+              selectedType !== 'ALL') && (
+              <button
+                type="button"
+                onClick={() => setShowFilterDrawer(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 font-bold text-[11px] rounded-xl border border-blue-200 shadow-xs cursor-pointer"
+              >
+                <Filter className="w-3 h-3" />
+                <span>Filter Aktif ({filteredPoles.length})</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* ============================================================ */}
+      {/* GOOGLE-STYLE 4-DOTS TOOLS POPUP ACTION SHEET                 */}
+      {/* ============================================================ */}
+      {showGoogleToolsMenu && (
+        <div className="fixed inset-0 z-[500] bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-5 shadow-2xl border border-slate-200 w-full max-w-sm max-h-[85vh] overflow-y-auto space-y-4 animate-in slide-in-from-bottom-4">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <LayoutGrid className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-slate-900">Menu &amp; Alat GIS</h3>
+                  <p className="text-[10px] text-slate-400">Pilih fitur pemetaan &amp; alat survei</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowGoogleToolsMenu(false)}
+                className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Grid Menu Cards (Google Style) */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* 1. Auto-Corridor Generator */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleToolsMenu(false);
+                  toggleCorridorMode();
+                }}
+                className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
+                  isCorridorMode
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/25'
+                    : 'bg-slate-50 hover:bg-blue-50/50 border-slate-200 hover:border-blue-300'
+                }`}
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 shadow-xs ${
+                    isCorridorMode ? 'bg-white/20 text-white' : 'bg-blue-600 text-white'
+                  }`}
+                >
+                  <Zap className="w-5 h-5 text-amber-300 fill-amber-300" />
+                </div>
+                <div>
+                  <h4
+                    className={`font-black text-xs ${
+                      isCorridorMode ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    Tarik Jalur Otomatis
+                  </h4>
+                  <p
+                    className={`text-[10px] leading-tight mt-0.5 ${
+                      isCorridorMode ? 'text-blue-100' : 'text-slate-500'
+                    }`}
+                  >
+                    Pasang tiang per interval 35m di jalan
+                  </p>
+                </div>
+              </button>
+
+              {/* 2. Batch Delete Tool */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleToolsMenu(false);
+                  toggleBatchDeleteMode();
+                }}
+                className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
+                  isBatchDeleteMode
+                    ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-500/25'
+                    : 'bg-slate-50 hover:bg-red-50/50 border-slate-200 hover:border-red-300'
+                }`}
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 shadow-xs ${
+                    isBatchDeleteMode ? 'bg-white/20 text-white' : 'bg-red-600 text-white'
+                  }`}
+                >
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4
+                    className={`font-black text-xs ${
+                      isBatchDeleteMode ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    Pilih &amp; Hapus Massal
+                  </h4>
+                  <p
+                    className={`text-[10px] leading-tight mt-0.5 ${
+                      isBatchDeleteMode ? 'text-red-100' : 'text-slate-500'
+                    }`}
+                  >
+                    Pilih beberapa pin tiang untuk dihapus
+                  </p>
+                </div>
+              </button>
+
+              {/* 3. Measurement Tool */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleToolsMenu(false);
+                  toggleMeasuring();
+                }}
+                className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer group ${
+                  isMeasuring
+                    ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/25'
+                    : 'bg-slate-50 hover:bg-amber-50/50 border-slate-200 hover:border-amber-300'
+                }`}
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 shadow-xs ${
+                    isMeasuring ? 'bg-white/20 text-white' : 'bg-amber-500 text-white'
+                  }`}
+                >
+                  <Ruler className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4
+                    className={`font-black text-xs ${
+                      isMeasuring ? 'text-white' : 'text-slate-900'
+                    }`}
+                  >
+                    Ukur Jarak Spasial
+                  </h4>
+                  <p
+                    className={`text-[10px] leading-tight mt-0.5 ${
+                      isMeasuring ? 'text-amber-100' : 'text-slate-500'
+                    }`}
+                  >
+                    Hitung bentang kabel antar-tiang
+                  </p>
+                </div>
+              </button>
+
+              {/* 4. Filter Drawer */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleToolsMenu(false);
+                  setShowFilterDrawer(true);
+                }}
+                className="p-3 rounded-2xl border bg-slate-50 hover:bg-blue-50/50 border-slate-200 hover:border-blue-300 text-left flex flex-col justify-between transition-all cursor-pointer group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 shadow-xs">
+                  <Filter className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-black text-xs text-slate-900">
+                    Filter Data Tiang
+                  </h4>
+                  <p className="text-[10px] text-slate-500 leading-tight mt-0.5">
+                    Provider, kondisi, &amp; kecamatan
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            {/* Map Layers Section */}
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Pengaturan Layer Peta
+              </h4>
+
+              {/* Layer Mode Switch */}
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-blue-600" />
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block">
+                      Tipe Layer Peta
+                    </span>
+                    <span className="text-[10px] text-slate-500 block capitalize">
+                      {tileMode === 'clean_satellite'
+                        ? 'Google Satelit Polos'
+                        : tileMode === 'hybrid_survey'
+                        ? 'Satelit + Jalan (Hybrid)'
+                        : 'Peta Jalan (Street)'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTileMode}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-blue-700 font-bold text-xs rounded-xl shadow-2xs cursor-pointer"
+                >
+                  Ganti Mode
+                </button>
+              </div>
+
+              {/* Boundaries Overlay Switch */}
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-indigo-600" />
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 block">
+                      Batas Kelurahan
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {showBoundaries ? 'Aktif (Terlihat)' : 'Nonaktif'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleBoundaries}
+                  className={`px-2.5 py-1 font-bold text-xs rounded-xl shadow-2xs cursor-pointer transition-all ${
+                    showBoundaries
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
+                  }`}
+                >
+                  {showBoundaries ? 'Sembunyikan' : 'Tampilkan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Multi-Pole Measurement Mode Prompt Banner */}
       {isMeasuring && (
