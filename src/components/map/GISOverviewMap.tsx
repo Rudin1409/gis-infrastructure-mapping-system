@@ -203,24 +203,6 @@ export default function GISOverviewMap({
   const [isCopiedCoords, setIsCopiedCoords] = useState<boolean>(false);
   const [showGpsHud, setShowGpsHud] = useState<boolean>(false);
 
-  // 🧭 MAP ROTATION & COMPASS BEARING STATE
-  const [mapRotation, setMapRotation] = useState<number>(0);
-  const [isDraggingRotation, setIsDraggingRotation] = useState<boolean>(false);
-  const [showRotationControls, setShowRotationControls] = useState<boolean>(false);
-  const [isCompassSensorActive, setIsCompassSensorActive] = useState<boolean>(false);
-
-  const getCardinalDirection = (deg: number): string => {
-    const normalized = ((deg % 360) + 360) % 360;
-    if (normalized >= 337.5 || normalized < 22.5) return 'Utara (N)';
-    if (normalized >= 22.5 && normalized < 67.5) return 'Timur Laut (NE)';
-    if (normalized >= 67.5 && normalized < 112.5) return 'Timur (E)';
-    if (normalized >= 112.5 && normalized < 157.5) return 'Tenggara (SE)';
-    if (normalized >= 157.5 && normalized < 202.5) return 'Selatan (S)';
-    if (normalized >= 202.5 && normalized < 247.5) return 'Barat Daya (SW)';
-    if (normalized >= 247.5 && normalized < 292.5) return 'Barat (W)';
-    return 'Barat Laut (NW)';
-  };
-
   // Load Leaflet dynamically
   useEffect(() => {
     let isMounted = true;
@@ -316,102 +298,6 @@ export default function GISOverviewMap({
       mapInstanceRef.current = null;
     };
   }, [leafletLib]);
-
-  // 🧭 Apply CSS Rotation to Leaflet map pane
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-    const pane = mapContainerRef.current.querySelector('.leaflet-map-pane') as HTMLElement | null;
-    if (pane) {
-      pane.style.transformOrigin = 'center center';
-      pane.style.transition = isDraggingRotation ? 'none' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-      pane.style.transform = `rotate(${mapRotation}deg)`;
-    }
-  }, [mapRotation, isDraggingRotation]);
-
-  // 📱 Touch Gesture: 2-Finger Pinch & Rotate on Mobile
-  useEffect(() => {
-    const container = mapContainerRef.current;
-    if (!container) return;
-
-    let startAngle = 0;
-    let initialRotation = 0;
-    let isMultiTouch = false;
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        isMultiTouch = true;
-        setIsDraggingRotation(true);
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        startAngle = Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX) * (180 / Math.PI);
-        initialRotation = mapRotation;
-      }
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (isMultiTouch && e.touches.length === 2) {
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        const currentAngle = Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX) * (180 / Math.PI);
-        const diff = currentAngle - startAngle;
-        const newRot = ((initialRotation + diff) % 360 + 360) % 360;
-        setMapRotation(Math.round(newRot));
-      }
-    };
-
-    const onTouchEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) {
-        isMultiTouch = false;
-        setIsDraggingRotation(false);
-      }
-    };
-
-    container.addEventListener('touchstart', onTouchStart, { passive: true });
-    container.addEventListener('touchmove', onTouchMove, { passive: true });
-    container.addEventListener('touchend', onTouchEnd, { passive: true });
-
-    return () => {
-      container.removeEventListener('touchstart', onTouchStart);
-      container.removeEventListener('touchmove', onTouchMove);
-      container.removeEventListener('touchend', onTouchEnd);
-    };
-  }, [mapRotation]);
-
-  // 📱 Device Orientation Sensor for Live Mobile Compass
-  useEffect(() => {
-    if (!isCompassSensorActive) return;
-
-    const handleOrientation = (e: DeviceOrientationEvent) => {
-      let heading: number | null = null;
-      if ((e as any).webkitCompassHeading !== undefined) {
-        heading = (e as any).webkitCompassHeading;
-      } else if (e.alpha !== null) {
-        heading = (360 - e.alpha) % 360;
-      }
-
-      if (heading !== null && !isNaN(heading)) {
-        setMapRotation(Math.round(heading));
-      }
-    };
-
-    if (typeof window !== 'undefined') {
-      if (typeof (DeviceOrientationEvent as any)?.requestPermission === 'function') {
-        (DeviceOrientationEvent as any).requestPermission().then((res: string) => {
-          if (res === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation, true);
-          }
-        }).catch(() => {});
-      } else {
-        window.addEventListener('deviceorientation', handleOrientation, true);
-      }
-    }
-
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('deviceorientation', handleOrientation, true);
-      }
-    };
-  }, [isCompassSensorActive]);
 
   // 📍 GPS Location Trigger & Realtime Tracking
   const startLocating = (centerMap: boolean = true) => {
@@ -1491,54 +1377,6 @@ export default function GISOverviewMap({
             <HelpCircle className="w-5 h-5 text-blue-600" />
           </button>
 
-          {/* INTERACTIVE COMPASS ROSE & ROTATION BUTTON */}
-          <button
-            type="button"
-            onClick={() => {
-              if (mapRotation !== 0) {
-                setMapRotation(0);
-              } else {
-                setShowRotationControls((prev) => !prev);
-              }
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setShowRotationControls((prev) => !prev);
-            }}
-            className={`relative w-10 h-10 rounded-full shadow-lg border backdrop-blur-md flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 ${
-              mapRotation !== 0
-                ? 'bg-gradient-to-tr from-slate-900 to-slate-800 text-white border-blue-400 ring-2 ring-blue-500/40 shadow-blue-500/20'
-                : showRotationControls
-                ? 'bg-blue-600 text-white border-blue-400'
-                : 'bg-white/95 text-slate-700 hover:text-blue-600 border-slate-200'
-            }`}
-            title={
-              mapRotation !== 0
-                ? `Peta Diputar ${Math.round(mapRotation)}° (${getCardinalDirection(mapRotation)}) - Klik untuk Reset ke Utara (0°)`
-                : 'Kompas & Putar Peta (Klik untuk Memutar Peta)'
-            }
-          >
-            {/* Dynamic Rotating Compass Needle */}
-            <div
-              className="relative w-6 h-6 flex items-center justify-center transition-transform duration-300"
-              style={{ transform: `rotate(${-mapRotation}deg)` }}
-            >
-              {/* North Needle (Red) */}
-              <div className="absolute top-0 w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-b-[10px] border-b-red-500 filter drop-shadow-xs"></div>
-              {/* South Needle (White/Silver) */}
-              <div className="absolute bottom-0 w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-t-[10px] border-t-slate-300 filter drop-shadow-xs"></div>
-              {/* Center Pivot Point */}
-              <div className="w-1.5 h-1.5 bg-amber-400 rounded-full z-10 border border-slate-800"></div>
-            </div>
-
-            {/* Degree Badge if rotated */}
-            {mapRotation !== 0 && (
-              <span className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-blue-600 text-white text-[8px] font-black rounded-full border border-white shadow-xs leading-none">
-                {Math.round(mapRotation)}°
-              </span>
-            )}
-          </button>
-
           {/* DESKTOP FULL-WIDTH / MOBILE MODE TOGGLE BUTTON */}
           <button
             type="button"
@@ -1798,29 +1636,7 @@ export default function GISOverviewMap({
               </button>
             </div>
 
-            {/* 8. Bulat: Putar & Rotasi Peta (360°) */}
-            <div className="flex items-center gap-2 group">
-              <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
-                🧭 Putar Peta ({Math.round(mapRotation)}°)
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowGoogleToolsMenu(false);
-                  setShowRotationControls((prev) => !prev);
-                }}
-                className={`w-10 h-10 rounded-full shadow-xl border flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 ${
-                  mapRotation !== 0
-                    ? 'bg-indigo-600 text-white border-indigo-400 ring-4 ring-indigo-500/30'
-                    : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'
-                }`}
-                title="Atur Rotasi & Arah Hadap Peta"
-              >
-                <Compass className="w-5 h-5 text-indigo-600" />
-              </button>
-            </div>
-
-            {/* 9. Bulat: Mode Desktop Widescreen */}
+            {/* 8. Bulat: Mode Desktop Widescreen */}
             <div className="flex items-center gap-2 group">
               <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
                 🖥️ {viewMode === 'DESKTOP' ? 'Mode Desktop (Aktif)' : 'Buka Mode Desktop (Layar Lebar)'}
@@ -2183,39 +1999,9 @@ export default function GISOverviewMap({
       <div ref={mapContainerRef} className="w-full h-full z-0 flex-1 overflow-hidden" />
 
       {/* ============================================================ */}
-      {/* FLOATING MAP CONTROLS (LOCATE ME & QUICK ROTATION)           */}
+      {/* FLOATING MAP CONTROLS (LOCATE ME)                            */}
       {/* ============================================================ */}
       <div className="absolute right-3.5 bottom-24 sm:bottom-28 z-[400] flex flex-col items-center gap-2 pointer-events-auto select-none">
-        {/* Quick Rotation Buttons (When Rotated or Triggered) */}
-        {mapRotation !== 0 && (
-          <div className="flex flex-col items-center gap-1 bg-slate-900/90 p-1 rounded-2xl shadow-xl border border-white/20 backdrop-blur-md animate-in slide-in-from-right fade-in">
-            <button
-              type="button"
-              onClick={() => setMapRotation((prev) => ((prev - 45) % 360 + 360) % 360)}
-              className="w-8 h-8 rounded-xl text-white hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer text-xs font-bold"
-              title="Putar Kiri 45°"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapRotation(0)}
-              className="w-8 h-8 rounded-xl bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors cursor-pointer text-[10px] font-black"
-              title="Reset ke Utara (0°)"
-            >
-              N
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapRotation((prev) => (prev + 45) % 360)}
-              className="w-8 h-8 rounded-xl text-white hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer text-xs font-bold"
-              title="Putar Kanan 45°"
-            >
-              <RotateCw className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
         {/* Locate Me Floating GPS Button */}
         <button
           type="button"
@@ -2242,137 +2028,6 @@ export default function GISOverviewMap({
           )}
         </button>
       </div>
-
-      {/* ============================================================ */}
-      {/* FLOATING MAP ROTATION & COMPASS BEARING DRAWER              */}
-      {/* ============================================================ */}
-      {showRotationControls && (
-        <div className="absolute top-20 left-3 right-3 sm:left-auto sm:right-3 sm:w-96 z-[450] bg-slate-900/95 text-white border border-blue-500/60 rounded-3xl p-4 shadow-[0_16px_50px_rgba(15,23,42,0.4)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 space-y-3.5 select-none">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-600/30 border border-blue-400/40 text-blue-400 flex items-center justify-center">
-                <Compass className="w-5 h-5 animate-pulse" />
-              </div>
-              <div>
-                <h4 className="font-bold text-xs text-white">Rotasi & Orientasi Peta</h4>
-                <p className="text-[10px] text-blue-400 font-mono">
-                  {Math.round(mapRotation)}° • {getCardinalDirection(mapRotation)}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowRotationControls(false)}
-              className="p-1 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Range Slider 0° to 359° */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
-              <span>Sudut Putar Peta:</span>
-              <span className="font-mono text-blue-400 text-xs font-bold">{Math.round(mapRotation)}°</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={359}
-              value={mapRotation}
-              onChange={(e) => setMapRotation(parseInt(e.target.value, 10))}
-              className="w-full accent-blue-500 cursor-pointer h-2 bg-slate-800 rounded-lg appearance-none"
-            />
-          </div>
-
-          {/* Quick Cardinal Presets */}
-          <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
-            {[
-              { label: 'Utara (0°)', deg: 0 },
-              { label: 'Timur (90°)', deg: 90 },
-              { label: 'Selatan (180°)', deg: 180 },
-              { label: 'Barat (270°)', deg: 270 },
-            ].map((preset) => (
-              <button
-                key={preset.deg}
-                type="button"
-                onClick={() => setMapRotation(preset.deg)}
-                className={`py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
-                  mapRotation === preset.deg
-                    ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400/40'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
-                }`}
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Quick Step Buttons */}
-          <div className="grid grid-cols-4 gap-1.5 text-xs">
-            <button
-              type="button"
-              onClick={() => setMapRotation((prev) => ((prev - 45) % 360 + 360) % 360)}
-              className="py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>-45°</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapRotation((prev) => ((prev - 15) % 360 + 360) % 360)}
-              className="py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
-            >
-              <RotateCcw className="w-3 h-3" />
-              <span>-15°</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapRotation((prev) => (prev + 15) % 360)}
-              className="py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
-            >
-              <RotateCw className="w-3 h-3" />
-              <span>+15°</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapRotation((prev) => (prev + 45) % 360)}
-              className="py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
-            >
-              <RotateCw className="w-3 h-3" />
-              <span>+45°</span>
-            </button>
-          </div>
-
-          {/* Sensor Kompas HP Toggle */}
-          <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Smartphone className="w-4 h-4 text-indigo-400" />
-              <div>
-                <span className="text-[11px] font-bold text-slate-200 block">Sensor Kompas HP</span>
-                <span className="text-[9px] text-slate-400">Otomatis ikuti hadap badan</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsCompassSensorActive((prev) => !prev)}
-              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                isCompassSensorActive
-                  ? 'bg-emerald-500 text-white ring-2 ring-emerald-400/40 shadow-xs'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              {isCompassSensorActive ? 'AKTIF' : 'OFF'}
-            </button>
-          </div>
-
-          {/* Mobile Gestures Tip */}
-          <p className="text-[10px] text-slate-400 bg-slate-950/60 p-2 rounded-xl border border-slate-800 leading-relaxed">
-            💡 <strong>Tips Putar Cepat:</strong> Anda juga bisa memutar peta dengan sentuhan <strong>2 jari (cubit &amp; putar)</strong> langsung di layar HP!
-          </p>
-        </div>
-      )}
 
       {/* ============================================================ */}
       {/* FLOATING LIVE GPS STATUS HUD CARD                           */}
