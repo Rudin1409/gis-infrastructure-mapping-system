@@ -6,7 +6,7 @@ import { Pole, PoleCondition, PoleType, SisiJalan, OwnershipStatus } from '@/typ
 import { Provider } from '@/types/provider';
 import { Coordinates } from '@/types/gis';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
-import { DEFAULT_PROVIDERS } from '@/config/providers';
+import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 import { useAuth } from '@/context/AuthContext';
 import PinSelectorMap from '@/components/map/PinSelectorMap';
 import PhotoUploader from './PhotoUploader';
@@ -188,13 +188,16 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
         }
       }
 
-      const activeProviderObj = providerList.find((p) => p.id === providerId);
+      const resolved = resolveProviderInfo({
+        providerId,
+        infrastructureCategory,
+      });
 
       const updateData = {
         poleLatitude: coord.lat,
         poleLongitude: coord.lng,
-        providerId,
-        providerName: activeProviderObj?.name || pole.providerName || providerId,
+        providerId: resolved.providerId,
+        providerName: resolved.providerName,
         poleType,
         condition,
         poleCode: poleCode.trim() || undefined,

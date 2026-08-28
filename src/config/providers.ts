@@ -276,3 +276,75 @@ export const DEFAULT_PROVIDERS: Provider[] = [
     markingDescription: 'Tiang tanpa marka atau belum diketahui pemilik resminya',
   },
 ];
+
+export function getProviderById(providerId?: string): Provider | undefined {
+  if (!providerId) return undefined;
+  return DEFAULT_PROVIDERS.find((p) => p.id === providerId || p.code.toLowerCase() === providerId.toLowerCase());
+}
+
+export function resolveProviderInfo(params: {
+  providerId?: string;
+  providerName?: string;
+  infrastructureCategory?: string;
+}): { providerId: string; providerName: string; selectedProviderObj?: Provider } {
+  const { providerId, providerName, infrastructureCategory } = params;
+
+  // 1. Kategori PLN Murni
+  if (infrastructureCategory === 'PLN_MURNI') {
+    const pln = getProviderById('PRV_PLN_DISTRIBUSI') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PLN_DISTRIBUSI');
+    return {
+      providerId: 'PRV_PLN_DISTRIBUSI',
+      providerName: 'PT PLN (PERSERO) DISTRIBUSI',
+      selectedProviderObj: pln,
+    };
+  }
+
+  // 2. Kategori Gabungan PLN + PJU
+  if (infrastructureCategory === 'GABUNG_PLN_PJU') {
+    const gabung = getProviderById('PRV_PLN_PJU_GABUNG') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PLN_PJU_GABUNG');
+    return {
+      providerId: 'PRV_PLN_PJU_GABUNG',
+      providerName: 'PLN + PJU (TIANG GABUNGAN)',
+      selectedProviderObj: gabung,
+    };
+  }
+
+  // 3. Kategori PJU Mandiri Pemkot
+  if (infrastructureCategory === 'PJU_MANDIRI') {
+    const pju = getProviderById('PRV_PJU_PEMKOT') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PJU_PEMKOT');
+    return {
+      providerId: 'PRV_PJU_PEMKOT',
+      providerName: 'PJU PEMERINTAH KOTA LUBUKLINGGAU',
+      selectedProviderObj: pju,
+    };
+  }
+
+  // 4. Pencocokan berdasarkan ID Provider
+  if (providerId) {
+    const match = getProviderById(providerId);
+    if (match) {
+      return {
+        providerId: match.id,
+        providerName: match.name,
+        selectedProviderObj: match,
+      };
+    }
+  }
+
+  // 5. Pencocokan jika providerName valid (bukan 'Unknown')
+  if (providerName && providerName.trim() !== '' && providerName.toLowerCase() !== 'unknown') {
+    const nameMatch = DEFAULT_PROVIDERS.find((p) => p.name.toLowerCase() === providerName.toLowerCase());
+    return {
+      providerId: providerId || nameMatch?.id || 'PRV_LOCAL',
+      providerName: providerName,
+      selectedProviderObj: nameMatch,
+    };
+  }
+
+  const unk = getProviderById('UNKNOWN');
+  return {
+    providerId: providerId || 'UNKNOWN',
+    providerName: 'TIDAK DIKETAHUI / BELUM TERIDENTIFIKASI',
+    selectedProviderObj: unk,
+  };
+}

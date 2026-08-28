@@ -15,6 +15,7 @@ import {
 } from '@/types/pole';
 import { Provider } from '@/types/provider';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
+import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 import PhotoUploader from './PhotoUploader';
 import { formatDistance } from '@/lib/gis/haversine';
 import {
@@ -51,7 +52,6 @@ import {
   Lightbulb,
   Plus,
 } from 'lucide-react';
-import { DEFAULT_PROVIDERS } from '@/config/providers';
 import PoleVisualGuideModal, { PoleMiniGraphic } from './PoleVisualGuideModal';
 import { useAuth } from '@/context/AuthContext';
 
@@ -262,10 +262,13 @@ export default function SurveyForm({
         }
       }
 
-      // Step 2: Save record to Supabase API
+      // Step 2: Save record to server API
       setSubmitStage('SAVING_SHEET');
 
-      const selectedProviderObj = providers.find((p) => p.id === providerId);
+      const resolved = resolveProviderInfo({
+        providerId,
+        infrastructureCategory,
+      });
 
       const payload = {
         poleLatitude: confirmedCoord.lat,
@@ -275,8 +278,8 @@ export default function SurveyForm({
         gpsAccuracy,
         distanceFromDevice,
         locationMethod: 'MANUAL_MAP_PIN',
-        providerId,
-        providerName: selectedProviderObj?.name || 'Unknown',
+        providerId: resolved.providerId,
+        providerName: resolved.providerName,
         poleType,
         condition,
         road: road.trim(),

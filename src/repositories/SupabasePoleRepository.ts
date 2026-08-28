@@ -1,8 +1,15 @@
 import { IPoleRepository, PoleFilterOptions } from './interfaces/IPoleRepository';
 import { Pole, CreatePoleInput, UpdatePoleInput } from '@/types/pole';
 import { supabase } from '@/lib/supabase';
+import { resolveProviderInfo } from '@/config/providers';
 
 function mapDbToPole(row: any): Pole {
+  const resolved = resolveProviderInfo({
+    providerId: row.provider_id,
+    providerName: row.provider_name,
+    infrastructureCategory: row.infrastructure_category,
+  });
+
   return {
     id: row.id,
     poleCode: row.pole_code || undefined,
@@ -13,8 +20,8 @@ function mapDbToPole(row: any): Pole {
     gpsAccuracy: row.gps_accuracy ? parseFloat(row.gps_accuracy) : undefined,
     distanceFromDevice: row.distance_from_device ? parseFloat(row.distance_from_device) : undefined,
     locationMethod: row.location_method || 'GPS_DEVICE',
-    providerId: row.provider_id,
-    providerName: row.provider_name || undefined,
+    providerId: resolved.providerId,
+    providerName: resolved.providerName,
     poleType: row.pole_type || 'BETON',
     condition: row.condition || 'GOOD',
     road: row.road || '',

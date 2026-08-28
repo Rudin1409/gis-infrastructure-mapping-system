@@ -33,6 +33,8 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
+
 export default async function PoleDetailPage({
   params,
 }: {
@@ -50,7 +52,16 @@ export default async function PoleDetailPage({
     notFound();
   }
 
-  const selectedProviderObj = providers.find((p) => p.id === pole.providerId);
+  const resolvedProvider = resolveProviderInfo({
+    providerId: pole.providerId,
+    providerName: pole.providerName,
+    infrastructureCategory: pole.infrastructureCategory,
+  });
+
+  const selectedProviderObj =
+    resolvedProvider.selectedProviderObj ||
+    providers.find((p) => p.id === pole.providerId) ||
+    DEFAULT_PROVIDERS.find((p) => p.id === pole.providerId);
 
   const hasHazards =
     pole.isTilted ||
@@ -164,7 +175,7 @@ export default async function PoleDetailPage({
             <div className="min-w-0">
               <span className="text-slate-400 block text-[9px] uppercase font-bold">Instansi / Pemilik</span>
               <span className="font-bold text-slate-800 truncate block mt-0.5">
-                {pole.providerName || selectedProviderObj?.name || pole.providerId}
+                {resolvedProvider.providerName}
               </span>
             </div>
           </div>
@@ -194,7 +205,13 @@ export default async function PoleDetailPage({
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
             <span className="text-slate-400 block text-[9px] uppercase font-bold">Kepemilikan</span>
             <span className="font-bold text-slate-800 block mt-0.5 capitalize">
-              {pole.ownershipStatus === 'BERSAMA_PLN'
+              {pole.infrastructureCategory === 'PLN_MURNI'
+                ? 'Milik PT PLN'
+                : pole.infrastructureCategory === 'GABUNG_PLN_PJU'
+                ? 'Joint PLN & Pemkot'
+                : pole.infrastructureCategory === 'PJU_MANDIRI'
+                ? 'Milik Pemkot Lubuklinggau'
+                : pole.ownershipStatus === 'BERSAMA_PLN'
                 ? 'Joint PLN'
                 : pole.ownershipStatus === 'SEWA'
                 ? 'Sewa'

@@ -4,6 +4,8 @@ import { Pole, CreatePoleInput, UpdatePoleInput } from '@/types/pole';
 import { PoleFilterOptions } from '@/repositories/interfaces/IPoleRepository';
 import { evaluateLocationQC } from '@/lib/gis/haversine';
 
+import { resolveProviderInfo } from '@/config/providers';
+
 export class PoleService {
   async getPoles(filters?: PoleFilterOptions): Promise<Pole[]> {
     return getPoleRepository().findAll(filters);
@@ -14,11 +16,20 @@ export class PoleService {
   }
 
   async createPole(input: CreatePoleInput): Promise<Pole> {
-    // Resolve provider name if not supplied
-    if (!input.providerName && input.providerId) {
-      const provider = await getProviderRepository().findById(input.providerId);
-      if (provider) {
-        input.providerName = provider.name;
+    // Otomatis tentukan Instansi / Provider Name jika PLN / PJU atau belum ada
+    const resolved = resolveProviderInfo({
+      providerId: input.providerId,
+      providerName: input.providerName,
+      infrastructureCategory: input.infrastructureCategory,
+    });
+
+    input.providerId = resolved.providerId;
+    input.providerName = resolved.providerName;
+
+    // Set status kepemilikan yang sesuai jika PLN
+    if (input.infrastructureCategory === 'PLN_MURNI' || input.infrastructureCategory === 'GABUNG_PLN_PJU') {
+      if (!input.ownershipStatus || input.ownershipStatus === 'SENDIRI') {
+        input.ownershipStatus = 'BERSAMA_PLN';
       }
     }
 
@@ -39,6 +50,16 @@ export class PoleService {
   }
 
   async updatePole(id: string, input: UpdatePoleInput): Promise<Pole> {
+    if (input.providerId || input.infrastructureCategory || input.providerName) {
+      const resolved = resolveProviderInfo({
+        providerId: input.providerId,
+        providerName: input.providerName,
+        infrastructureCategory: input.infrastructureCategory,
+      });
+      input.providerId = resolved.providerId;
+      input.providerName = resolved.providerName;
+    }
+
     return getPoleRepository().update(id, input);
   }
 
