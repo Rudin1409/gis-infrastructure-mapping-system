@@ -36,7 +36,8 @@ export function interpolatePolesAlongPath(
   points: Coordinates[],
   intervalMeters: number = 35,
   equalSpacing: boolean = true,
-  codePrefix: string = 'LLG-B1-PJ'
+  codePrefix: string = 'LLG-B1-PJ',
+  startSeq: number = 1
 ): CorridorInterpolationResult {
   if (!points || points.length < 2) {
     return {
@@ -136,7 +137,7 @@ export function interpolatePolesAlongPath(
     const span = Math.round((targetD - prevDistance) * 10) / 10;
     const isStart = idx === 0;
     const isEnd = idx === targetDistances.length - 1;
-    const seqFormatted = String(idx + 1).padStart(3, '0');
+    const seqFormatted = String(startSeq + idx).padStart(3, '0');
 
     resultPoles.push({
       index: idx + 1,

@@ -60,7 +60,7 @@ import {
 } from '@/lib/gis/haversine';
 import { findPolesPath } from '@/lib/gis/pathfinding';
 import { interpolatePolesAlongPath } from '@/lib/gis/corridorInterpolation';
-import { reverseGeocodeLocation } from '@/lib/gis/geocoding';
+import { reverseGeocodeLocation, getKecamatanCode, getKelurahanCode } from '@/lib/gis/geocoding';
 import { fetchRoadGeometry, offsetCoordinatePerpendicular } from '@/lib/gis/roadRouting';
 import { Coordinates } from '@/types/gis';
 import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
@@ -290,10 +290,28 @@ export default function GISOverviewMap({
     const rawPts = corridorRoadCoords.length >= 2 ? corridorRoadCoords : corridorWaypoints;
     if (rawPts.length < 2) return null;
 
+    const kecCode = getKecamatanCode(corridorKecamatan);
+    const kelCode = getKelurahanCode(corridorKelurahan);
+    const prefix = `LLG-${kecCode}-${kelCode}`;
+
+    let maxSeq = 0;
+    const currentPolesList = livePoles || poles || [];
+    for (const p of currentPolesList) {
+      if (p.poleCode && p.poleCode.startsWith(`${prefix}-`)) {
+        const num = parseInt(p.poleCode.slice(prefix.length + 1), 10);
+        if (!isNaN(num) && num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+    const startSeq = maxSeq + 1;
+
     const baseResult = interpolatePolesAlongPath(
       rawPts,
       corridorInterval,
-      corridorEqualSpacing
+      corridorEqualSpacing,
+      prefix,
+      startSeq
     );
 
     // Apply roadside perpendicular offset if requested (-2.5m for KIRI, +2.5m for KANAN)
@@ -344,6 +362,10 @@ export default function GISOverviewMap({
     corridorInterval,
     corridorEqualSpacing,
     corridorRoadSide,
+    corridorKecamatan,
+    corridorKelurahan,
+    livePoles,
+    poles,
   ]);
 
   // Auto zoom/fit bounds when Point B (2 waypoints) is placed

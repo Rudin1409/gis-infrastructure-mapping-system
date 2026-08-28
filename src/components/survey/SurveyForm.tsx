@@ -134,6 +134,25 @@ export default function SurveyForm({
   >('IDLE');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // --- EXISTING POLE CODES FROM SERVER (for sequential numbering) ---
+  const [existingPoleCodes, setExistingPoleCodes] = useState<string[]>([]);
+
+  // 0. Fetch all existing pole codes from server for sequential numbering
+  useEffect(() => {
+    async function fetchExistingCodes() {
+      try {
+        const res = await fetch('/api/poles/codes');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.codes)) {
+          setExistingPoleCodes(json.codes);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch existing pole codes:', err);
+      }
+    }
+    fetchExistingCodes();
+  }, []);
+
   // 1. Smart Memory: Load previous pole attributes on initial mount
   useEffect(() => {
     try {
@@ -173,7 +192,7 @@ export default function SurveyForm({
     async function fetchSmartDetails() {
       setIsAutoDetecting(true);
       try {
-        const geo = await reverseGeocodeLocation(confirmedCoord);
+        const geo = await reverseGeocodeLocation(confirmedCoord, existingPoleCodes);
         if (isMounted) {
           // If smart memory has road, only override if geocode found a specific road
           if (geo.road && (!road || !isSmartMemoryApplied)) setRoad(geo.road);
@@ -192,7 +211,7 @@ export default function SurveyForm({
     return () => {
       isMounted = false;
     };
-  }, [confirmedCoord, isSmartMemoryApplied]);
+  }, [confirmedCoord, isSmartMemoryApplied, existingPoleCodes]);
 
   // Available kelurahan for current selected kecamatan
   const currentKecamatanObj = KECAMATAN_LUBUKLINGGAU.find((k) => k.name === kecamatan);
@@ -206,7 +225,7 @@ export default function SurveyForm({
     if (found && found.kelurahan.length > 0) {
       setKelurahan(newKel);
     }
-    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(newKec, newKel);
+    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(newKec, newKel, existingPoleCodes);
     setPoleCode(smartPoleCode);
     setSegmentCode(smartSegmentCode);
   };
@@ -214,7 +233,7 @@ export default function SurveyForm({
   const handleKelurahanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newKel = e.target.value;
     setKelurahan(newKel);
-    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(kecamatan, newKel);
+    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(kecamatan, newKel, existingPoleCodes);
     setPoleCode(smartPoleCode);
     setSegmentCode(smartSegmentCode);
   };
@@ -362,6 +381,11 @@ export default function SurveyForm({
         }
       } catch (smErr) {
         console.warn('Smart memory save notice:', smErr);
+      }
+
+      // Add the new pole code to existing codes list so next pole gets correct number
+      if (poleCode.trim()) {
+        setExistingPoleCodes((prev) => [...prev, poleCode.trim()]);
       }
 
       setSubmitStage('SUCCESS');
