@@ -5,19 +5,18 @@ import { usePathname } from 'next/navigation';
 import TopHeader from './TopHeader';
 import BottomNav from './BottomNav';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { Radio, Loader2 } from 'lucide-react';
+import { ViewModeProvider, useViewMode } from '@/context/ViewModeContext';
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isAuthenticated, isLoaded } = useAuth();
+  const { isAuthenticated } = useAuth();
   const isLoginPage = pathname === '/login';
 
-  // Splash animation control: Guarantee the full cinematic logo animation plays completely on launch
+  // Splash animation control
   const [showSplash, setShowSplash] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
 
   useEffect(() => {
-    // Play full cinematic logo intro animation for 2.2 seconds before dissolving
     const timer = setTimeout(() => {
       setIsFadingOut(true);
       const removeTimer = setTimeout(() => {
@@ -33,7 +32,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* Full-Screen Pure Cinematic Logo Splash Screen (100% Solid Opaque White) */}
+      {/* Full-Screen Pure Cinematic Logo Splash Screen */}
       {showSplash && (
         <div
           className={`fixed inset-0 z-[99999] w-screen h-screen flex flex-col items-center justify-center bg-white text-slate-800 p-6 select-none overflow-hidden transition-all duration-700 ease-out ${
@@ -103,15 +102,32 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AppLayoutContainer({ children }: { children: React.ReactNode }) {
+  const { viewMode } = useViewMode();
+  const isDesktop = viewMode === 'DESKTOP';
+
+  return (
+    <div className="min-h-screen w-full bg-[#0b1120] flex justify-center items-start text-slate-800 font-sans selection:bg-blue-600 selection:text-white transition-all duration-300">
+      {/* Responsive Container: Full Width in Desktop Mode, Centered Mobile Frame in Mobile Mode */}
+      <div
+        className={`w-full h-screen max-h-screen bg-[#f4f7fb] relative flex flex-col overflow-hidden transition-all duration-300 ease-out ${
+          isDesktop
+            ? 'max-w-full shadow-none border-none'
+            : 'max-w-[430px] border-x border-slate-200/50 shadow-[0_20px_60px_rgba(0,0,0,0.6)]'
+        }`}
+      >
+        <LayoutContent>{children}</LayoutContent>
+      </div>
+    </div>
+  );
+}
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-[#0b1120] flex justify-center items-start text-slate-800 font-sans selection:bg-blue-600 selection:text-white">
-        {/* Centered Clean Mobile App Container */}
-        <div className="w-full max-w-[430px] h-screen max-h-screen bg-[#f4f7fb] border-x border-slate-200/50 shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative flex flex-col overflow-hidden">
-          <LayoutContent>{children}</LayoutContent>
-        </div>
-      </div>
+      <ViewModeProvider>
+        <AppLayoutContainer>{children}</AppLayoutContainer>
+      </ViewModeProvider>
     </AuthProvider>
   );
 }

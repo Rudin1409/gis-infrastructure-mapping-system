@@ -15,8 +15,13 @@ import {
   RotateCw,
   User,
   ShieldAlert,
+  Monitor,
+  Smartphone,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useViewMode } from '@/context/ViewModeContext';
 
 export default function TopHeader() {
   const pathname = usePathname();
@@ -109,12 +114,13 @@ export default function TopHeader() {
     }, 600);
   };
 
+  const { viewMode, toggleViewMode, isFullscreen, toggleFullscreen } = useViewMode();
   const meta = getHeaderMeta();
   const Icon = meta.icon;
 
   return (
     <header className="sticky top-0 w-full z-30 bg-gradient-to-r from-[#1e40af] via-[#2563eb] to-[#3b82f6] text-white shadow-[0_2px_12px_rgba(30,64,175,0.2)] border-b border-blue-400/20 select-none flex-shrink-0">
-      <div className="px-3.5 py-2 flex items-center justify-between gap-2 max-w-md mx-auto">
+      <div className={`px-3.5 py-2 flex items-center justify-between gap-2 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto' : 'max-w-md mx-auto'}`}>
         {/* Left Side: Back Button OR Brand Emblem + Title */}
         <div className="flex items-center gap-2 min-w-0">
           {meta.showBack ? (
@@ -146,8 +152,50 @@ export default function TopHeader() {
           </div>
         </div>
 
-        {/* Right Side: Reload/Refresh Button & Active Agency Avatar */}
+        {/* Right Side: Desktop Mode Toggle, Fullscreen, Reload/Refresh Button & Active User */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Desktop Widescreen / Mobile Mode Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleViewMode}
+            className={`px-2 py-1 rounded-xl border flex items-center gap-1 text-[10px] font-bold transition-all cursor-pointer ${
+              viewMode === 'DESKTOP'
+                ? 'bg-white text-blue-700 border-white shadow-md'
+                : 'bg-white/15 hover:bg-white/25 text-white border-white/20'
+            }`}
+            title={
+              viewMode === 'DESKTOP'
+                ? 'Mode Desktop Aktif (Layar Lebar) - Klik untuk Mode Mobile'
+                : 'Buka Ukuran Desktop Penuh (Layar Lebar & Pas)'
+            }
+          >
+            {viewMode === 'DESKTOP' ? (
+              <>
+                <Smartphone className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Mobile</span>
+              </>
+            ) : (
+              <>
+                <Monitor className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Desktop</span>
+              </>
+            )}
+          </button>
+
+          {/* Fullscreen F11 Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 active:scale-90 flex items-center justify-center text-white border border-white/20 transition-all cursor-pointer"
+            title={isFullscreen ? 'Keluar dari Layar Penuh' : 'Layar Penuh (Fullscreen)'}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-3.5 h-3.5" />
+            ) : (
+              <Maximize2 className="w-3.5 h-3.5" />
+            )}
+          </button>
+
           {/* Reload / Refresh Button */}
           <button
             type="button"

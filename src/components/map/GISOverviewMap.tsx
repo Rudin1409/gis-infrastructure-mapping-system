@@ -56,8 +56,12 @@ import {
   Copy,
   Radio,
   Smartphone,
+  Monitor,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useViewMode } from '@/context/ViewModeContext';
 import { LUBUKLINGGAU_KELURAHAN_BOUNDARIES } from '@/lib/gis/boundaries';
 import MapPinLegendModal from './MapPinLegendModal';
 import {
@@ -89,6 +93,7 @@ export default function GISOverviewMap({
   initialQuery,
 }: GISOverviewMapProps) {
   const { poles: livePoles, refreshPoles } = useSupabaseRealtimePoles(poles);
+  const { viewMode, toggleViewMode, isFullscreen, toggleFullscreen } = useViewMode();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -102,6 +107,18 @@ export default function GISOverviewMap({
   const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
   const [showBoundaries, setShowBoundaries] = useState(true);
   const [showLegendModal, setShowLegendModal] = useState(false);
+
+  // Invalidate Leaflet Map Size when switching between Desktop full-width & Mobile mode
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      const timers = [50, 150, 300, 500];
+      timers.forEach((t) => {
+        setTimeout(() => {
+          mapInstanceRef.current?.invalidateSize();
+        }, t);
+      });
+    }
+  }, [viewMode, isFullscreen]);
 
   // Merge default providers with any custom provider records passed
   const allCombinedProviders = useMemo(() => {
@@ -1522,6 +1539,28 @@ export default function GISOverviewMap({
             )}
           </button>
 
+          {/* DESKTOP FULL-WIDTH / MOBILE MODE TOGGLE BUTTON */}
+          <button
+            type="button"
+            onClick={toggleViewMode}
+            className={`w-10 h-10 rounded-full shadow-lg border backdrop-blur-md flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+              viewMode === 'DESKTOP'
+                ? 'bg-blue-600 text-white border-blue-400 ring-2 ring-blue-500/30'
+                : 'bg-white/95 text-slate-700 hover:text-blue-600 border-slate-200'
+            }`}
+            title={
+              viewMode === 'DESKTOP'
+                ? 'Mode Desktop Penuh Aktif (Layar Lebar & Pas) - Klik untuk Mode Mobile'
+                : 'Buka Ukuran Layar Penuh Desktop (Layar Luas & Pas)'
+            }
+          >
+            {viewMode === 'DESKTOP' ? (
+              <Smartphone className="w-5 h-5" />
+            ) : (
+              <Monitor className="w-5 h-5 text-blue-600" />
+            )}
+          </button>
+
           {/* 4-DOTS CIRCULAR TOGGLE BUTTON (Bisa dibuka dan disembunyikan lagi) */}
           <button
             type="button"
@@ -1781,7 +1820,29 @@ export default function GISOverviewMap({
               </button>
             </div>
 
-            {/* 9. Bulat: Arti Pin & Legenda Peta */}
+            {/* 9. Bulat: Mode Desktop Widescreen */}
+            <div className="flex items-center gap-2 group">
+              <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
+                🖥️ {viewMode === 'DESKTOP' ? 'Mode Desktop (Aktif)' : 'Buka Mode Desktop (Layar Lebar)'}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleToolsMenu(false);
+                  toggleViewMode();
+                }}
+                className={`w-10 h-10 rounded-full shadow-xl border flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 ${
+                  viewMode === 'DESKTOP'
+                    ? 'bg-blue-600 text-white border-blue-400 ring-4 ring-blue-500/30'
+                    : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                }`}
+                title="Beralih antara Mode Desktop Layar Lebar dan Mode Mobile"
+              >
+                {viewMode === 'DESKTOP' ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {/* 10. Bulat: Arti Pin & Legenda Peta */}
             <div className="flex items-center gap-2 group">
               <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
                 📖 Arti Pin &amp; Legenda Peta
