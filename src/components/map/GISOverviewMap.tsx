@@ -47,9 +47,11 @@ import {
   Route,
   Navigation,
   LayoutGrid,
+  HelpCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { LUBUKLINGGAU_KELURAHAN_BOUNDARIES } from '@/lib/gis/boundaries';
+import MapPinLegendModal from './MapPinLegendModal';
 import {
   calculateHaversineDistance,
   calculateMidpoint,
@@ -87,6 +89,7 @@ export default function GISOverviewMap({
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
   const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
   const [showBoundaries, setShowBoundaries] = useState(true);
+  const [showLegendModal, setShowLegendModal] = useState(false);
 
   // Multi-Pole Sequential Ruler & Auto-Corridor Routing State
   const [isMeasuring, setIsMeasuring] = useState(false);
@@ -1051,6 +1054,16 @@ export default function GISOverviewMap({
             )}
           </div>
 
+          {/* PANDUAN ARTI PIN BUTTON (Quick Access) */}
+          <button
+            type="button"
+            onClick={() => setShowLegendModal(true)}
+            className="w-10 h-10 rounded-full shadow-lg border bg-white/95 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-slate-200 backdrop-blur-md flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95"
+            title="Buka Panduan &amp; Arti Simbol Pin Peta"
+          >
+            <HelpCircle className="w-5 h-5 text-blue-600" />
+          </button>
+
           {/* 4-DOTS CIRCULAR TOGGLE BUTTON (Bisa dibuka dan disembunyikan lagi) */}
           <button
             type="button"
@@ -1257,6 +1270,24 @@ export default function GISOverviewMap({
                 title="Tampilkan / Sembunyikan Batas Kelurahan"
               >
                 <Shield className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* 7. Bulat: Arti Pin & Legenda Peta */}
+            <div className="flex items-center gap-2 group">
+              <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
+                📖 Arti Pin &amp; Legenda Peta
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleToolsMenu(false);
+                  setShowLegendModal(true);
+                }}
+                className="w-10 h-10 rounded-full shadow-xl border bg-white text-blue-600 border-blue-200 hover:bg-blue-50 flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 ring-2 ring-blue-500/20"
+                title="Panduan Lengkap Arti Pin &amp; Simbol Peta GIS"
+              >
+                <HelpCircle className="w-5 h-5 text-blue-600" />
               </button>
             </div>
           </div>
@@ -2409,6 +2440,12 @@ export default function GISOverviewMap({
           </div>
         </div>
       )}
+
+      {/* MODAL PANDUAN LENGKAP ARTI SIMBOL PIN PETA GIS */}
+      <MapPinLegendModal
+        isOpen={showLegendModal}
+        onClose={() => setShowLegendModal(false)}
+      />
     </div>
   );
 }
