@@ -479,6 +479,9 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                 if (providerId === 'PRV_PJU_PEMKOT' || providerId === 'PRV_PLN_PJU_GABUNG' || providerId === 'PRV_PLN_DISTRIBUSI') {
                   setProviderId('PRV_TELKOM');
                 }
+                setOwnershipStatus('SENDIRI');
+                setHeight('7m');
+                setCableInstallationType('UDARA');
               }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                 infrastructureCategory === 'FO_WIFI'
@@ -499,6 +502,14 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                 setInfrastructureCategory('PJU_MANDIRI');
                 setProviderId('PRV_PJU_PEMKOT');
                 setOwnershipStatus('SENDIRI');
+                setPoleType('BESI');
+                setHeight('7m');
+                setPjuLampType('LED');
+                setPjuLampPower('90W');
+                setPjuLampCondition('MENYALA_NORMAL');
+                setHasKwhMeter(false);
+                setHasNetworkCable(false);
+                setCableInstallationType('UDARA');
               }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                 infrastructureCategory === 'PJU_MANDIRI'
@@ -519,6 +530,14 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                 setInfrastructureCategory('GABUNG_PLN_PJU');
                 setProviderId('PRV_PLN_PJU_GABUNG');
                 setOwnershipStatus('BERSAMA_PLN');
+                setPoleType('BETON');
+                setHeight('9m');
+                setPjuLampType('LED');
+                setPjuLampPower('90W');
+                setPjuLampCondition('MENYALA_NORMAL');
+                setHasKwhMeter(false);
+                setHasNetworkCable(false);
+                setCableInstallationType('UDARA');
               }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                 infrastructureCategory === 'GABUNG_PLN_PJU'
@@ -539,6 +558,9 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                 setInfrastructureCategory('PLN_MURNI');
                 setProviderId('PRV_PLN_DISTRIBUSI');
                 setOwnershipStatus('BERSAMA_PLN');
+                setPoleType('BETON');
+                setHeight('9m');
+                setCableInstallationType('UDARA');
               }}
               className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                 infrastructureCategory === 'PLN_MURNI'

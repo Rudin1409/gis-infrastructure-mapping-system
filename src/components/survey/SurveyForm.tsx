@@ -103,7 +103,7 @@ export default function SurveyForm({
   const [condition, setCondition] = useState<PoleCondition>('GOOD');
   const [poleCode, setPoleCode] = useState('');
   const [segmentCode, setSegmentCode] = useState('');
-  const [height, setHeight] = useState('5m');
+  const [height, setHeight] = useState('7m');
   const [ownershipStatus, setOwnershipStatus] = useState<OwnershipStatus>('SENDIRI');
 
   // --- 4. SAFETY & HAZARD QUICK TOGGLES (Hasil Pengamatan) ---
@@ -153,6 +153,9 @@ export default function SurveyForm({
         if (data.cableInstallationType) setCableInstallationType(data.cableInstallationType);
         if (data.pjuLampType) setPjuLampType(data.pjuLampType);
         if (data.pjuLampPower) setPjuLampPower(data.pjuLampPower);
+        if (data.pjuLampCondition) setPjuLampCondition(data.pjuLampCondition);
+        if (data.hasKwhMeter !== undefined) setHasKwhMeter(data.hasKwhMeter);
+        if (data.hasNetworkCable !== undefined) setHasNetworkCable(data.hasNetworkCable);
 
         setIsSmartMemoryApplied(true);
         setSmartMemoryNotice(
@@ -327,8 +330,8 @@ export default function SurveyForm({
       // Save to Smart Memory for next poles
       try {
         const smartMemoryData = {
-          providerId,
-          providerName: selectedProviderObj?.name,
+          providerId: resolved.providerId,
+          providerName: resolved.providerName,
           poleType,
           condition,
           height,
@@ -341,6 +344,9 @@ export default function SurveyForm({
           cableInstallationType,
           pjuLampType,
           pjuLampPower,
+          pjuLampCondition,
+          hasKwhMeter,
+          hasNetworkCable,
         };
         localStorage.setItem('gis_smart_memory_pole', JSON.stringify(smartMemoryData));
 
@@ -703,6 +709,9 @@ export default function SurveyForm({
                     if (providerId === 'PRV_PJU_PEMKOT' || providerId === 'PRV_PLN_PJU_GABUNG' || providerId === 'PRV_PLN_DISTRIBUSI') {
                       setProviderId('PRV_TELKOM');
                     }
+                    setOwnershipStatus('SENDIRI');
+                    setHeight('7m');
+                    setCableInstallationType('UDARA');
                   }}
                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                     infrastructureCategory === 'FO_WIFI'
@@ -723,6 +732,14 @@ export default function SurveyForm({
                     setInfrastructureCategory('PJU_MANDIRI');
                     setProviderId('PRV_PJU_PEMKOT');
                     setOwnershipStatus('SENDIRI');
+                    setPoleType('BESI');
+                    setHeight('7m');
+                    setPjuLampType('LED');
+                    setPjuLampPower('90W');
+                    setPjuLampCondition('MENYALA_NORMAL');
+                    setHasKwhMeter(false);
+                    setHasNetworkCable(false);
+                    setCableInstallationType('UDARA');
                   }}
                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                     infrastructureCategory === 'PJU_MANDIRI'
@@ -743,6 +760,14 @@ export default function SurveyForm({
                     setInfrastructureCategory('GABUNG_PLN_PJU');
                     setProviderId('PRV_PLN_PJU_GABUNG');
                     setOwnershipStatus('BERSAMA_PLN');
+                    setPoleType('BETON');
+                    setHeight('9m');
+                    setPjuLampType('LED');
+                    setPjuLampPower('90W');
+                    setPjuLampCondition('MENYALA_NORMAL');
+                    setHasKwhMeter(false);
+                    setHasNetworkCable(false);
+                    setCableInstallationType('UDARA');
                   }}
                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                     infrastructureCategory === 'GABUNG_PLN_PJU'
@@ -763,6 +788,9 @@ export default function SurveyForm({
                     setInfrastructureCategory('PLN_MURNI');
                     setProviderId('PRV_PLN_DISTRIBUSI');
                     setOwnershipStatus('BERSAMA_PLN');
+                    setPoleType('BETON');
+                    setHeight('9m');
+                    setCableInstallationType('UDARA');
                   }}
                   className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                     infrastructureCategory === 'PLN_MURNI'
