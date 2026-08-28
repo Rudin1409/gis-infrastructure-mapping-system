@@ -3,8 +3,10 @@ import GISOverviewMap from '@/components/map/GISOverviewMap';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getSegmentRepository } from '@/repositories/GoogleSheetsSegmentRepository';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
+import { getSystemLicenseConfig } from '@/lib/systemLicense';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function MapPage({
   searchParams,
@@ -20,10 +22,11 @@ export default async function MapPage({
   const segmentRepo = getSegmentRepository();
   const providerRepo = getProviderRepository();
 
-  const [poles, segments, providers] = await Promise.all([
+  const [poles, segments, providers, licenseConfig] = await Promise.all([
     poleRepo.findAll(),
     segmentRepo.findAll(),
     providerRepo.findAll(),
+    getSystemLicenseConfig(),
   ]);
 
   return (
@@ -34,6 +37,8 @@ export default async function MapPage({
         providers={providers}
         initialProvider={searchParams?.provider}
         initialQuery={searchParams?.q}
+        isLicenseLocked={licenseConfig.isLocked}
+        licenseReason={licenseConfig.reason}
       />
     </div>
   );

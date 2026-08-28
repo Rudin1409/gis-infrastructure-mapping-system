@@ -59,6 +59,7 @@ import {
   Monitor,
   Maximize2,
   Minimize2,
+  Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useViewMode } from '@/context/ViewModeContext';
@@ -83,6 +84,8 @@ interface GISOverviewMapProps {
   providers?: Provider[];
   initialProvider?: string;
   initialQuery?: string;
+  isLicenseLocked?: boolean;
+  licenseReason?: string;
 }
 
 export default function GISOverviewMap({
@@ -91,9 +94,30 @@ export default function GISOverviewMap({
   providers = [],
   initialProvider,
   initialQuery,
+  isLicenseLocked = false,
+  licenseReason,
 }: GISOverviewMapProps) {
   const { poles: livePoles, refreshPoles } = useSupabaseRealtimePoles(poles);
   const { viewMode, toggleViewMode, isFullscreen, toggleFullscreen } = useViewMode();
+  const [isLocked, setIsLocked] = useState<boolean>(isLicenseLocked);
+  const [lockReason, setLockReason] = useState<string>(
+    licenseReason ||
+      'Masa Uji Coba (Trial Period) Server GIS Telah Berakhir. Kapasitas kuota data infrastruktur telah melebihi batas paket dasar.'
+  );
+
+  useEffect(() => {
+    // Dynamic real-time license check
+    fetch('/api/system/license', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) {
+          setIsLocked(!!d.isLocked);
+          if (d.reason) setLockReason(d.reason);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -1338,6 +1362,69 @@ export default function GISOverviewMap({
     const found = KECAMATAN_LUBUKLINGGAU.find((k) => k.name === selectedKecamatan);
     return found ? found.kelurahan : [];
   }, [selectedKecamatan]);
+
+  if (isLocked) {
+    return (
+      <div className="relative w-full h-full min-h-[500px] flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-[#0b1120] text-slate-100 p-6 select-none overflow-hidden font-sans">
+        {/* Subtle Background Lighting & Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Lock Screen Container */}
+        <div className="relative z-10 w-full max-w-lg bg-slate-900/90 border border-red-500/40 rounded-3xl p-6 sm:p-8 shadow-[0_25px_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-center space-y-5 animate-in zoom-in-95 duration-300">
+          {/* Animated Lock Icon */}
+          <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-3xl bg-red-600/20 border border-red-500/40 animate-ping opacity-30" />
+            <div className="relative w-18 h-18 rounded-2xl bg-gradient-to-br from-red-600 to-amber-600 text-white flex items-center justify-center shadow-xl shadow-red-600/30 border border-red-400/50">
+              <Lock className="w-9 h-9 stroke-[2.5]" />
+            </div>
+          </div>
+
+          {/* Title & Description */}
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-950/80 text-red-400 border border-red-500/30 font-mono">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span>AKSES SERVER DIBATASI</span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-black tracking-tight text-white uppercase leading-tight font-mono">
+              Masa Uji Coba Server GIS Berakhir
+            </h2>
+            <p className="text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
+              {lockReason}
+            </p>
+          </div>
+
+          {/* Technical Info & Server Audit Card */}
+          <div className="bg-slate-950/80 rounded-2xl p-4 border border-slate-800 text-left font-mono text-[11px] space-y-2 text-slate-300 shadow-inner">
+            <div className="flex justify-between items-center pb-1.5 border-b border-slate-800/80">
+              <span className="text-slate-500">STATUS LISENSI:</span>
+              <span className="px-2 py-0.5 rounded-md bg-red-950 text-red-400 font-bold border border-red-900">
+                TERKUNCI (Perlu Lisensi)
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">KAPASITAS DATA:</span>
+              <span className="text-amber-400 font-bold">180+ Tiang (Batas Kuota Terlampaui)</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">MODUL SPASIAL:</span>
+              <span className="text-slate-400">Non-Aktif (Offline Mode)</span>
+            </div>
+            <div className="flex justify-between items-center pt-1 border-t border-slate-800/80 text-[10px]">
+              <span className="text-slate-500">KODE KENDALA:</span>
+              <span className="text-slate-400">ERR_SUBSCRIPTION_LIMIT_EXCEEDED</span>
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className="pt-2 text-[11px] text-slate-400 leading-relaxed">
+            Harap hubungi pengembang / administrator sistem untuk proses aktivasi dan pembaruan paket lisensi server enterprise.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full flex flex-col bg-slate-100 overflow-hidden">
