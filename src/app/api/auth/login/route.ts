@@ -42,11 +42,11 @@ export async function POST(request: NextRequest) {
             phone: dbUser.phone,
             avatar: dbUser.role === 'ADMIN_KOMINFO' ? '🏢' : '👨‍💼',
           },
-          source: 'SUPABASE_POSTGRESQL',
+          source: 'SERVER_DATABASE',
         });
       }
     } catch (supaErr) {
-      console.warn('Supabase auth notice:', supaErr);
+      console.warn('Server auth notice:', supaErr);
     }
 
     // 2. Fallback Apps Script
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         user: authUser,
-        source: 'MASTER_ACCOUNTS',
+        source: 'SERVER_DATABASE',
       });
     }
 

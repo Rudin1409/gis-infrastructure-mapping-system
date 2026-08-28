@@ -265,11 +265,11 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menghapus data dari database Supabase');
+        throw new Error(json.error || 'Gagal menghapus data dari server');
       }
 
       setShowDeleteModal(false);
-      setSuccessMessage(`Data tiang (${pole.poleCode || pole.id}) berhasil dihapus permanen dari database Supabase!`);
+      setSuccessMessage(`Data tiang (${pole.poleCode || pole.id}) berhasil dihapus permanen dari server basis data!`);
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('gis:hard-refresh'));

@@ -31,7 +31,7 @@ export default function PoleDetailActions({ poleId, poleCode }: PoleDetailAction
         setShowConfirm(false);
         setToastMessage({
           type: 'success',
-          text: `Data tiang (${poleCode || poleId}) berhasil dihapus permanen dari database Supabase!`,
+          text: `Data tiang (${poleCode || poleId}) berhasil dihapus permanen dari server basis data!`,
         });
 
         // 2. Beritahu seluruh komponen untuk membersihkan cache
@@ -47,7 +47,7 @@ export default function PoleDetailActions({ poleId, poleCode }: PoleDetailAction
         setIsDeleting(false);
         setToastMessage({
           type: 'error',
-          text: json.error || 'Gagal menghapus data dari database Supabase.',
+          text: json.error || 'Gagal menghapus data dari server basis data.',
         });
       }
     } catch (err: any) {
@@ -123,7 +123,7 @@ export default function PoleDetailActions({ poleId, poleCode }: PoleDetailAction
                 Apakah Anda yakin ingin menghapus tiang <strong className="font-mono text-slate-800">{poleCode || poleId}</strong>?
               </p>
               <div className="p-2 bg-amber-50 rounded-xl border border-amber-200 text-[10px] text-amber-800 text-left font-medium mt-2">
-                ⚠️ <strong>Validasi Ganda:</strong> Data akan dihapus secara permanen dari Database Supabase PostgreSQL.
+                ⚠️ <strong>Validasi Ganda:</strong> Data akan dihapus secara permanen dari Server Basis Data Pusat.
               </div>
             </div>
 

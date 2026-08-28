@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
       .in('id', ids);
 
     if (poleErr) {
-      console.error('Supabase batch delete error:', poleErr);
+      console.error('Server batch delete error:', poleErr);
       return NextResponse.json(
-        { success: false, error: `Gagal menghapus tiang dari Supabase: ${poleErr.message}` },
+        { success: false, error: `Gagal menghapus data tiang dari server: ${poleErr.message}` },
         { status: 500 }
       );
     }

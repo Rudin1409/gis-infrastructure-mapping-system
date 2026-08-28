@@ -565,7 +565,7 @@ export default function GISOverviewMap({
   const handleExecuteBatchDelete = async () => {
     if (selectedDeleteIds.length === 0) return;
 
-    const confirmMsg = `Yakin ingin menghapus ${selectedDeleteIds.length} tiang terpilih beserta segmen kabelnya dari database Supabase dan Google Sheets?`;
+    const confirmMsg = `Yakin ingin menghapus ${selectedDeleteIds.length} tiang terpilih beserta segmen kabelnya dari server basis data dan Google Sheets?`;
     if (!confirm(confirmMsg)) return;
 
     setIsDeletingBatch(true);
@@ -2097,7 +2097,7 @@ export default function GISOverviewMap({
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>
-                    Membuat {interpolatedCorridor?.poles.length} Tiang di Supabase...
+                    Menyimpan {interpolatedCorridor?.poles.length} Tiang ke Server...
                   </span>
                 </>
               ) : (

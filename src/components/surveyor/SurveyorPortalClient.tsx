@@ -157,7 +157,7 @@ export default function SurveyorPortalClient({ initialPoles }: SurveyorPortalCli
                 onClick={refreshPoles}
                 disabled={isSyncing}
                 className="p-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 text-blue-200 hover:text-white transition-all cursor-pointer"
-                title="Refresh Realtime Supabase"
+                title="Segarkan Data Realtime Server"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
               </button>

@@ -131,7 +131,7 @@ export class SupabasePoleRepository implements IPoleRepository {
 
     const { data, error } = await query;
     if (error) {
-      console.error('Supabase findAll error:', error);
+      console.error('Server DB findAll error:', error);
       return [];
     }
     return (data || []).map(mapDbToPole);
@@ -160,8 +160,8 @@ export class SupabasePoleRepository implements IPoleRepository {
     const row = mapPoleToDb(newPole);
     const { data, error } = await supabase.from('poles').insert(row).select().single();
     if (error) {
-      console.error('Supabase create error:', error);
-      throw new Error(`Gagal menyimpan ke Supabase: ${error.message}`);
+      console.error('Server DB create error:', error);
+      throw new Error(`Gagal menyimpan data ke server: ${error.message}`);
     }
     return mapDbToPole(data);
   }
@@ -172,8 +172,8 @@ export class SupabasePoleRepository implements IPoleRepository {
 
     const { data, error } = await supabase.from('poles').update(row).eq('id', id).select().single();
     if (error) {
-      console.error('Supabase update error:', error);
-      throw new Error(`Gagal mengupdate ke Supabase: ${error.message}`);
+      console.error('Server DB update error:', error);
+      throw new Error(`Gagal mengupdate data ke server: ${error.message}`);
     }
     return mapDbToPole(data);
   }
@@ -181,7 +181,7 @@ export class SupabasePoleRepository implements IPoleRepository {
   async delete(id: string): Promise<boolean> {
     const { error } = await supabase.from('poles').delete().eq('id', id);
     if (error) {
-      console.error('Supabase delete error:', error);
+      console.error('Server DB delete error:', error);
       return false;
     }
     return true;
