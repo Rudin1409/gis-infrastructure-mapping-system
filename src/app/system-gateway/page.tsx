@@ -123,19 +123,19 @@ export default function SystemGatewayPage() {
         </div>
       )}
 
-      {/* Screen 1: Master PIN Authorization */}
+      {/* Screen 1: Admin Authorization */}
       {!isAuthorized ? (
         <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl animate-in zoom-in-95 duration-300">
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-red-600 to-amber-600 text-white flex items-center justify-center mx-auto shadow-xl shadow-red-500/20 border border-red-400/30">
-              <KeyRound className="w-8 h-8" />
+            <div className="w-16 h-16 rounded-3xl bg-slate-800 text-slate-200 border border-slate-700 flex items-center justify-center mx-auto shadow-xl">
+              <ShieldAlert className="w-8 h-8 text-slate-300" />
             </div>
             <div>
-              <h2 className="text-lg font-black tracking-wider uppercase text-white font-mono">
-                System Master Gateway
+              <h2 className="text-base font-black tracking-wider uppercase text-white font-mono">
+                Akses Khusus Admin
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                Panel Kontrol Rahasia Lisensi &amp; Kunci Server Peta GIS
+                Autentikasi Keamanan Administrator Sistem
               </p>
             </div>
           </div>
@@ -143,17 +143,17 @@ export default function SystemGatewayPage() {
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <div>
               <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Masukkan PIN Otorisasi Master:
+                Kata Sandi Otorisasi Admin:
               </label>
               <div className="relative">
                 <input
                   type="password"
                   value={pin}
                   onChange={(e) => setPin(e.target.value)}
-                  maxLength={10}
-                  placeholder="******"
+                  maxLength={15}
+                  placeholder="••••••"
                   autoFocus
-                  className="w-full px-4 py-3.5 bg-slate-950 border border-slate-700/80 rounded-2xl text-center text-xl font-mono tracking-widest text-white placeholder-slate-600 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+                  className="w-full px-4 py-3.5 bg-slate-950 border border-slate-700/80 rounded-2xl text-center text-xl font-mono tracking-widest text-white placeholder-slate-600 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               </div>
               {authError && (
@@ -167,15 +167,15 @@ export default function SystemGatewayPage() {
             <button
               type="submit"
               disabled={isLoading || !pin}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-red-600/30 cursor-pointer transition-all disabled:opacity-50"
+              className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-blue-600/30 cursor-pointer transition-all disabled:opacity-50"
             >
-              {isLoading ? 'Memverifikasi Otorisasi...' : 'Buka Panel Gateway'}
+              {isLoading ? 'Memverifikasi...' : 'Masuk Gateway Admin'}
             </button>
           </form>
 
           <div className="mt-6 pt-4 border-t border-slate-800/80 text-center">
             <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-              Security Protocol Level 4 • Private Master Access
+              Akses Terbatas • Khusus Administrator
             </span>
           </div>
         </div>
