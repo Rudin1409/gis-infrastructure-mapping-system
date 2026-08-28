@@ -121,23 +121,23 @@ export const DEFAULT_PROVIDERS: Provider[] = [
   },
   {
     id: 'PRV_MYREP_1',
-    name: '12. MYREPUBLIC (Pucuk Ungu)',
+    name: '12. MYREPUBLIC (Pucuk Merah)',
     code: 'MYREP',
-    colorHex: '#9333ea',
+    colorHex: '#ef4444',
     status: 'ACTIVE',
     bodyColor: '#1e293b',
-    topColor: '#9333ea',
-    markingDescription: 'No. 12: Tiang hitam dengan pucuk Ungu polos khas MyRepublic',
+    topColor: '#dc2626',
+    markingDescription: 'No. 12: Tiang hitam dengan pucuk Merah khas MyRepublic',
   },
   {
     id: 'PRV_MYREP_2',
-    name: '13. MYREPUBLIC (Ungu Bergaris)',
+    name: '13. MYREPUBLIC (Pucuk Ungu)',
     code: 'MYREP',
     colorHex: '#9333ea',
     status: 'ACTIVE',
     bodyColor: '#1e293b',
     topColor: '#9333ea',
-    markingDescription: 'No. 13: Tiang hitam dengan pucuk Ungu bergaris',
+    markingDescription: 'No. 13: Tiang hitam dengan pucuk Ungu khas MyRepublic',
   },
   {
     id: 'PRV_INDOSAT',
@@ -279,7 +279,15 @@ export const DEFAULT_PROVIDERS: Provider[] = [
 
 export function getProviderById(providerId?: string): Provider | undefined {
   if (!providerId) return undefined;
-  return DEFAULT_PROVIDERS.find((p) => p.id === providerId || p.code.toLowerCase() === providerId.toLowerCase());
+  const pId = providerId.toLowerCase().trim();
+  return DEFAULT_PROVIDERS.find(
+    (p) =>
+      p.id.toLowerCase() === pId ||
+      p.code.toLowerCase() === pId ||
+      (pId === 'prv_myrepublic' && p.id === 'PRV_MYREP_1') ||
+      (pId === 'myrepublic' && p.id === 'PRV_MYREP_1') ||
+      (pId === 'myrep' && p.id === 'PRV_MYREP_1')
+  );
 }
 
 export function resolveProviderInfo(params: {
@@ -342,10 +350,16 @@ export function resolveProviderInfo(params: {
 
   // 5. Pencocokan jika providerName valid (bukan 'Unknown')
   if (providerName && providerName.trim() !== '' && providerName.toLowerCase() !== 'unknown') {
-    const nameMatch = DEFAULT_PROVIDERS.find((p) => p.name.toLowerCase() === providerName.toLowerCase());
+    const cleanName = providerName.toLowerCase().replace(/^\d+\.\s*/, '').trim();
+    const nameMatch = DEFAULT_PROVIDERS.find(
+      (p) =>
+        p.name.toLowerCase() === providerName.toLowerCase() ||
+        p.name.toLowerCase().replace(/^\d+\.\s*/, '').trim() === cleanName ||
+        cleanName.includes(p.name.toLowerCase().replace(/^\d+\.\s*/, '').trim())
+    );
     return {
       providerId: providerId || nameMatch?.id || 'PRV_LOCAL',
-      providerName: providerName,
+      providerName: nameMatch?.name || providerName,
       category: 'FO_WIFI',
       selectedProviderObj: nameMatch,
     };
