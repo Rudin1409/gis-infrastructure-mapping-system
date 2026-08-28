@@ -31,6 +31,7 @@ export default function MiniMap({
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
   const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
+  const [isLoadingLicense, setIsLoadingLicense] = useState(true);
   const [isLicenseLocked, setIsLicenseLocked] = useState(false);
 
   useEffect(() => {
@@ -41,10 +42,14 @@ export default function MiniMap({
           setIsLicenseLocked(true);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        setIsLoadingLicense(false);
+      });
   }, []);
 
   useEffect(() => {
+    if (isLoadingLicense || isLicenseLocked) return;
     let isMounted = true;
     async function loadLeaflet() {
       if (typeof window === 'undefined') return;
@@ -62,7 +67,7 @@ export default function MiniMap({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isLoadingLicense, isLicenseLocked]);
 
   useEffect(() => {
     if (isLicenseLocked || !leafletLib || !containerRef.current || mapRef.current) return;
@@ -129,6 +134,14 @@ export default function MiniMap({
 
     tileLayerRef.current = newLayer;
   };
+
+  if (isLoadingLicense) {
+    return (
+      <div className="relative w-full h-44 rounded-2xl bg-slate-900 flex items-center justify-center border border-slate-800 animate-pulse">
+        <div className="w-5 h-5 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
+      </div>
+    );
+  }
 
   if (isLicenseLocked) {
     return <GISApiQuotaExceededLock compact={true} />;

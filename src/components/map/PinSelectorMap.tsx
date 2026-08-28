@@ -68,6 +68,7 @@ export default function PinSelectorMap({
   const boundaryLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const isMountedRef = useRef<boolean>(true);
 
+  const [isLoadingLicense, setIsLoadingLicense] = useState(true);
   const [isLicenseLocked, setIsLicenseLocked] = useState(false);
   const [licenseReason, setLicenseReason] = useState<string | undefined>(undefined);
 
@@ -80,7 +81,10 @@ export default function PinSelectorMap({
           if (d.reason) setLicenseReason(d.reason);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        setIsLoadingLicense(false);
+      });
   }, []);
 
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
@@ -99,8 +103,9 @@ export default function PinSelectorMap({
     }
   );
 
-  // Load Leaflet library dynamically client-side
+  // Load Leaflet library dynamically client-side only when verified NOT locked
   useEffect(() => {
+    if (isLoadingLicense || isLicenseLocked) return;
     let isMounted = true;
 
     async function loadLeaflet() {
@@ -123,11 +128,11 @@ export default function PinSelectorMap({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isLoadingLicense, isLicenseLocked]);
 
   // Initialize Map
   useEffect(() => {
-    if (!leafletLib || !mapContainerRef.current || mapInstanceRef.current) return;
+    if (isLoadingLicense || isLicenseLocked || !leafletLib || !mapContainerRef.current || mapInstanceRef.current) return;
     isMountedRef.current = true;
 
     const L = leafletLib;
@@ -521,6 +526,19 @@ export default function PinSelectorMap({
       distanceFromDevice: distance,
     });
   };
+
+  if (isLoadingLicense) {
+    return (
+      <div className="w-full h-full min-h-[450px] bg-slate-900 flex flex-col items-center justify-center p-6 select-none relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b12_1px,transparent_1px),linear-gradient(to_bottom,#1e293b12_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
+        <div className="w-14 h-14 rounded-2xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-slate-400 mb-3.5 shadow-xl animate-pulse">
+          <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
+        </div>
+        <div className="h-3.5 w-48 bg-slate-800 rounded-full mb-2 animate-pulse" />
+        <div className="h-2.5 w-32 bg-slate-800/70 rounded-full animate-pulse" />
+      </div>
+    );
+  }
 
   if (isLicenseLocked) {
     return <GISApiQuotaExceededLock customMessage={licenseReason} />;
