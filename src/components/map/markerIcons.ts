@@ -22,6 +22,53 @@ export function createSurveyorBlueDotIcon(LInstance: typeof L) {
   });
 }
 
+/**
+ * High-precision GPS User Location Marker with Radar Pulse & Direction Pointer
+ */
+export function createUserGpsMarkerIcon(
+  LInstance: typeof L,
+  options?: {
+    heading?: number | null;
+    accuracy?: number;
+  }
+) {
+  const hasHeading = options?.heading !== undefined && options?.heading !== null && !isNaN(options.heading);
+  const headingDeg = hasHeading ? options!.heading : 0;
+
+  const html = `
+    <div class="relative flex items-center justify-center select-none pointer-events-none" style="width:48px;height:48px;">
+      <!-- Outer Radar Wave Pulse -->
+      <div class="absolute w-12 h-12 rounded-full bg-blue-500/25 animate-ping"></div>
+      
+      <!-- Direction Heading Cone (if device compass/heading available) -->
+      ${
+        hasHeading
+          ? `
+        <div class="absolute w-12 h-12 flex items-center justify-center transform" style="transform: rotate(${headingDeg}deg);">
+          <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[16px] border-b-blue-600 -translate-y-4 filter drop-shadow-md"></div>
+        </div>
+      `
+          : ''
+      }
+
+      <!-- Center Blue Accuracy Glow -->
+      <div class="absolute w-7 h-7 bg-blue-400/40 rounded-full blur-[2px]"></div>
+
+      <!-- Core GPS Blue Dot -->
+      <div class="relative w-5 h-5 bg-gradient-to-tr from-blue-600 to-sky-400 rounded-full border-2 border-white shadow-lg flex items-center justify-center ring-2 ring-blue-500/40">
+        <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+      </div>
+    </div>
+  `;
+
+  return LInstance.divIcon({
+    html,
+    className: 'custom-user-gps-icon',
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
+  });
+}
+
 export function createDraggablePinIcon(LInstance: typeof L) {
   const html = `
     <div class="relative flex flex-col items-center group cursor-grab active:cursor-grabbing">
