@@ -10,7 +10,7 @@ export function useSupabaseRealtimePoles(
 ) {
   const [poles, setPoles] = useState<Pole[]>(initialPoles);
   const [isLive, setIsLive] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState<boolean>(initialPoles.length === 0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const onPolesChangeRef = useRef(onPolesChange);
   onPolesChangeRef.current = onPolesChange;
@@ -19,23 +19,24 @@ export function useSupabaseRealtimePoles(
   useEffect(() => {
     if (initialPoles && initialPoles.length > 0) {
       setPoles(initialPoles);
-      setIsLoading(false);
     }
   }, [initialPoles]);
 
+  // Fetch directly from Supabase Client to save 100% of Vercel Fast Origin bandwidth
   const fetchFreshPoles = useCallback(async (showLoading = false) => {
     try {
       if (showLoading) setIsLoading(true);
       else setIsSyncing(true);
 
-      const res = await fetch('/api/poles', { cache: 'no-store' });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          setPoles(json.data);
-          if (onPolesChangeRef.current) {
-            onPolesChangeRef.current(json.data);
-          }
+      const { data, error } = await supabase
+        .from('poles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && Array.isArray(data)) {
+        setPoles(data as Pole[]);
+        if (onPolesChangeRef.current) {
+          onPolesChangeRef.current(data as Pole[]);
         }
       }
     } catch (err) {
@@ -47,10 +48,12 @@ export function useSupabaseRealtimePoles(
   }, []);
 
   useEffect(() => {
-    // 1. Instant Immediate Fresh Fetch on Mount (<50ms)
-    fetchFreshPoles(initialPoles.length === 0);
+    // 1. Only fetch if initialPoles was empty
+    if (!initialPoles || initialPoles.length === 0) {
+      fetchFreshPoles(true);
+    }
 
-    // 2. Setup Supabase Realtime WebSocket Listener (Instant <10ms event trigger)
+    // 2. Setup Supabase Realtime WebSocket Listener (Zero Vercel Bandwidth)
     const channel = supabase
       .channel('realtime-poles-live')
       .on(
@@ -67,12 +70,7 @@ export function useSupabaseRealtimePoles(
         }
       });
 
-    // 3. Heartbeat Polling Fallback (setiap 5 detik) untuk jaringan HP
-    const heartbeat = setInterval(() => {
-      fetchFreshPoles(false);
-    }, 5000);
-
-    // 4. Global Hard-Refresh Event Listener (Tombol Reload Header)
+    // 3. Global Hard-Refresh Event Listener (Tombol Reload Header)
     const handleHardRefresh = () => {
       fetchFreshPoles(false);
     };
@@ -82,12 +80,11 @@ export function useSupabaseRealtimePoles(
 
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(heartbeat);
       if (typeof window !== 'undefined') {
         window.removeEventListener('gis:hard-refresh', handleHardRefresh);
       }
     };
-  }, [fetchFreshPoles, initialPoles.length]);
+  }, [fetchFreshPoles, initialPoles]);
 
   return {
     poles,
