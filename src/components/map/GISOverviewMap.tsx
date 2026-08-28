@@ -249,9 +249,17 @@ export default function GISOverviewMap({
     };
   }, []);
 
+  // Cleanup map instance if locked
+  useEffect(() => {
+    if (isLocked && mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+  }, [isLocked]);
+
   // Initialize Map
   useEffect(() => {
-    if (!leafletLib || !mapContainerRef.current || mapInstanceRef.current) return;
+    if (isLocked || !leafletLib || !mapContainerRef.current || mapInstanceRef.current) return;
 
     const L = leafletLib;
     const map = L.map(mapContainerRef.current, {
