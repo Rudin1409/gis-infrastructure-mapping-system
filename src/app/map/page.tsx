@@ -6,7 +6,16 @@ import { getProviderRepository } from '@/repositories/GoogleSheetsProviderReposi
 
 export const dynamic = 'force-dynamic';
 
-export default async function MapPage() {
+export default async function MapPage({
+  searchParams,
+}: {
+  searchParams?: {
+    provider?: string;
+    q?: string;
+    kecamatan?: string;
+    kelurahan?: string;
+  };
+}) {
   const poleRepo = getPoleRepository();
   const segmentRepo = getSegmentRepository();
   const providerRepo = getProviderRepository();
@@ -23,6 +32,8 @@ export default async function MapPage() {
         poles={poles}
         segments={segments}
         providers={providers}
+        initialProvider={searchParams?.provider}
+        initialQuery={searchParams?.q}
       />
     </div>
   );

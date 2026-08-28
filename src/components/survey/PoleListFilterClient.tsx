@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Pole } from '@/types/pole';
 import { Provider } from '@/types/provider';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
+import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 import { formatIndonesianDate } from '@/lib/utils/formatDate';
 import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
 import {
@@ -108,19 +109,42 @@ export default function PoleListFilterClient({
     hazardFilter,
   ]);
 
+  // Merge default providers with any custom provider records passed
+  const allCombinedProviders = useMemo(() => {
+    const map = new Map<string, Provider>();
+    DEFAULT_PROVIDERS.forEach((p) => map.set(p.id, p));
+    providers.forEach((p) => map.set(p.id, { ...map.get(p.id), ...p }));
+    return Array.from(map.values());
+  }, [providers]);
+
   // Filtered Poles Computation
   const filteredPoles = useMemo(() => {
     return livePoles.filter((pole) => {
+      // 0. Resolve accurate provider and category
+      const resolved = resolveProviderInfo({
+        providerId: pole.providerId,
+        providerName: pole.providerName,
+        infrastructureCategory: pole.infrastructureCategory,
+      });
+
+      const effectiveCategory = resolved.category || pole.infrastructureCategory || 'FO_WIFI';
+      const effectiveProviderId = resolved.providerId || pole.providerId || '';
+      const effectiveProviderName = resolved.providerName || pole.providerName || '';
+
       // 1. Search Query Filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchId = pole.id.toLowerCase().includes(q);
+        const matchId = (pole.id || '').toLowerCase().includes(q);
         const matchCode = (pole.poleCode || '').toLowerCase().includes(q);
-        const matchRoad = pole.road.toLowerCase().includes(q);
-        const matchKec = pole.kecamatan.toLowerCase().includes(q);
-        const matchKel = pole.kelurahan.toLowerCase().includes(q);
-        const matchProvider = (pole.providerName || '').toLowerCase().includes(q);
+        const matchRoad = (pole.road || '').toLowerCase().includes(q);
+        const matchKec = (pole.kecamatan || '').toLowerCase().includes(q);
+        const matchKel = (pole.kelurahan || '').toLowerCase().includes(q);
+        const matchProviderId = effectiveProviderId.toLowerCase().includes(q);
+        const matchProviderName = effectiveProviderName.toLowerCase().includes(q);
         const matchDesc = (pole.description || '').toLowerCase().includes(q);
+        const matchPatokan = (pole.patokanLokasi || '').toLowerCase().includes(q);
+        const matchSurveyor = (pole.surveyorName || '').toLowerCase().includes(q);
+        const matchType = (pole.poleType || '').toLowerCase().includes(q);
 
         if (
           !matchId &&
@@ -128,8 +152,12 @@ export default function PoleListFilterClient({
           !matchRoad &&
           !matchKec &&
           !matchKel &&
-          !matchProvider &&
-          !matchDesc
+          !matchProviderId &&
+          !matchProviderName &&
+          !matchDesc &&
+          !matchPatokan &&
+          !matchSurveyor &&
+          !matchType
         ) {
           return false;
         }
@@ -137,33 +165,93 @@ export default function PoleListFilterClient({
 
       // 2. Category Filter
       if (selectedCategory !== 'ALL') {
-        const cat = pole.infrastructureCategory || 'FO_WIFI';
-        if (cat !== selectedCategory) return false;
+        if (effectiveCategory !== selectedCategory) {
+          // Special fallback matching
+          if (selectedCategory === 'PLN_MURNI' && effectiveProviderId === 'PRV_PLN_DISTRIBUSI') {
+            // match
+          } else if (selectedCategory === 'GABUNG_PLN_PJU' && effectiveProviderId === 'PRV_PLN_PJU_GABUNG') {
+            // match
+          } else if (selectedCategory === 'PJU_MANDIRI' && effectiveProviderId === 'PRV_PJU_PEMKOT') {
+            // match
+          } else {
+            return false;
+          }
+        }
       }
 
       // 3. Provider Filter
       if (selectedProvider !== 'ALL') {
-        if (pole.providerId !== selectedProvider) return false;
+        const selLower = selectedProvider.toLowerCase().trim();
+        const matchId =
+          effectiveProviderId.toLowerCase() === selLower ||
+          (pole.providerId || '').toLowerCase() === selLower;
+
+        const matchName =
+          effectiveProviderName.toLowerCase().includes(selLower) ||
+          selLower.includes(effectiveProviderName.toLowerCase()) ||
+          (pole.providerName || '').toLowerCase().includes(selLower);
+
+        // Also check if selectedProvider is an ID matching one of the providers
+        const targetProvObj = allCombinedProviders.find((p) => p.id === selectedProvider);
+        const matchTargetObj =
+          targetProvObj &&
+          ((targetProvObj.name &&
+            effectiveProviderName
+              .toLowerCase()
+              .includes(targetProvObj.name.toLowerCase().replace(/^\d+\.\s*/, ''))) ||
+            (targetProvObj.code &&
+              (pole.poleCode || '').toLowerCase().includes(targetProvObj.code.toLowerCase())));
+
+        if (!matchId && !matchName && !matchTargetObj) return false;
       }
 
-      // 4. Kecamatan Filter
+      // 4. Kecamatan Filter (Resilient matching)
       if (selectedKecamatan !== 'ALL') {
-        if (pole.kecamatan.toLowerCase() !== selectedKecamatan.toLowerCase()) return false;
+        const cleanPoleKec = (pole.kecamatan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanTargetKec = selectedKecamatan.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (
+          !cleanPoleKec.includes(cleanTargetKec) &&
+          !cleanTargetKec.includes(cleanPoleKec)
+        ) {
+          return false;
+        }
       }
 
-      // 5. Kelurahan Filter
+      // 5. Kelurahan Filter (Resilient matching)
       if (selectedKelurahan !== 'ALL') {
-        if (pole.kelurahan.toLowerCase() !== selectedKelurahan.toLowerCase()) return false;
+        const cleanPoleKel = (pole.kelurahan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanTargetKel = selectedKelurahan.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (
+          !cleanPoleKel.includes(cleanTargetKel) &&
+          !cleanTargetKel.includes(cleanPoleKel)
+        ) {
+          return false;
+        }
       }
 
       // 6. Condition Filter
       if (selectedCondition !== 'ALL') {
-        if (pole.condition !== selectedCondition) return false;
+        const normPoleCond = (pole.condition || '').toUpperCase();
+        const normSelCond = selectedCondition.toUpperCase();
+        if (normPoleCond !== normSelCond) {
+          if (normSelCond === 'GOOD' && normPoleCond === 'BAIK') {
+            // match
+          } else if (
+            normSelCond === 'NEEDS_REPAIR' &&
+            (normPoleCond === 'PERLU_PERBAIKAN' || normPoleCond === 'PERLU_SERVIS')
+          ) {
+            // match
+          } else if (normSelCond === 'DAMAGED' && normPoleCond === 'RUSAK') {
+            // match
+          } else {
+            return false;
+          }
+        }
       }
 
       // 7. Type Filter
       if (selectedType !== 'ALL') {
-        if (pole.poleType !== selectedType) return false;
+        if ((pole.poleType || '').toUpperCase() !== selectedType.toUpperCase()) return false;
       }
 
       // 8. Hazard Filter
@@ -196,6 +284,7 @@ export default function PoleListFilterClient({
     selectedCondition,
     selectedType,
     hazardFilter,
+    allCombinedProviders,
   ]);
 
   // Compute Total Pages & Slice Data
@@ -280,6 +369,21 @@ export default function PoleListFilterClient({
           }`}
         >
           💡 PJU Mandiri
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedCategory(selectedCategory === 'PLN_MURNI' ? 'ALL' : 'PLN_MURNI');
+            setCurrentPage(1);
+          }}
+          className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
+            selectedCategory === 'PLN_MURNI'
+              ? 'bg-sky-700 text-white shadow-xs'
+              : 'bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100'
+          }`}
+        >
+          ⚡ PLN Listrik
         </button>
 
         <button
@@ -401,7 +505,7 @@ export default function PoleListFilterClient({
           {selectedProvider !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>
-                Provider: {providers.find((p) => p.id === selectedProvider)?.name.split('.')[1] || selectedProvider}
+                Provider: {allCombinedProviders.find((p) => p.id === selectedProvider)?.name.replace(/^\d+\.\s*/, '') || selectedProvider}
               </span>
               <button onClick={() => setSelectedProvider('ALL')} className="hover:text-rose-600 cursor-pointer">
                 <X className="w-3 h-3" />
@@ -764,8 +868,8 @@ export default function PoleListFilterClient({
                   onChange={(e) => setSelectedProvider(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-900 font-semibold outline-none focus:border-blue-500 focus:bg-white transition-all"
                 >
-                  <option value="ALL">Semua Provider ({providers.length} Operator)</option>
-                  {providers.map((p) => (
+                  <option value="ALL">Semua Provider ({allCombinedProviders.length} Operator)</option>
+                  {allCombinedProviders.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import type L from 'leaflet';
 import {
   Pole,
@@ -15,7 +15,7 @@ import { NetworkSegment } from '@/types/segment';
 import { Provider } from '@/types/provider';
 import { MAP_TILE_LAYERS } from '@/lib/gis/tiles';
 import { LUBUKLINGGAU_CENTER, KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
-import { DEFAULT_PROVIDERS } from '@/config/providers';
+import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 import { createProviderPoleMarkerIcon } from './markerIcons';
 import {
   Layers,
@@ -69,12 +69,16 @@ interface GISOverviewMapProps {
   poles: Pole[];
   segments?: NetworkSegment[];
   providers?: Provider[];
+  initialProvider?: string;
+  initialQuery?: string;
 }
 
 export default function GISOverviewMap({
   poles,
   segments = [],
   providers = [],
+  initialProvider,
+  initialQuery,
 }: GISOverviewMapProps) {
   const { poles: livePoles, refreshPoles } = useSupabaseRealtimePoles(poles);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -90,6 +94,14 @@ export default function GISOverviewMap({
   const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
   const [showBoundaries, setShowBoundaries] = useState(true);
   const [showLegendModal, setShowLegendModal] = useState(false);
+
+  // Merge default providers with any custom provider records passed
+  const allCombinedProviders = useMemo(() => {
+    const map = new Map<string, Provider>();
+    DEFAULT_PROVIDERS.forEach((p) => map.set(p.id, p));
+    providers.forEach((p) => map.set(p.id, { ...map.get(p.id), ...p }));
+    return Array.from(map.values());
+  }, [providers]);
 
   // Multi-Pole Sequential Ruler & Auto-Corridor Routing State
   const [isMeasuring, setIsMeasuring] = useState(false);
@@ -133,8 +145,8 @@ export default function GISOverviewMap({
   const [isDeletingBatch, setIsDeletingBatch] = useState<boolean>(false);
 
   // Filters & Search State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState(initialQuery || '');
+  const [selectedProvider, setSelectedProvider] = useState(initialProvider || 'ALL');
   const [selectedCondition, setSelectedCondition] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL'); // FO_WIFI, PJU_MANDIRI, GABUNG_PLN_PJU, PLN_MURNI, etc.
   const [selectedPjuCableFilter, setSelectedPjuCableFilter] = useState<'ALL' | 'WITH_CABLE' | 'WITHOUT_CABLE'>('ALL');
@@ -663,21 +675,80 @@ export default function GISOverviewMap({
 
   // Comprehensive Multi-Parameter Pole Filtering
   const filteredPoles = livePoles.filter((pole) => {
+    // 0. Resolve accurate provider and category
+    const resolved = resolveProviderInfo({
+      providerId: pole.providerId,
+      providerName: pole.providerName,
+      infrastructureCategory: pole.infrastructureCategory,
+    });
+
+    const effectiveCategory = resolved.category || pole.infrastructureCategory || 'FO_WIFI';
+    const effectiveProviderId = resolved.providerId || pole.providerId || '';
+    const effectiveProviderName = resolved.providerName || pole.providerName || '';
+
     // 1. Provider Filter
-    if (selectedProvider !== 'ALL' && pole.providerId !== selectedProvider) return false;
+    if (selectedProvider !== 'ALL') {
+      const selLower = selectedProvider.toLowerCase().trim();
+      const matchId =
+        effectiveProviderId.toLowerCase() === selLower ||
+        (pole.providerId || '').toLowerCase() === selLower;
+
+      const matchName =
+        effectiveProviderName.toLowerCase().includes(selLower) ||
+        selLower.includes(effectiveProviderName.toLowerCase()) ||
+        (pole.providerName || '').toLowerCase().includes(selLower);
+
+      const targetProvObj = allCombinedProviders.find((p) => p.id === selectedProvider);
+      const matchTargetObj =
+        targetProvObj &&
+        ((targetProvObj.name &&
+          effectiveProviderName
+            .toLowerCase()
+            .includes(targetProvObj.name.toLowerCase().replace(/^\d+\.\s*/, ''))) ||
+          (targetProvObj.code &&
+            (pole.poleCode || '').toLowerCase().includes(targetProvObj.code.toLowerCase())));
+
+      if (!matchId && !matchName && !matchTargetObj) return false;
+    }
 
     // 2. Condition Filter
-    if (selectedCondition !== 'ALL' && pole.condition !== selectedCondition) return false;
+    if (selectedCondition !== 'ALL') {
+      const normPoleCond = (pole.condition || '').toUpperCase();
+      const normSelCond = selectedCondition.toUpperCase();
+      if (normPoleCond !== normSelCond) {
+        if (normSelCond === 'GOOD' && normPoleCond === 'BAIK') {
+          // match
+        } else if (
+          normSelCond === 'NEEDS_REPAIR' &&
+          (normPoleCond === 'PERLU_PERBAIKAN' || normPoleCond === 'PERLU_SERVIS')
+        ) {
+          // match
+        } else if (normSelCond === 'DAMAGED' && normPoleCond === 'RUSAK') {
+          // match
+        } else {
+          return false;
+        }
+      }
+    }
 
     // 3. Infrastructure Category (PJU Mandiri, Gabung PLN+PJU, PLN Murni, FO/WiFi)
     if (selectedCategory !== 'ALL') {
-      const poleCat = pole.infrastructureCategory || 'FO_WIFI';
-      if (poleCat !== selectedCategory) return false;
+      if (effectiveCategory !== selectedCategory) {
+        if (selectedCategory === 'PLN_MURNI' && effectiveProviderId === 'PRV_PLN_DISTRIBUSI') {
+          // match
+        } else if (selectedCategory === 'GABUNG_PLN_PJU' && effectiveProviderId === 'PRV_PLN_PJU_GABUNG') {
+          // match
+        } else if (selectedCategory === 'PJU_MANDIRI' && effectiveProviderId === 'PRV_PJU_PEMKOT') {
+          // match
+        } else {
+          return false;
+        }
+      }
     }
 
     // 3b. PJU Network Cable Tumpangan Filter (Khusus PJU)
     if (selectedPjuCableFilter !== 'ALL') {
-      const isPju = pole.infrastructureCategory === 'PJU_MANDIRI' || pole.infrastructureCategory === 'GABUNG_PLN_PJU';
+      const isPju = effectiveCategory === 'PJU_MANDIRI' || effectiveCategory === 'GABUNG_PLN_PJU';
       if (selectedPjuCableFilter === 'WITH_CABLE') {
         if (!isPju || !pole.hasNetworkCable) return false;
       } else if (selectedPjuCableFilter === 'WITHOUT_CABLE') {
@@ -685,14 +756,34 @@ export default function GISOverviewMap({
       }
     }
 
-    // 4. Kecamatan Filter
-    if (selectedKecamatan !== 'ALL' && pole.kecamatan !== selectedKecamatan) return false;
+    // 4. Kecamatan Filter (Resilient matching)
+    if (selectedKecamatan !== 'ALL') {
+      const cleanPoleKec = (pole.kecamatan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanTargetKec = selectedKecamatan.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (
+        !cleanPoleKec.includes(cleanTargetKec) &&
+        !cleanTargetKec.includes(cleanPoleKec)
+      ) {
+        return false;
+      }
+    }
 
-    // 5. Kelurahan Filter
-    if (selectedKelurahan !== 'ALL' && pole.kelurahan !== selectedKelurahan) return false;
+    // 5. Kelurahan Filter (Resilient matching)
+    if (selectedKelurahan !== 'ALL') {
+      const cleanPoleKel = (pole.kelurahan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanTargetKel = selectedKelurahan.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (
+        !cleanPoleKel.includes(cleanTargetKel) &&
+        !cleanTargetKel.includes(cleanPoleKel)
+      ) {
+        return false;
+      }
+    }
 
     // 6. Pole Material Type Filter (Beton, Besi, Kayu)
-    if (selectedType !== 'ALL' && pole.poleType !== selectedType) return false;
+    if (selectedType !== 'ALL') {
+      if ((pole.poleType || '').toUpperCase() !== selectedType.toUpperCase()) return false;
+    }
 
     // 6b. Pole Height Filter (5m, 6m, 7m, 9m, 12m)
     if (selectedHeight !== 'ALL') {
@@ -708,7 +799,14 @@ export default function GISOverviewMap({
 
     // 8. Hazard / Risk Filter
     if (selectedHazard === 'HAZARD_ONLY') {
-      if (!pole.isTilted && !pole.isMessyCable && !pole.isLowCable) return false;
+      const isProblem =
+        pole.isTilted ||
+        pole.isMessyCable ||
+        pole.isLowCable ||
+        pole.isCorroded ||
+        pole.isObstructing ||
+        pole.isHazardous;
+      if (!isProblem) return false;
     } else if (selectedHazard === 'TILTED') {
       if (!pole.isTilted) return false;
     } else if (selectedHazard === 'MESSY') {
@@ -718,15 +816,35 @@ export default function GISOverviewMap({
     }
 
     // 9. Search Query Filter
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchId = pole.id.toLowerCase().includes(q);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchId = (pole.id || '').toLowerCase().includes(q);
       const matchCode = (pole.poleCode || '').toLowerCase().includes(q);
-      const matchRoad = pole.road.toLowerCase().includes(q);
-      const matchKec = pole.kecamatan.toLowerCase().includes(q);
-      const matchKel = pole.kelurahan.toLowerCase().includes(q);
-      const matchProvider = (pole.providerName || '').toLowerCase().includes(q);
-      if (!matchId && !matchCode && !matchRoad && !matchKec && !matchKel && !matchProvider) return false;
+      const matchRoad = (pole.road || '').toLowerCase().includes(q);
+      const matchKec = (pole.kecamatan || '').toLowerCase().includes(q);
+      const matchKel = (pole.kelurahan || '').toLowerCase().includes(q);
+      const matchProviderId = effectiveProviderId.toLowerCase().includes(q);
+      const matchProviderName = effectiveProviderName.toLowerCase().includes(q);
+      const matchDesc = (pole.description || '').toLowerCase().includes(q);
+      const matchPatokan = (pole.patokanLokasi || '').toLowerCase().includes(q);
+      const matchSurveyor = (pole.surveyorName || '').toLowerCase().includes(q);
+      const matchType = (pole.poleType || '').toLowerCase().includes(q);
+
+      if (
+        !matchId &&
+        !matchCode &&
+        !matchRoad &&
+        !matchKec &&
+        !matchKel &&
+        !matchProviderId &&
+        !matchProviderName &&
+        !matchDesc &&
+        !matchPatokan &&
+        !matchSurveyor &&
+        !matchType
+      ) {
+        return false;
+      }
     }
 
     return true;
@@ -1438,8 +1556,8 @@ export default function GISOverviewMap({
                 onChange={(e) => setSelectedProvider(e.target.value)}
                 className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
               >
-                <option value="ALL">Semua Provider</option>
-                {providers.map((p) => (
+                <option value="ALL">Semua Provider ({allCombinedProviders.length} Operator)</option>
+                {allCombinedProviders.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>

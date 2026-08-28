@@ -286,35 +286,43 @@ export function resolveProviderInfo(params: {
   providerId?: string;
   providerName?: string;
   infrastructureCategory?: string;
-}): { providerId: string; providerName: string; selectedProviderObj?: Provider } {
+}): {
+  providerId: string;
+  providerName: string;
+  category: 'PLN_MURNI' | 'GABUNG_PLN_PJU' | 'PJU_MANDIRI' | 'FO_WIFI';
+  selectedProviderObj?: Provider;
+} {
   const { providerId, providerName, infrastructureCategory } = params;
 
   // 1. Kategori PLN Murni
-  if (infrastructureCategory === 'PLN_MURNI') {
+  if (infrastructureCategory === 'PLN_MURNI' || providerId === 'PRV_PLN_DISTRIBUSI') {
     const pln = getProviderById('PRV_PLN_DISTRIBUSI') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PLN_DISTRIBUSI');
     return {
       providerId: 'PRV_PLN_DISTRIBUSI',
       providerName: 'PT PLN (PERSERO) DISTRIBUSI',
+      category: 'PLN_MURNI',
       selectedProviderObj: pln,
     };
   }
 
   // 2. Kategori Gabungan PLN + PJU
-  if (infrastructureCategory === 'GABUNG_PLN_PJU') {
+  if (infrastructureCategory === 'GABUNG_PLN_PJU' || providerId === 'PRV_PLN_PJU_GABUNG') {
     const gabung = getProviderById('PRV_PLN_PJU_GABUNG') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PLN_PJU_GABUNG');
     return {
       providerId: 'PRV_PLN_PJU_GABUNG',
       providerName: 'PLN + PJU (TIANG GABUNGAN)',
+      category: 'GABUNG_PLN_PJU',
       selectedProviderObj: gabung,
     };
   }
 
   // 3. Kategori PJU Mandiri Pemkot
-  if (infrastructureCategory === 'PJU_MANDIRI') {
+  if (infrastructureCategory === 'PJU_MANDIRI' || providerId === 'PRV_PJU_PEMKOT') {
     const pju = getProviderById('PRV_PJU_PEMKOT') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PJU_PEMKOT');
     return {
       providerId: 'PRV_PJU_PEMKOT',
       providerName: 'PJU PEMERINTAH KOTA LUBUKLINGGAU',
+      category: 'PJU_MANDIRI',
       selectedProviderObj: pju,
     };
   }
@@ -326,6 +334,7 @@ export function resolveProviderInfo(params: {
       return {
         providerId: match.id,
         providerName: match.name,
+        category: 'FO_WIFI',
         selectedProviderObj: match,
       };
     }
@@ -337,6 +346,7 @@ export function resolveProviderInfo(params: {
     return {
       providerId: providerId || nameMatch?.id || 'PRV_LOCAL',
       providerName: providerName,
+      category: 'FO_WIFI',
       selectedProviderObj: nameMatch,
     };
   }
@@ -345,6 +355,7 @@ export function resolveProviderInfo(params: {
   return {
     providerId: providerId || 'UNKNOWN',
     providerName: 'TIDAK DIKETAHUI / BELUM TERIDENTIFIKASI',
+    category: 'FO_WIFI',
     selectedProviderObj: unk,
   };
 }
