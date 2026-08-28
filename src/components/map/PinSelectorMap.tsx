@@ -35,6 +35,7 @@ import {
   ChevronLeft,
   RotateCcw,
 } from 'lucide-react';
+import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
 
 interface PinSelectorMapProps {
   initialPinCoord?: Coordinates;
@@ -66,6 +67,21 @@ export default function PinSelectorMap({
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
   const boundaryLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const isMountedRef = useRef<boolean>(true);
+
+  const [isLicenseLocked, setIsLicenseLocked] = useState(false);
+  const [licenseReason, setLicenseReason] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    fetch('/api/system/license', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.isLocked) {
+          setIsLicenseLocked(true);
+          if (d.reason) setLicenseReason(d.reason);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
   const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('hybrid_survey');
@@ -505,6 +521,10 @@ export default function PinSelectorMap({
       distanceFromDevice: distance,
     });
   };
+
+  if (isLicenseLocked) {
+    return <GISApiQuotaExceededLock customMessage={licenseReason} />;
+  }
 
   return (
     <div className="flex flex-col h-full w-full bg-slate-100 text-slate-800 relative select-none">

@@ -10,7 +10,8 @@ export interface SystemLicenseConfig {
 
 const DEFAULT_CONFIG: SystemLicenseConfig = {
   isLocked: false,
-  reason: 'Masa Uji Coba (Trial Period) Server GIS Telah Berakhir. Kapasitas kuota data infrastruktur telah melebihi batas paket dasar.',
+  reason:
+    'Akses modul pemetaan spasial dan visualisasi layer peta dinonaktifkan sementara oleh API Gateway karena volume data dan pemanggilan layer telah melampaui batas kuota paket dasar yang dialokasikan.',
   updatedAt: new Date().toISOString(),
 };
 

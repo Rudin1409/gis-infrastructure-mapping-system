@@ -15,6 +15,7 @@ import {
   Database,
   ArrowRight,
 } from 'lucide-react';
+import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
 
 export default function SystemGatewayPage() {
   const [pin, setPin] = useState('');
@@ -24,7 +25,7 @@ export default function SystemGatewayPage() {
 
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [reason, setReason] = useState<string>(
-    'Masa Uji Coba (Trial Period) Server GIS Telah Berakhir. Kapasitas kuota data infrastruktur telah melebihi batas paket dasar.'
+    'Akses modul pemetaan spasial dan visualisasi layer peta dinonaktifkan sementara oleh API Gateway karena volume data dan pemanggilan layer telah melampaui batas kuota paket dasar yang dialokasikan.'
   );
   const [updatedAt, setUpdatedAt] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
@@ -61,7 +62,6 @@ export default function SystemGatewayPage() {
 
     try {
       setIsLoading(true);
-      // Validate PIN against endpoint
       const res = await fetch('/api/system/license', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,7 +201,7 @@ export default function SystemGatewayPage() {
                 <p className="text-xs text-slate-400">
                   Status Saat Ini:{' '}
                   <strong className={isLocked ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}>
-                    {isLocked ? '🔒 TERKUNCI (Mode Berbayar / Kuota Habis)' : '🟢 AKTIF NORMAL (Peta Terbuka)'}
+                    {isLocked ? '🔒 TERKUNCI (Mode Berbayar / Kuota API Habis)' : '🟢 AKTIF NORMAL (Peta Terbuka)'}
                   </strong>
                 </p>
               </div>
@@ -247,7 +247,7 @@ export default function SystemGatewayPage() {
                 </h3>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   {isLocked
-                    ? 'Pengguna yang membuka halaman peta GIS akan melihat layar peringatan kuota server habis / masa trial berakhir.'
+                    ? 'Pengguna yang membuka peta GIS maupun survei tiang baru akan melihat respon API Gateway 429 Quota Exceeded.'
                     : 'Semua surveyor dan dinas dapat melihat seluruh titik tiang, koordinat, dan layer peta secara bebas.'}
                 </p>
               </div>
@@ -282,7 +282,7 @@ export default function SystemGatewayPage() {
           {/* Reason Configuration */}
           <div className="bg-slate-950/60 p-5 rounded-2xl border border-slate-800/90 space-y-3">
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Pesan / Alasan Penguncian yang Ditampilkan:
+              Pesan / Alasan Penguncian API Gateway:
             </label>
             <textarea
               rows={3}
@@ -292,7 +292,7 @@ export default function SystemGatewayPage() {
               className="w-full p-3 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-slate-200 outline-none focus:border-blue-500 font-sans leading-relaxed"
             />
             <div className="flex items-center justify-between text-[10px] text-slate-400">
-              <span>* Pesan ini akan otomatis tampil di layar peta saat terkunci.</span>
+              <span>* Pesan resmi API Gateway ini otomatis tampil di seluruh peta saat terkunci.</span>
               <button
                 type="button"
                 onClick={() => handleToggleLock(isLocked)}
@@ -316,35 +316,9 @@ export default function SystemGatewayPage() {
               </span>
             </div>
 
-            {/* Mock User Screen */}
-            <div className="bg-slate-950 rounded-2xl p-6 border border-slate-800 text-center space-y-4 shadow-inner">
-              <div className="w-14 h-14 rounded-2xl bg-red-600/20 border border-red-500/40 text-red-500 flex items-center justify-center mx-auto shadow-lg">
-                <Lock className="w-7 h-7" />
-              </div>
-              <div className="space-y-1.5 max-w-md mx-auto">
-                <h4 className="text-sm font-black text-white uppercase tracking-wider">
-                  Masa Uji Coba Server GIS Telah Berakhir
-                </h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {reason}
-                </p>
-              </div>
-
-              {/* Technical Specifications Badge */}
-              <div className="max-w-sm mx-auto bg-slate-900/90 rounded-xl p-3 border border-slate-800 text-left font-mono text-[10px] space-y-1 text-slate-300">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">STATUS SISTEM:</span>
-                  <span className="text-red-400 font-bold">TERKUNCI (Perlu Lisensi)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">KAPASITAS DATA:</span>
-                  <span className="text-amber-400 font-bold">180+ Tiang (Batas Kuota Terlampaui)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">MODUL SPASIAL:</span>
-                  <span className="text-slate-400">Dinonaktifkan Sementara</span>
-                </div>
-              </div>
+            {/* Render Actual GISApiQuotaExceededLock component in preview */}
+            <div className="rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
+              <GISApiQuotaExceededLock customMessage={reason} />
             </div>
           </div>
         </div>

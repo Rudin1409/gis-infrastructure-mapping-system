@@ -7,6 +7,7 @@ import { MAP_TILE_LAYERS } from '@/lib/gis/tiles';
 import { createProviderPoleMarkerIcon } from './markerIcons';
 import { PoleCondition } from '@/types/pole';
 import { Layers } from 'lucide-react';
+import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
 
 interface MiniMapProps {
   coord: Coordinates;
@@ -30,6 +31,18 @@ export default function MiniMap({
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
   const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
+  const [isLicenseLocked, setIsLicenseLocked] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/system/license', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.isLocked) {
+          setIsLicenseLocked(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -52,7 +65,7 @@ export default function MiniMap({
   }, []);
 
   useEffect(() => {
-    if (!leafletLib || !containerRef.current || mapRef.current) return;
+    if (isLicenseLocked || !leafletLib || !containerRef.current || mapRef.current) return;
     const L = leafletLib;
 
     const map = L.map(containerRef.current, {
@@ -91,7 +104,7 @@ export default function MiniMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [leafletLib, coord, condition, poleId, poleCode, providerColorHex, category]);
+  }, [isLicenseLocked, leafletLib, coord, condition, poleId, poleCode, providerColorHex, category]);
 
   const toggleTile = () => {
     if (!leafletLib || !mapRef.current) return;
@@ -116,6 +129,10 @@ export default function MiniMap({
 
     tileLayerRef.current = newLayer;
   };
+
+  if (isLicenseLocked) {
+    return <GISApiQuotaExceededLock compact={true} />;
+  }
 
   return (
     <div className="relative w-full h-44 rounded-2xl overflow-hidden border border-slate-200/80 shadow-inner">
