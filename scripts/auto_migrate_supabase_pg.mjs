@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS public.poles (
     pju_lamp_power TEXT,
     pju_lamp_condition TEXT DEFAULT 'TIDAK_ADA',
     has_kwh_meter BOOLEAN DEFAULT FALSE,
+    has_network_cable BOOLEAN DEFAULT FALSE,
     is_tilted BOOLEAN DEFAULT FALSE,
     is_messy_cable BOOLEAN DEFAULT FALSE,
     is_low_cable BOOLEAN DEFAULT FALSE,
@@ -259,13 +260,13 @@ async function run() {
         gps_accuracy, distance_from_device, location_method, provider_id, provider_name,
         pole_type, condition, road, kelurahan, kecamatan, kota, patokan_lokasi, sisi_jalan,
         height, ownership_status, cable_installation_type, infrastructure_category,
-        pju_lamp_type, pju_lamp_power, pju_lamp_condition, has_kwh_meter,
+        pju_lamp_type, pju_lamp_power, pju_lamp_condition, has_kwh_meter, has_network_cable,
         is_tilted, is_messy_cable, is_low_cable, is_hazardous, is_corroded, is_obstructing,
         description, photo_file_id, photo_url, surveyor_id, surveyor_name,
         survey_date, validation_status
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19,
-        $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40
+        $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41
       )
       ON CONFLICT (id) DO UPDATE SET
         pole_code = EXCLUDED.pole_code,
@@ -277,6 +278,7 @@ async function run() {
         kelurahan = EXCLUDED.kelurahan,
         kecamatan = EXCLUDED.kecamatan,
         photo_url = EXCLUDED.photo_url,
+        has_network_cable = EXCLUDED.has_network_cable,
         updated_at = NOW();
     `, [
       p.id,
@@ -306,6 +308,7 @@ async function run() {
       p.pjuLampPower || null,
       p.pjuLampCondition || 'TIDAK_ADA',
       Boolean(p.hasKwhMeter),
+      Boolean(p.hasNetworkCable),
       Boolean(p.isTilted),
       Boolean(p.isMessyCable),
       Boolean(p.isLowCable),
