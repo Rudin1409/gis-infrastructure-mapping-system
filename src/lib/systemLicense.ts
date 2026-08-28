@@ -11,7 +11,7 @@ export interface SystemLicenseConfig {
 const DEFAULT_CONFIG: SystemLicenseConfig = {
   isLocked: false,
   reason:
-    'Akses modul pemetaan spasial dan visualisasi layer peta dinonaktifkan sementara oleh API Gateway karena volume data dan pemanggilan layer telah melampaui batas kuota paket dasar yang dialokasikan.',
+    'Akses modul pemetaan spasial dan visualisasi layer peta ditangguhkan otomatis oleh API Gateway karena volume data dan pemanggilan layer telah melampaui batas alokasi kuota paket yang tersedia.',
   updatedAt: new Date().toISOString(),
 };
 

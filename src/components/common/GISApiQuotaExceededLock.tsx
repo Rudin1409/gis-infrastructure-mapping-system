@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertOctagon, ServerOff, Terminal, ShieldAlert, Cpu } from 'lucide-react';
+import { AlertOctagon, Layers, Terminal, AlertTriangle } from 'lucide-react';
 
 interface GISApiQuotaExceededLockProps {
   compact?: boolean;
@@ -23,7 +23,7 @@ export default function GISApiQuotaExceededLock({
             API 429 • Quota Limit Exceeded
           </div>
           <p className="text-[11px] text-slate-400 font-sans max-w-xs leading-tight">
-            Layanan pemetaan GIS dinonaktifkan sementara karena kuota panggilan data API telah melampaui batas paket.
+            Layanan pemetaan GIS ditangguhkan otomatis karena kuota panggilan data API telah melampaui batas paket.
           </p>
         </div>
       </div>
@@ -39,17 +39,17 @@ export default function GISApiQuotaExceededLock({
 
       {/* Main Official-Style API Lock Container */}
       <div className="relative z-10 w-full max-w-lg bg-slate-900/95 border border-red-500/50 rounded-3xl p-6 sm:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.85)] backdrop-blur-2xl text-center space-y-5 animate-in zoom-in-95 duration-300">
-        {/* API Server Engine Status Badge */}
+        {/* API Engine Status Badge */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-black uppercase tracking-widest bg-red-950/90 text-red-400 border border-red-500/40 shadow-inner">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
           <span>GEOSPATIAL API GATEWAY • STATUS 429</span>
         </div>
 
-        {/* Animated Server Warning Emblem */}
+        {/* Animated Map Engine Warning Emblem */}
         <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
           <div className="absolute inset-0 rounded-3xl bg-red-600/20 border border-red-500/30 animate-pulse opacity-40" />
           <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 via-red-700 to-amber-700 text-white flex items-center justify-center shadow-xl shadow-red-900/50 border border-red-400/40">
-            <ServerOff className="w-8 h-8 stroke-[2.2]" />
+            <Layers className="w-8 h-8 stroke-[2.2]" />
           </div>
         </div>
 
@@ -60,7 +60,7 @@ export default function GISApiQuotaExceededLock({
           </h2>
           <p className="text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
             {customMessage ||
-              'Akses modul pemetaan spasial dan visualisasi layer peta dinonaktifkan sementara oleh API Gateway karena volume data dan pemanggilan layer telah melampaui batas kuota paket dasar yang dialokasikan.'}
+              'Akses modul pemetaan spasial dan visualisasi layer peta ditangguhkan otomatis oleh API Gateway karena volume data dan pemanggilan layer telah melampaui batas alokasi kuota paket yang tersedia.'}
           </p>
         </div>
 
@@ -94,9 +94,9 @@ export default function GISApiQuotaExceededLock({
           </div>
         </div>
 
-        {/* Formal API Footnote */}
+        {/* Formal API Footnote - Pure Automated GIS API notice */}
         <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans pt-1">
-          Harap hubungi administrator pengembang untuk aktivasi kuota dan pembaruan paket lisensi server enterprise.
+          Layanan pemetaan interaktif ditangguhkan otomatis oleh API Geospatial Gateway karena batas alokasi kuota pemanggilan telah terpenuhi. Diperlukan pembaruan paket lisensi untuk mengaktifkan kembali akses API.
         </p>
       </div>
     </div>
