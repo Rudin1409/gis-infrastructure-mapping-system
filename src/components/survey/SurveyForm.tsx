@@ -188,7 +188,7 @@ export default function SurveyForm({
     }
   }, []);
 
-  // 2. Auto-reverse geocode location from GPS coordinate
+  // 2. Auto-reverse geocode location from GPS coordinate (Always syncs with confirmed pin location)
   useEffect(() => {
     let isMounted = true;
     async function fetchSmartDetails() {
@@ -196,10 +196,10 @@ export default function SurveyForm({
       try {
         const geo = await reverseGeocodeLocation(confirmedCoord, existingPoleCodes);
         if (isMounted) {
-          // If smart memory has road, only override if geocode found a specific road
-          if (geo.road && (!road || !isSmartMemoryApplied)) setRoad(geo.road);
-          if (geo.kecamatan && !isSmartMemoryApplied) setKecamatan(geo.kecamatan);
-          if (geo.kelurahan && !isSmartMemoryApplied) setKelurahan(geo.kelurahan);
+          // Always use actual road and district from the confirmed coordinates
+          if (geo.road) setRoad(geo.road);
+          if (geo.kecamatan) setKecamatan(geo.kecamatan);
+          if (geo.kelurahan) setKelurahan(geo.kelurahan);
           if (geo.smartPoleCode) setPoleCode(geo.smartPoleCode);
           if (geo.smartSegmentCode) setSegmentCode(geo.smartSegmentCode);
         }
@@ -213,7 +213,7 @@ export default function SurveyForm({
     return () => {
       isMounted = false;
     };
-  }, [confirmedCoord, isSmartMemoryApplied, existingPoleCodes]);
+  }, [confirmedCoord, existingPoleCodes]);
 
   // Available kelurahan for current selected kecamatan
   const currentKecamatanObj = KECAMATAN_LUBUKLINGGAU.find((k) => k.name === kecamatan);
