@@ -28,6 +28,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Jika berjalan di lingkungan Vercel, nonaktifkan endpoint AI
+    if (process.env.VERCEL === '1' || process.env.NEXT_PUBLIC_VERCEL_ENV) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Fitur Asisten INFRA-AI hanya aktif pada server VPS resmi (https://inframap.my.id).',
+        },
+        { status: 403 }
+      );
+    }
+
     const apiKey =
       process.env.OPENROUTER_API_KEY ||
       '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';

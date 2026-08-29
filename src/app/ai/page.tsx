@@ -62,7 +62,15 @@ const FEATURE_CARDS = [
   },
 ];
 
+import { isAiFeatureActive } from '@/lib/ai/aiConfig';
+
 export default function AiAssistantPage() {
+  const [isAiEnabled, setIsAiEnabled] = useState(true);
+
+  useEffect(() => {
+    setIsAiEnabled(isAiFeatureActive());
+  }, []);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -207,6 +215,30 @@ export default function AiAssistantPage() {
       );
     });
   };
+
+  if (!isAiEnabled) {
+    return (
+      <div className="p-6 max-w-lg mx-auto text-center space-y-4 pt-16">
+        <div className="w-16 h-16 rounded-3xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-md">
+          <Sparkles className="w-8 h-8" />
+        </div>
+        <h1 className="text-base font-black text-slate-900">
+          Modul INFRA-AI Khusus Server VPS
+        </h1>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Fitur Asisten Cerdas INFRA-AI hanya aktif pada server produksi VPS resmi (<strong>inframap.my.id</strong>).
+        </p>
+        <div className="pt-2">
+          <a
+            href="https://inframap.my.id/ai"
+            className="inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-md transition-all"
+          >
+            Buka di Server VPS Resmi
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-5xl mx-auto font-sans text-slate-800 pb-20">

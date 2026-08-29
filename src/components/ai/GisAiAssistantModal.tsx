@@ -45,9 +45,17 @@ const QUICK_PROMPTS = [
   },
 ];
 
+import { isAiFeatureActive } from '@/lib/ai/aiConfig';
+
 export default function GisAiAssistantModal() {
+  const [isAiEnabled, setIsAiEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    setIsAiEnabled(isAiFeatureActive());
+  }, []);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome-1',
@@ -189,6 +197,10 @@ export default function GisAiAssistantModal() {
       return part;
     });
   };
+
+  if (!isAiEnabled) {
+    return null;
+  }
 
   return (
     <>

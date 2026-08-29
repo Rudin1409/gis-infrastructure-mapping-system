@@ -18,14 +18,21 @@ import {
   Sparkles,
 } from 'lucide-react';
 
+import { isAiFeatureActive } from '@/lib/ai/aiConfig';
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isAiEnabled, setIsAiEnabled] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsAiEnabled(isAiFeatureActive());
+  }, []);
 
   const navLinks = [
     { href: '/', label: 'Overview Data', icon: LayoutDashboard },
     { href: '/poles', label: 'Inventaris Tiang', icon: Database },
     { href: '/map', label: 'Peta GIS Spasial', icon: Map },
-    { href: '/ai', label: 'Asisten INFRA-AI', icon: Sparkles, isAi: true },
+    ...(isAiEnabled ? [{ href: '/ai', label: 'Asisten INFRA-AI', icon: Sparkles, isAi: true }] : []),
     { href: '/segments', label: 'Penataan Kabel', icon: ShieldAlert },
     { href: '/surveyor', label: 'Portal Surveyor HP', icon: Smartphone, isMobilePortal: true },
     { href: '/poles/new', label: 'Input Tiang Baru', icon: PlusCircle, isHighlight: true },
