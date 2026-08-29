@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { updatePoleSchema } from '@/lib/validation/poleSchema';
 import { sheetsBackupService } from '@/services/sheetsBackupService';
+import { isDataMutationAllowed } from '@/lib/ai/aiConfig';
 
 export async function GET(
   request: NextRequest,
@@ -36,6 +37,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isDataMutationAllowed()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Pembaruan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
+        },
+        { status: 403 }
+      );
+    }
+
     const { id } = params;
     const body = await request.json();
     const validationResult = updatePoleSchema.safeParse({ ...body, id });
@@ -75,6 +86,16 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!isDataMutationAllowed()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Penghapusan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
+        },
+        { status: 403 }
+      );
+    }
+
     const { id } = params;
     const success = await poleService.deletePole(id);
 

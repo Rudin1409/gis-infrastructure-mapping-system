@@ -3,6 +3,7 @@ import { Pole, CreatePoleInput, UpdatePoleInput } from '@/types/pole';
 import { supabase } from '@/lib/supabase';
 import { resolveProviderInfo } from '@/config/providers';
 import { buildInsertSql, buildUpdateSql, dbQuery, isPostgresConfigured } from '@/lib/postgres';
+import { isVercelEnvironment, VERCEL_DATA_LOCK_CUTOFF } from '@/lib/ai/aiConfig';
 
 function mapDbToPole(row: any): Pole {
   const resolved = resolveProviderInfo({
@@ -148,10 +149,19 @@ export class SupabasePoleRepository implements IPoleRepository {
         }
       }
 
+      if (isVercelEnvironment()) {
+        poles = poles.filter((p) => !p.createdAt || p.createdAt <= VERCEL_DATA_LOCK_CUTOFF);
+      }
+
       return poles;
     }
 
     let query = supabase.from('poles').select('*').order('created_at', { ascending: false });
+
+    // 🔒 Kunci Data di Vercel: Hanya ambil data yang dibuat sampai batas baseline
+    if (isVercelEnvironment()) {
+      query = query.lte('created_at', VERCEL_DATA_LOCK_CUTOFF);
+    }
 
     if (filters?.providerId) {
       query = query.eq('provider_id', filters.providerId);

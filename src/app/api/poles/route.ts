@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { createPoleSchema } from '@/lib/validation/poleSchema';
 import { sheetsBackupService } from '@/services/sheetsBackupService';
+import { isDataMutationAllowed } from '@/lib/ai/aiConfig';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,6 +42,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isDataMutationAllowed()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Penambahan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const validationResult = createPoleSchema.safeParse(body);
 

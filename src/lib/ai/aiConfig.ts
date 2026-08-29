@@ -1,22 +1,38 @@
 /**
- * Helper deteksi ketersediaan fitur AI.
- * Fitur AI dinonaktifkan sepenuhnya jika berjalan di lingkungan Vercel (vercel.app),
- * dan HANYA aktif di Server VPS Produksi (inframap.my.id) serta environment server lokal.
+ * Helper deteksi lingkungan & isolasi data Vercel vs VPS.
+ * 
+ * - VERCEL (*.vercel.app):
+ *   1. Data terkunci pada baseline snapshot (648 tiang terdata).
+ *   2. Penambahan data baru & fitur AI dinonaktifkan.
+ * 
+ * - VPS PRODUKSI (https://inframap.my.id/) & LOCAL DEV:
+ *   1. Data live real-time tanpa batas (semua penambahan tiang baru masuk & tampil).
+ *   2. Fitur AI & survei berjalan 100% penuh.
  */
 
-export function isAiFeatureActive(): boolean {
-  // 1. Cek Server-Side (Vercel selalu otomatis menginjeksi variabel VERCEL=1)
+export const VERCEL_DATA_LOCK_CUTOFF = '2026-08-29T14:15:00.000Z';
+
+export function isVercelEnvironment(): boolean {
+  // 1. Cek Server-Side (Vercel otomatis menginjeksi VERCEL=1)
   if (process.env.VERCEL === '1' || process.env.NEXT_PUBLIC_VERCEL_ENV) {
-    return false;
+    return true;
   }
 
   // 2. Cek Client-Side Hostname Browser
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname.toLowerCase();
     if (hostname.includes('vercel.app')) {
-      return false;
+      return true;
     }
   }
 
-  return true;
+  return false;
+}
+
+export function isAiFeatureActive(): boolean {
+  return !isVercelEnvironment();
+}
+
+export function isDataMutationAllowed(): boolean {
+  return !isVercelEnvironment();
 }

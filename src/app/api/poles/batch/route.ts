@@ -5,6 +5,7 @@ import { sheetsBackupService } from '@/services/sheetsBackupService';
 import { calculateHaversineDistance } from '@/lib/gis/haversine';
 import { Pole } from '@/types/pole';
 import { NetworkSegment } from '@/types/segment';
+import { isDataMutationAllowed } from '@/lib/ai/aiConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,16 @@ interface BatchCreateCorridorPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!isDataMutationAllowed()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Penambahan data dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
+        },
+        { status: 403 }
+      );
+    }
+
     const body: BatchCreateCorridorPayload = await request.json();
 
     if (!body.poles || !Array.isArray(body.poles) || body.poles.length === 0) {
