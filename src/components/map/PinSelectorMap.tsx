@@ -38,6 +38,9 @@ import {
   ExternalLink,
   Maximize2,
   X,
+  RefreshCw,
+  Target,
+  Navigation,
 } from 'lucide-react';
 import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
 import { getStreetViewImageUrl, getStreetViewEmbedUrl, getStreetViewDirectUrl } from '@/lib/gis/streetview';
@@ -113,11 +116,25 @@ export default function PinSelectorMap({
   // 🚶 Google Street View Inset Thumbnail & Fullscreen State
   const [showStreetViewModal, setShowStreetViewModal] = useState<boolean>(false);
   const [streetViewPhotoUrl, setStreetViewPhotoUrl] = useState<string>('');
+  const [debouncedStreetViewCoord, setDebouncedStreetViewCoord] = useState<Coordinates>(
+    initialPinCoord || {
+      lat: LUBUKLINGGAU_CENTER.lat,
+      lng: LUBUKLINGGAU_CENTER.lng,
+    }
+  );
+  const [streetViewHeading, setStreetViewHeading] = useState<number>(0);
+  const [streetViewKey, setStreetViewKey] = useState<number>(1);
+  const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
 
+  // Debounce coordinate updates for smooth, flicker-free Street View iframe loading
   useEffect(() => {
-    const url = getStreetViewImageUrl(pinCoord, 0, 10, 90);
-    setStreetViewPhotoUrl(url);
-  }, [pinCoord]);
+    const timer = setTimeout(() => {
+      setDebouncedStreetViewCoord(pinCoord);
+      const url = getStreetViewImageUrl(pinCoord, streetViewHeading, 10, 90);
+      setStreetViewPhotoUrl(url);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [pinCoord, streetViewHeading]);
 
   // Load Leaflet library dynamically client-side only when verified NOT locked
   useEffect(() => {
@@ -794,30 +811,46 @@ export default function PinSelectorMap({
       {showStreetViewModal && (
         <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950 text-white animate-in fade-in duration-200">
           {/* Header */}
-          <div className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+          <div className="px-3.5 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md">
                 <Camera className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-black tracking-tight text-white flex items-center gap-1.5">
-                  <span>Google Street View 360°</span>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-xs font-black tracking-tight text-white">
+                    Google Street View 360°
+                  </h3>
                   <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-purple-500/30 text-purple-300 border border-purple-400/30">
-                    INTERAKTIF
+                    LIVE PANORAMA
                   </span>
-                </h3>
+                </div>
                 <p className="text-[10px] text-slate-400 font-mono">
-                  Lat: {pinCoord.lat.toFixed(6)}, Lng: {pinCoord.lng.toFixed(6)}
+                  Koordinat: {debouncedStreetViewCoord.lat.toFixed(6)}, {debouncedStreetViewCoord.lng.toFixed(6)}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              {/* Refresh Panorama Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStreetViewLoading(true);
+                  setStreetViewKey((k) => k + 1);
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                title="Muat Ulang Tampilan Panorama jika loading terhambat"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isStreetViewLoading ? 'animate-spin text-purple-400' : ''}`} />
+                <span className="hidden sm:inline">Segarkan</span>
+              </button>
+
               <a
-                href={getStreetViewDirectUrl(pinCoord, 0)}
+                href={getStreetViewDirectUrl(debouncedStreetViewCoord, streetViewHeading)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-300 transition-all"
+                className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-300 transition-all"
               >
                 <span>Buka di Google Maps</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -833,21 +866,58 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Interactive 360° Panorama Frame */}
-          <div className="flex-1 w-full relative bg-slate-900">
+          {/* Interactive 360° Panorama Frame Container */}
+          <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
+            {/* Loading Indicator Overlay */}
+            {isStreetViewLoading && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
+                <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-2" />
+                <p className="text-xs font-bold text-slate-300">Memuat Panorama 360° Jalan...</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Menyesuaikan sudut terdekat</p>
+              </div>
+            )}
+
+            {/* Google Street View Iframe */}
             <iframe
-              src={getStreetViewEmbedUrl(pinCoord, 0)}
+              key={streetViewKey}
+              src={getStreetViewEmbedUrl(debouncedStreetViewCoord, streetViewHeading)}
               className="w-full h-full border-0"
               allowFullScreen
-              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              loading="eager"
+              onLoad={() => setIsStreetViewLoading(false)}
               title="Street View 360 Panorama"
             />
+
+            {/* Floating Central Pin Target Reticle Overlay */}
+            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-20">
+              <div className="flex flex-col items-center animate-bounce duration-1000 -translate-y-6">
+                <div className="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-2xl border-2 border-white flex items-center gap-1">
+                  <MapPin className="w-3 h-3 fill-white" />
+                  <span>PIN TIANG TARGET</span>
+                </div>
+                <div className="w-2.5 h-2.5 bg-red-600 rotate-45 -mt-1 shadow-md border-r-2 border-b-2 border-white" />
+                <div className="w-3 h-1 bg-black/40 rounded-full blur-[1px] mt-1" />
+              </div>
+
+              {/* Aiming Reticle Crosshair */}
+              <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/50 flex items-center justify-center pointer-events-none shadow-lg">
+                <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm" />
+              </div>
+            </div>
+
+            {/* Top Instruction Pill */}
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Putar kamera ke tiang fisik, lalu klik Kunci Titik &amp; Simpan</span>
+            </div>
           </div>
 
           {/* Bottom Action Footer */}
-          <div className="p-3.5 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-between gap-3 flex-shrink-0">
-            <div className="text-[11px] text-slate-300 truncate hidden sm:block">
-              <span>Putar kamera 360° untuk memeriksa posisi fisik tiang dan kabel di lapangan.</span>
+          <div className="p-3 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex items-center justify-between gap-3 flex-shrink-0">
+            <div className="text-[11px] text-slate-300 truncate hidden sm:flex items-center gap-1.5">
+              <Target className="w-4 h-4 text-purple-400 flex-shrink-0" />
+              <span>Kamera mengarah tepat ke posisi tiang di pinggir jalan.</span>
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -865,10 +935,10 @@ export default function PinSelectorMap({
                   setShowStreetViewModal(false);
                   handleConfirm();
                 }}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 text-white font-bold text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>KUNCI TITIK &amp; LANJUTKAN SURVEI &rarr;</span>
+                <span>📸 KUNCI TITIK INI &amp; LANJUT ISI DATA &rarr;</span>
               </button>
             </div>
           </div>
