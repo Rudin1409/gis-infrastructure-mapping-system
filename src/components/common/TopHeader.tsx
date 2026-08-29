@@ -71,6 +71,14 @@ export default function TopHeader() {
         showBack: true,
       };
     }
+    if (pathname === '/ai') {
+      return {
+        title: 'Asisten Cerdas INFRA-AI',
+        subtitle: 'Konsultasi Data & Inventaris GIS',
+        icon: Sparkles,
+        showBack: true,
+      };
+    }
     if (pathname === '/segments') {
       return {
         title: 'Audit & Penataan Kabel',

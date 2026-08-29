@@ -25,6 +25,7 @@ export default function Sidebar() {
     { href: '/', label: 'Overview Data', icon: LayoutDashboard },
     { href: '/poles', label: 'Inventaris Tiang', icon: Database },
     { href: '/map', label: 'Peta GIS Spasial', icon: Map },
+    { href: '/ai', label: 'Asisten INFRA-AI', icon: Sparkles, isAi: true },
     { href: '/segments', label: 'Penataan Kabel', icon: ShieldAlert },
     { href: '/surveyor', label: 'Portal Surveyor HP', icon: Smartphone, isMobilePortal: true },
     { href: '/poles/new', label: 'Input Tiang Baru', icon: PlusCircle, isHighlight: true },
@@ -73,6 +74,28 @@ export default function Sidebar() {
                   <span>{link.label}</span>
                   <span className="px-1.5 py-0.2 bg-emerald-500 text-white text-[9px] font-bold rounded-md uppercase">
                     HP
+                  </span>
+                </div>
+              </Link>
+            );
+          }
+
+          if (link.isAi) {
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-indigo-900/40 ring-2 ring-white/20'
+                    : 'bg-indigo-950/40 hover:bg-indigo-900/60 text-indigo-100 border border-indigo-400/30'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+                <div className="flex-1 flex items-center justify-between">
+                  <span>{link.label}</span>
+                  <span className="px-1.5 py-0.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-[8px] font-black rounded-md uppercase tracking-wider shadow-xs">
+                    AI
                   </span>
                 </div>
               </Link>
