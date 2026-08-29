@@ -43,7 +43,7 @@ import {
   Navigation,
 } from 'lucide-react';
 import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
-import { getStreetViewImageUrl, getStreetViewEmbedUrl, getStreetViewDirectUrl } from '@/lib/gis/streetview';
+import { getStreetViewImageUrl, getStreetViewEmbedUrl, getStreetViewDirectUrl, projectCoordinateAlongHeading } from '@/lib/gis/streetview';
 import { offsetCoordinatePerpendicular } from '@/lib/gis/roadRouting';
 
 interface PinSelectorMapProps {
@@ -124,6 +124,7 @@ export default function PinSelectorMap({
     }
   );
   const [streetViewHeading, setStreetViewHeading] = useState<number>(0);
+  const [streetViewPitch, setStreetViewPitch] = useState<number>(10);
   const [streetViewSide, setStreetViewSide] = useState<'KIRI' | 'KANAN'>('KIRI');
   const [streetViewKey, setStreetViewKey] = useState<number>(1);
   const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
@@ -132,7 +133,7 @@ export default function PinSelectorMap({
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedStreetViewCoord(pinCoord);
-      const url = getStreetViewImageUrl(pinCoord, streetViewHeading, 10, 90);
+      const url = getStreetViewEmbedUrl(pinCoord, streetViewHeading);
       setStreetViewPhotoUrl(url);
     }, 400);
     return () => clearTimeout(timer);
@@ -868,24 +869,22 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Interactive 360° Panorama Frame Container */}
+          {/* Interactive 360° Panorama Frame Container — NON-INTERACTIVE (controlled by rotation buttons) */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
+              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-2" />
                 <p className="text-xs font-bold text-slate-300">Memuat Panorama 360° Jalan...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Menyesuaikan sudut terdekat</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Heading: {streetViewHeading}°</p>
               </div>
             )}
 
-            {/* Google Street View Iframe */}
+            {/* Google Street View Iframe — pointer-events DISABLED so heading is always tracked by OUR controls */}
             <iframe
-              key={streetViewKey}
-              src={getStreetViewEmbedUrl(debouncedStreetViewCoord, streetViewHeading)}
-              className="w-full h-full border-0"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              key={`${streetViewKey}-${streetViewHeading}`}
+              src={getStreetViewEmbedUrl(debouncedStreetViewCoord, streetViewHeading, streetViewPitch)}
+              className="w-full h-full border-0 pointer-events-none"
               loading="eager"
               onLoad={() => setIsStreetViewLoading(false)}
               title="Street View 360 Panorama"
@@ -893,7 +892,7 @@ export default function PinSelectorMap({
 
             {/* Floating Central Pin Target Reticle Overlay */}
             <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-20">
-              <div className="flex flex-col items-center animate-bounce duration-1000 -translate-y-6">
+              <div className="flex flex-col items-center -translate-y-4">
                 <div className="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-2xl border-2 border-white flex items-center gap-1">
                   <MapPin className="w-3 h-3 fill-white" />
                   <span>PIN TIANG TARGET</span>
@@ -903,26 +902,109 @@ export default function PinSelectorMap({
               </div>
 
               {/* Aiming Reticle Crosshair */}
-              <div className="w-12 h-12 rounded-full border-2 border-dashed border-white/50 flex items-center justify-center pointer-events-none shadow-lg">
-                <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm" />
+              <div className="w-14 h-14 rounded-full border-2 border-dashed border-red-400/70 flex items-center justify-center pointer-events-none shadow-lg">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm ring-2 ring-red-300/50" />
               </div>
             </div>
 
             {/* Top Instruction Pill */}
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Putar kamera ke tiang fisik, lalu klik Kunci Titik &amp; Simpan</span>
+              <span>Putar arah ◀ ▶ sampai tiang tepat di tengah lingkaran merah</span>
+            </div>
+
+            {/* ====== ROTATION CONTROLS (overlaid on panorama) ====== */}
+            {/* LEFT rotation zone */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsStreetViewLoading(true);
+                setStreetViewHeading(h => (h - 15 + 360) % 360);
+              }}
+              className="absolute left-0 top-0 bottom-0 w-16 z-25 flex items-center justify-start pl-2 bg-gradient-to-r from-black/50 to-transparent hover:from-black/70 transition-all cursor-pointer group"
+              title="Putar Kiri 15°"
+            >
+              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/40 group-active:scale-90 transition-all">
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </div>
+            </button>
+
+            {/* RIGHT rotation zone */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsStreetViewLoading(true);
+                setStreetViewHeading(h => (h + 15) % 360);
+              }}
+              className="absolute right-0 top-0 bottom-0 w-16 z-25 flex items-center justify-end pr-2 bg-gradient-to-l from-black/50 to-transparent hover:from-black/70 transition-all cursor-pointer group"
+              title="Putar Kanan 15°"
+            >
+              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/40 group-active:scale-90 transition-all">
+                <ChevronLeft className="w-6 h-6 text-white rotate-180" />
+              </div>
+            </button>
+
+            {/* PITCH UP */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsStreetViewLoading(true);
+                setStreetViewPitch(p => Math.min(p + 10, 60));
+              }}
+              className="absolute top-12 right-3 z-25 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/40 active:scale-90 transition-all cursor-pointer flex items-center justify-center"
+              title="Lihat Atas"
+            >
+              <ChevronLeft className="w-5 h-5 text-white rotate-90" />
+            </button>
+
+            {/* PITCH DOWN */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsStreetViewLoading(true);
+                setStreetViewPitch(p => Math.max(p - 10, -30));
+              }}
+              className="absolute bottom-3 right-3 z-25 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/40 active:scale-90 transition-all cursor-pointer flex items-center justify-center"
+              title="Lihat Bawah"
+            >
+              <ChevronLeft className="w-5 h-5 text-white -rotate-90" />
+            </button>
+
+            {/* Compass heading indicator (bottom-center) */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 pointer-events-none">
+              <Compass className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[10px] font-bold text-white font-mono">{streetViewHeading}°</span>
+              <span className="text-[9px] text-slate-400">
+                {streetViewHeading >= 337.5 || streetViewHeading < 22.5 ? 'Utara' :
+                 streetViewHeading < 67.5 ? 'Timur Laut' :
+                 streetViewHeading < 112.5 ? 'Timur' :
+                 streetViewHeading < 157.5 ? 'Tenggara' :
+                 streetViewHeading < 202.5 ? 'Selatan' :
+                 streetViewHeading < 247.5 ? 'Barat Daya' :
+                 streetViewHeading < 292.5 ? 'Barat' : 'Barat Laut'}
+              </span>
+              <span className="text-[9px] text-slate-500">Pitch: {streetViewPitch}°</span>
             </div>
           </div>
 
           {/* Bottom Action Footer */}
           <div className="p-3 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 flex-shrink-0">
-            {/* Roadside Shoulder Selector (Pinggir Jalan) */}
-            <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
-              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-                <Target className="w-3.5 h-3.5 text-purple-400" />
-                <span>Posisi Tiang:</span>
-              </span>
+            {/* Fine rotation + Side selector */}
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start flex-wrap">
+              {/* Fine rotation ±5° */}
+              <div className="inline-flex bg-slate-800 p-0.5 rounded-xl border border-white/10 items-center gap-0.5">
+                <button type="button" onClick={() => { setIsStreetViewLoading(true); setStreetViewHeading(h => (h - 5 + 360) % 360); }}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all cursor-pointer">
+                  ◀ 5°
+                </button>
+                <span className="text-[9px] text-slate-500 px-1">Halus</span>
+                <button type="button" onClick={() => { setIsStreetViewLoading(true); setStreetViewHeading(h => (h + 5) % 360); }}
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-all cursor-pointer">
+                  5° ▶
+                </button>
+              </div>
+
+              {/* Roadside Shoulder Selector */}
               <div className="inline-flex bg-slate-800 p-0.5 rounded-xl border border-white/10">
                 <button
                   type="button"
@@ -933,7 +1015,7 @@ export default function PinSelectorMap({
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  ◀ Bahu Kiri
+                  ◀ Kiri
                 </button>
                 <button
                   type="button"
@@ -944,7 +1026,7 @@ export default function PinSelectorMap({
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Bahu Kanan ▶
+                  Kanan ▶
                 </button>
               </div>
             </div>
@@ -963,18 +1045,26 @@ export default function PinSelectorMap({
                 type="button"
                 onClick={() => {
                   setShowStreetViewModal(false);
-                  // Calculate exact roadside shoulder offset (3.5m towards left or right curb)
-                  const offsetMeters = streetViewSide === 'KANAN' ? 3.5 : -3.5;
-                  const finalPoleCoord = offsetCoordinatePerpendicular(
+                  // 1. Project coordinate from camera position ALONG the heading direction
+                  //    to where the reticle is pointing (~8 meters forward from road center)
+                  const projectedCoord = projectCoordinateAlongHeading(
                     debouncedStreetViewCoord,
                     streetViewHeading,
-                    offsetMeters
+                    8 // ~8 meters from road center to roadside pole
+                  );
+                  // 2. Apply perpendicular roadside offset (3m) for curb accuracy
+                  const sideOffset = streetViewSide === 'KANAN' ? 1.5 : -1.5;
+                  const finalPoleCoord = offsetCoordinatePerpendicular(
+                    projectedCoord,
+                    streetViewHeading,
+                    sideOffset
                   );
                   setPinCoord(finalPoleCoord);
                   if (pinMarkerRef.current) {
                     pinMarkerRef.current.setLatLng([finalPoleCoord.lat, finalPoleCoord.lng]);
                   }
-                  const embedPhoto = getStreetViewEmbedUrl(debouncedStreetViewCoord, streetViewHeading);
+                  // 3. Generate clean photo embed URL with exact tracked heading & pitch
+                  const embedPhoto = getStreetViewEmbedUrl(debouncedStreetViewCoord, streetViewHeading, streetViewPitch);
                   onConfirmLocation({
                     poleCoord: finalPoleCoord,
                     deviceCoord: deviceCoord || undefined,

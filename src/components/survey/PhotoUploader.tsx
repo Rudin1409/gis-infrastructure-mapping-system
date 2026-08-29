@@ -170,17 +170,26 @@ export default function PhotoUploader({
       {previewUrl ? (
         <div className="relative rounded-3xl overflow-hidden border border-slate-200 bg-slate-900 group shadow-md">
           {previewUrl.includes('google.com') || previewUrl.includes('svembed') ? (
-            /* Clean & Pure Street View Panorama Frame (Pure and clear) */
-            <div className="relative w-full h-56 bg-slate-950 overflow-hidden flex items-center justify-center">
+            /* Clean & Pure Street View Photo — CSS-cropped to remove Google Maps UI chrome */
+            <div className="relative w-full h-56 bg-slate-950 overflow-hidden">
+              {/* The iframe is scaled up and shifted to crop out the Google Maps top address bar, 
+                  bottom toolbar, compass, and navigation arrows — leaving ONLY clean panorama */}
               <iframe
                 src={previewUrl}
-                className="w-full h-full border-0 pointer-events-none"
+                className="border-0 pointer-events-none"
+                style={{
+                  position: 'absolute',
+                  top: '-70px',
+                  left: '-15px',
+                  width: 'calc(100% + 30px)',
+                  height: 'calc(100% + 130px)',
+                }}
                 loading="lazy"
                 title="Foto Street View Tiang"
               />
-              <div className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-black/80 backdrop-blur rounded-xl text-[10px] text-amber-300 font-bold border border-white/10 flex items-center gap-1 z-10">
+              <div className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-emerald-700/90 backdrop-blur rounded-xl text-[10px] text-white font-bold border border-emerald-400/30 flex items-center gap-1 z-10">
                 <Camera className="w-3 h-3" />
-                <span>Foto Rekaman Street View</span>
+                <span>📸 Foto Street View Terkunci</span>
               </div>
             </div>
           ) : (
