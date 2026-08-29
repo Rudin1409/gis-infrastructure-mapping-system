@@ -77,13 +77,15 @@ rollback() {
     rm -f "$NEXT_LINK"
     ln -s "$PREVIOUS_RELEASE" "$NEXT_LINK"
     mv -Tf "$NEXT_LINK" "$CURRENT_LINK"
-    pm2 startOrReload "${CURRENT_LINK}/ecosystem.config.cjs" --update-env
+    pm2 delete gis-app || true
+    pm2 start "${CURRENT_LINK}/ecosystem.config.cjs" --update-env
   else
     pm2 stop gis-app || true
   fi
 }
 
-if ! pm2 startOrReload "${CURRENT_LINK}/ecosystem.config.cjs" --update-env; then
+pm2 delete gis-app || true
+if ! pm2 start "${CURRENT_LINK}/ecosystem.config.cjs" --update-env; then
   rollback
   fail "PM2 could not start the new release"
 fi
