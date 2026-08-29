@@ -78,6 +78,8 @@ import { reverseGeocodeLocation, getKecamatanCode, getKelurahanCode } from '@/li
 import { fetchRoadGeometry, offsetCoordinatePerpendicular } from '@/lib/gis/roadRouting';
 import { Coordinates } from '@/types/gis';
 import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
+import StreetViewSurveyModal from './StreetViewSurveyModal';
+import { Camera } from 'lucide-react';
 
 interface GISOverviewMapProps {
   poles: Pole[];
@@ -234,6 +236,19 @@ export default function GISOverviewMap({
   const [selectedDeleteIds, setSelectedDeleteIds] = useState<string[]>([]);
   const [isDeletingBatch, setIsDeletingBatch] = useState<boolean>(false);
 
+  // 🚶 SURVEI VIRTUAL STREET VIEW (1-CLICK PINNING) STATE
+  const [isStreetViewSurveyMode, setIsStreetViewSurveyMode] = useState<boolean>(false);
+  const isStreetViewSurveyModeRef = useRef<boolean>(false);
+  isStreetViewSurveyModeRef.current = isStreetViewSurveyMode;
+
+  const [streetViewSide, setStreetViewSide] = useState<'KIRI' | 'KANAN'>('KIRI');
+  const streetViewSideRef = useRef<'KIRI' | 'KANAN'>('KIRI');
+  streetViewSideRef.current = streetViewSide;
+
+  const [streetViewClickedCoord, setStreetViewClickedCoord] = useState<Coordinates | null>(null);
+  const [isStreetViewModalOpen, setIsStreetViewModalOpen] = useState<boolean>(false);
+  const [streetViewToast, setStreetViewToast] = useState<string | null>(null);
+
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState(initialQuery || '');
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -359,9 +374,12 @@ export default function GISOverviewMap({
     corridorLayerGroupRef.current = L.layerGroup().addTo(map);
     userLocationLayerGroupRef.current = L.layerGroup().addTo(map);
 
-    // Map Click Listener for Corridor Waypoint placement
+    // Map Click Listener for Corridor & Street View Survey
     map.on('click', (e: L.LeafletMouseEvent) => {
-      if (isCorridorModeRef.current) {
+      if (isStreetViewSurveyModeRef.current) {
+        setStreetViewClickedCoord({ lat: e.latlng.lat, lng: e.latlng.lng });
+        setIsStreetViewModalOpen(true);
+      } else if (isCorridorModeRef.current) {
         addCorridorWaypoint({ lat: e.latlng.lat, lng: e.latlng.lng });
       }
     });
@@ -796,6 +814,27 @@ export default function GISOverviewMap({
       setSelectedPole(null);
       setCorridorWaypoints([]);
     }
+  };
+
+  // Toggle Street View Survey Mode (1-Click Pinning)
+  const toggleStreetViewSurveyMode = () => {
+    if (isStreetViewSurveyMode) {
+      setIsStreetViewSurveyMode(false);
+      setStreetViewToast(null);
+    } else {
+      setIsStreetViewSurveyMode(true);
+      setIsCorridorMode(false);
+      setIsBatchDeleteMode(false);
+      setIsMeasuring(false);
+      setSelectedPole(null);
+      setStreetViewToast('🚶 Mode Survei Street View Aktif! Klik ruas jalan di peta untuk mengunci tiang & foto Street View otomatis.');
+    }
+  };
+
+  const handleStreetViewPoleSaved = (newPole: Pole) => {
+    refreshPoles();
+    setStreetViewToast(`✅ Tiang ${newPole.poleCode || newPole.id} (${newPole.road}) berhasil disimpan!`);
+    setTimeout(() => setStreetViewToast(null), 5000);
   };
 
   // Batch create corridor poles & cable in Supabase
@@ -1729,6 +1768,28 @@ export default function GISOverviewMap({
         {/* ============================================================ */}
         {showGoogleToolsMenu && (
           <div className="flex flex-col items-end gap-2 pt-1 animate-in slide-in-from-top-3 fade-in duration-200">
+            {/* 0. Bulat: Survei Cepat Street View */}
+            <div className="flex items-center gap-2 group">
+              <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
+                🚶 Survei Cepat Street View
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleToolsMenu(false);
+                  toggleStreetViewSurveyMode();
+                }}
+                className={`w-10 h-10 rounded-full shadow-xl border flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 ${
+                  isStreetViewSurveyMode
+                    ? 'bg-purple-600 text-white border-purple-400 ring-4 ring-purple-500/30'
+                    : 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50'
+                }`}
+                title="Survei Cepat Street View (1-Click Pin)"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+            </div>
+
             {/* 1. Bulat: Tarik Jalur Otomatis */}
             <div className="flex items-center gap-2 group">
               <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
@@ -2371,6 +2432,91 @@ export default function GISOverviewMap({
             type="button"
             onClick={() => setCorridorResultToast(null)}
             className="text-emerald-300 hover:text-white p-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* 🚶 STREET VIEW SURVEY MODE FLOATING CONTROL BANNER */}
+      {isStreetViewSurveyMode && (
+        <div className="absolute top-20 left-3.5 right-3.5 sm:left-auto sm:right-4 sm:w-[460px] z-[450] bg-slate-900/95 text-white border border-purple-500/60 rounded-3xl p-3 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-2xl bg-purple-600 flex items-center justify-center text-white shadow-md animate-pulse">
+                <Camera className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="font-black text-xs uppercase tracking-wider text-white">
+                    Survei Virtual Street View
+                  </h4>
+                  <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-purple-500/30 text-purple-300 border border-purple-400/30">
+                    1-CLICK PIN
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-300 leading-tight mt-0.5">
+                  Klik ruas jalan untuk mengunci tiang &amp; foto Street View otomatis
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleStreetViewSurveyMode}
+              className="p-1.5 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between gap-2 text-[11px]">
+            <div className="flex items-center gap-1">
+              <span className="text-slate-400 text-[10px] font-bold">Sisi Bahu Jalan:</span>
+              <div className="inline-flex bg-slate-800 p-0.5 rounded-xl border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setStreetViewSide('KIRI')}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                    streetViewSide === 'KIRI' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Kiri ◀
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStreetViewSide('KANAN')}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all ${
+                    streetViewSide === 'KANAN' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Kanan ▶
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleStreetViewSurveyMode}
+              className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] rounded-xl transition-all cursor-pointer"
+            >
+              Selesai
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Street View Toast */}
+      {streetViewToast && (
+        <div className="absolute top-16 left-4 right-4 z-[600] bg-purple-950 text-white px-4 py-3 rounded-2xl shadow-2xl border border-purple-500 flex items-center justify-between animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-amber-300 flex-shrink-0" />
+            <span className="text-xs font-bold">{streetViewToast}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setStreetViewToast(null)}
+            className="text-purple-300 hover:text-white p-1 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -3192,6 +3338,16 @@ export default function GISOverviewMap({
       <MapPinLegendModal
         isOpen={showLegendModal}
         onClose={() => setShowLegendModal(false)}
+      />
+
+      {/* MODAL SURVEI VIRTUAL STREET VIEW 1-CLICK PINNING */}
+      <StreetViewSurveyModal
+        isOpen={isStreetViewModalOpen}
+        clickedCoord={streetViewClickedCoord}
+        roadSide={streetViewSide}
+        existingPoles={livePoles}
+        onClose={() => setIsStreetViewModalOpen(false)}
+        onPoleSaved={handleStreetViewPoleSaved}
       />
     </div>
   );
