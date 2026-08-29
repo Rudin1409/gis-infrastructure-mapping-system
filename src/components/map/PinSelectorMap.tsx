@@ -681,28 +681,28 @@ export default function PinSelectorMap({
           <button
             type="button"
             onClick={() => setShowStreetViewModal(true)}
-            className="group relative w-24 h-16 sm:w-28 sm:h-18 rounded-2xl overflow-hidden border-2 border-white shadow-xl bg-slate-900 flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ring-2 ring-black/10"
+            className="group relative w-28 h-20 sm:w-32 sm:h-22 rounded-2xl overflow-hidden border-2 border-white shadow-2xl bg-slate-900 flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ring-2 ring-black/15"
             title="Klik untuk membuka Street View 360° Penuh"
           >
-            <img
-              src={streetViewPhotoUrl}
-              alt="Street View Preview"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 opacity-90 group-hover:opacity-100"
-              onError={(e) => {
-                // Fallback style if image cannot load
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+            {/* Live Interactive Street View Embed (Scaled down for mini-box preview) */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center bg-slate-900">
+              <iframe
+                src={getStreetViewEmbedUrl(pinCoord, 0)}
+                className="w-[280px] h-[190px] border-0 pointer-events-none opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
+                loading="lazy"
+                title="Street View Mini Thumbnail"
+              />
+            </div>
 
             {/* Top Label Badge */}
-            <div className="absolute top-1 left-1 bg-black/75 backdrop-blur-md px-1.5 py-0.5 rounded-lg text-[8px] font-bold text-amber-300 flex items-center gap-1 border border-white/10 shadow-xs">
+            <div className="absolute top-1 left-1 bg-black/80 backdrop-blur-md px-1.5 py-0.5 rounded-lg text-[8px] font-bold text-amber-300 flex items-center gap-1 border border-white/10 shadow-md pointer-events-none z-10">
               <Camera className="w-2.5 h-2.5" />
               <span>Street View</span>
             </div>
 
             {/* Hover Expand Hint */}
-            <div className="absolute inset-0 bg-blue-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white font-bold text-[8px] gap-0.5 backdrop-blur-2xs">
-              <Maximize2 className="w-3.5 h-3.5" />
+            <div className="absolute inset-0 bg-blue-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white font-bold text-[9px] gap-0.5 backdrop-blur-2xs pointer-events-none z-20">
+              <Maximize2 className="w-4 h-4" />
               <span>Buka 360°</span>
             </div>
           </button>
