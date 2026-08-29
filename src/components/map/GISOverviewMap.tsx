@@ -89,6 +89,33 @@ interface GISOverviewMapProps {
   licenseReason?: string;
 }
 
+interface MapRenderBounds {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+}
+
+interface MapRenderState {
+  zoom: number;
+  bounds: MapRenderBounds;
+}
+
+const DETAIL_MARKER_ZOOM = 17;
+const LABEL_MARKER_ZOOM = 18;
+const MAX_DETAILED_MARKERS = 220;
+const VIEWPORT_PADDING_RATIO = 0.45;
+const SEGMENT_MIN_ZOOM = 15;
+
+function poleIsInsideBounds(pole: Pole, bounds: MapRenderBounds) {
+  return (
+    pole.poleLatitude >= bounds.south &&
+    pole.poleLatitude <= bounds.north &&
+    pole.poleLongitude >= bounds.west &&
+    pole.poleLongitude <= bounds.east
+  );
+}
+
 export default function GISOverviewMap({
   poles,
   segments = [],
@@ -134,6 +161,7 @@ export default function GISOverviewMap({
   const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
   const [showBoundaries, setShowBoundaries] = useState(true);
   const [showLegendModal, setShowLegendModal] = useState(false);
+  const [mapRenderState, setMapRenderState] = useState<MapRenderState | null>(null);
 
   // Invalidate Leaflet Map Size when switching between Desktop full-width & Mobile mode
   useEffect(() => {
@@ -310,6 +338,22 @@ export default function GISOverviewMap({
       }
     });
 
+    const syncMapRenderState = () => {
+      const paddedBounds = map.getBounds().pad(VIEWPORT_PADDING_RATIO);
+      setMapRenderState({
+        zoom: map.getZoom(),
+        bounds: {
+          south: paddedBounds.getSouth(),
+          west: paddedBounds.getWest(),
+          north: paddedBounds.getNorth(),
+          east: paddedBounds.getEast(),
+        },
+      });
+    };
+
+    map.on('moveend zoomend', syncMapRenderState);
+    syncMapRenderState();
+
     // Add Kelurahan Boundaries
     const boundaryGroup = L.layerGroup();
     LUBUKLINGGAU_KELURAHAN_BOUNDARIES.forEach((district) => {
@@ -348,6 +392,7 @@ export default function GISOverviewMap({
       map.remove();
       mapInstanceRef.current = null;
       selectionLayerGroupRef.current = null;
+      setMapRenderState(null);
     };
   }, [leafletLib]);
 
@@ -1116,6 +1161,39 @@ export default function GISOverviewMap({
     selectedHazard,
   ]);
 
+  const hasFocusedFilter = useMemo(
+    () =>
+      Boolean(normalizedSearchQuery) ||
+      selectedProvider !== 'ALL' ||
+      selectedCondition !== 'ALL' ||
+      selectedCategory !== 'ALL' ||
+      selectedPjuCableFilter !== 'ALL' ||
+      selectedKecamatan !== 'ALL' ||
+      selectedKelurahan !== 'ALL' ||
+      selectedType !== 'ALL' ||
+      selectedHeight !== 'ALL' ||
+      selectedCableType !== 'ALL' ||
+      selectedHazard !== 'ALL',
+    [
+      normalizedSearchQuery,
+      selectedProvider,
+      selectedCondition,
+      selectedCategory,
+      selectedPjuCableFilter,
+      selectedKecamatan,
+      selectedKelurahan,
+      selectedType,
+      selectedHeight,
+      selectedCableType,
+      selectedHazard,
+    ]
+  );
+
+  const renderablePoles = useMemo(() => {
+    if (!mapRenderState || normalizedSearchQuery) return filteredPoles;
+    return filteredPoles.filter((pole) => poleIsInsideBounds(pole, mapRenderState.bounds));
+  }, [filteredPoles, mapRenderState, normalizedSearchQuery]);
+
   // Handle Pole Marker Clicks with Smart Auto-Routing & Batch Delete
   const handlePoleClick = (pole: Pole) => {
     if (isBatchDeleteMode) {
@@ -1178,9 +1256,23 @@ export default function GISOverviewMap({
       segmentsLayerGroupRef.current.clearLayers();
     }
 
+    const currentZoom = mapRenderState?.zoom ?? mapInstanceRef.current.getZoom();
+    const renderablePoleIds = new Set(renderablePoles.map((pole) => pole.id));
+    const showDetailedMarkers =
+      currentZoom >= DETAIL_MARKER_ZOOM ||
+      (hasFocusedFilter && renderablePoles.length <= MAX_DETAILED_MARKERS);
+    const showMarkerLabels =
+      currentZoom >= LABEL_MARKER_ZOOM ||
+      Boolean(normalizedSearchQuery) ||
+      (hasFocusedFilter && renderablePoles.length <= 80);
+    const showSegments = currentZoom >= SEGMENT_MIN_ZOOM || hasFocusedFilter;
+
     // Render Cable Segments (Polylines)
     if (segmentsLayerGroupRef.current) {
       segments.forEach((seg) => {
+        if (!showSegments) return;
+        if (!renderablePoleIds.has(seg.fromNodeId) && !renderablePoleIds.has(seg.toNodeId)) return;
+
         const fromPole = livePoleById[seg.fromNodeId];
         const toPole = livePoleById[seg.toNodeId];
 
@@ -1193,17 +1285,20 @@ export default function GISOverviewMap({
           const color = seg.installationType === 'UNDERGROUND' ? '#8b5cf6' : '#2563eb';
           const polyline = L.polyline(latlngs, {
             color,
-            weight: 3.5,
-            opacity: 0.85,
+            weight: currentZoom >= 17 ? 3.5 : 2,
+            opacity: currentZoom >= 17 ? 0.85 : 0.45,
             dashArray: seg.installationType === 'UNDERGROUND' ? '6, 6' : undefined,
+            interactive: currentZoom >= 16,
           });
 
-          polyline.bindTooltip(
-            `<b>${seg.segmentCode || seg.id}</b><br/>${
-              seg.installationType === 'UNDERGROUND' ? 'Kabel Bawah Tanah' : 'Kabel Udara'
-            }<br/>Est. Jarak: ${seg.estimatedDistance}m`,
-            { sticky: true }
-          );
+          if (currentZoom >= 16) {
+            polyline.bindTooltip(
+              `<b>${seg.segmentCode || seg.id}</b><br/>${
+                seg.installationType === 'UNDERGROUND' ? 'Kabel Bawah Tanah' : 'Kabel Udara'
+              }<br/>Est. Jarak: ${seg.estimatedDistance}m`,
+              { sticky: true }
+            );
+          }
 
           polyline.addTo(segmentsLayerGroupRef.current!);
         }
@@ -1211,12 +1306,40 @@ export default function GISOverviewMap({
     }
 
     // Render Pole Markers with Provider Color & Smart GIS Code
-    filteredPoles.forEach((pole) => {
+    renderablePoles.forEach((pole) => {
       const provObj = providerById.get(pole.providerId);
+      let color = provObj?.colorHex || '#2563eb';
+      if (pole.infrastructureCategory === 'PJU_MANDIRI') color = '#f59e0b';
+      else if (pole.infrastructureCategory === 'GABUNG_PLN_PJU') color = '#0284c7';
+      else if (pole.infrastructureCategory === 'PLN_MURNI') color = '#0369a1';
+
+      let conditionRing = '#10b981';
+      if (pole.condition === 'NEEDS_REPAIR') conditionRing = '#f59e0b';
+      else if (pole.condition === 'DAMAGED') conditionRing = '#ef4444';
+      else if (pole.condition === 'UNKNOWN') conditionRing = '#64748b';
+
+      if (!showDetailedMarkers) {
+        const marker = L.circleMarker([pole.poleLatitude, pole.poleLongitude], {
+          radius: currentZoom >= 15 ? 5 : 3.5,
+          color: conditionRing,
+          fillColor: color,
+          fillOpacity: 0.92,
+          weight: currentZoom >= 15 ? 2 : 1,
+          interactive: true,
+        });
+
+        marker.on('click', () => {
+          handlePoleClick(pole);
+        });
+
+        marker.addTo(markersLayerGroupRef.current!);
+        return;
+      }
+
       const cacheKey = [
         provObj?.id || pole.providerId || '',
         pole.condition || 'GOOD',
-        pole.poleCode || pole.id,
+        showMarkerLabels ? pole.poleCode || pole.id : '',
         provObj?.code || '',
         pole.infrastructureCategory || '',
       ].join('|');
@@ -1226,7 +1349,7 @@ export default function GISOverviewMap({
         markerIcon = createProviderPoleMarkerIcon(L, {
           colorHex: provObj?.colorHex || '#2563eb',
           condition: pole.condition,
-          label: pole.poleCode || pole.id,
+          label: showMarkerLabels ? pole.poleCode || pole.id : undefined,
           providerCode: provObj?.code,
           category: pole.infrastructureCategory,
         });
@@ -1249,7 +1372,17 @@ export default function GISOverviewMap({
       const bounds = L.latLngBounds(filteredPoles.map((p) => [p.poleLatitude, p.poleLongitude]));
       mapInstanceRef.current.fitBounds(bounds, { maxZoom: 16, padding: [50, 50] });
     }
-  }, [filteredPoles, segments, leafletLib, normalizedSearchQuery, providerById, livePoleById]);
+  }, [
+    filteredPoles,
+    renderablePoles,
+    segments,
+    leafletLib,
+    normalizedSearchQuery,
+    providerById,
+    livePoleById,
+    mapRenderState,
+    hasFocusedFilter,
+  ]);
 
   // Render batch delete selection halos only when the selection changes
   useEffect(() => {
