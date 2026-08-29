@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
 import { getStreetViewImageUrl, getStreetViewEmbedUrl, getStreetViewDirectUrl } from '@/lib/gis/streetview';
+import { offsetCoordinatePerpendicular } from '@/lib/gis/roadRouting';
 
 interface PinSelectorMapProps {
   initialPinCoord?: Coordinates;
@@ -123,6 +124,7 @@ export default function PinSelectorMap({
     }
   );
   const [streetViewHeading, setStreetViewHeading] = useState<number>(0);
+  const [streetViewSide, setStreetViewSide] = useState<'KIRI' | 'KANAN'>('KIRI');
   const [streetViewKey, setStreetViewKey] = useState<number>(1);
   const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
 
@@ -914,12 +916,40 @@ export default function PinSelectorMap({
           </div>
 
           {/* Bottom Action Footer */}
-          <div className="p-3 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex items-center justify-between gap-3 flex-shrink-0">
-            <div className="text-[11px] text-slate-300 truncate hidden sm:flex items-center gap-1.5">
-              <Target className="w-4 h-4 text-purple-400 flex-shrink-0" />
-              <span>Kamera mengarah tepat ke posisi tiang di pinggir jalan.</span>
+          <div className="p-3 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 flex-shrink-0">
+            {/* Roadside Shoulder Selector (Pinggir Jalan) */}
+            <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
+              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                <Target className="w-3.5 h-3.5 text-purple-400" />
+                <span>Posisi Tiang:</span>
+              </span>
+              <div className="inline-flex bg-slate-800 p-0.5 rounded-xl border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setStreetViewSide('KIRI')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                    streetViewSide === 'KIRI'
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  ◀ Bahu Kiri
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStreetViewSide('KANAN')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                    streetViewSide === 'KANAN'
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Bahu Kanan ▶
+                </button>
+              </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
@@ -933,7 +963,25 @@ export default function PinSelectorMap({
                 type="button"
                 onClick={() => {
                   setShowStreetViewModal(false);
-                  handleConfirm();
+                  // Calculate exact roadside shoulder offset (3.5m towards left or right curb)
+                  const offsetMeters = streetViewSide === 'KANAN' ? 3.5 : -3.5;
+                  const finalPoleCoord = offsetCoordinatePerpendicular(
+                    debouncedStreetViewCoord,
+                    streetViewHeading,
+                    offsetMeters
+                  );
+                  setPinCoord(finalPoleCoord);
+                  if (pinMarkerRef.current) {
+                    pinMarkerRef.current.setLatLng([finalPoleCoord.lat, finalPoleCoord.lng]);
+                  }
+                  const embedPhoto = getStreetViewEmbedUrl(debouncedStreetViewCoord, streetViewHeading);
+                  onConfirmLocation({
+                    poleCoord: finalPoleCoord,
+                    deviceCoord: deviceCoord || undefined,
+                    gpsAccuracy: gpsReading?.accuracy,
+                    distanceFromDevice: distance,
+                    photoUrl: embedPhoto,
+                  });
                 }}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
               >

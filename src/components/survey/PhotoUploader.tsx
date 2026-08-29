@@ -169,14 +169,31 @@ export default function PhotoUploader({
       {/* Photo Preview State */}
       {previewUrl ? (
         <div className="relative rounded-3xl overflow-hidden border border-slate-200 bg-slate-900 group shadow-md">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt="Survey Pole Preview"
-            className="w-full h-56 object-cover"
-          />
+          {previewUrl.includes('google.com') || previewUrl.includes('svembed') ? (
+            /* Clean & Pure Street View Panorama Frame (Pure and clear) */
+            <div className="relative w-full h-56 bg-slate-950 overflow-hidden flex items-center justify-center">
+              <iframe
+                src={previewUrl}
+                className="w-full h-full border-0 pointer-events-none"
+                loading="lazy"
+                title="Foto Street View Tiang"
+              />
+              <div className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-black/80 backdrop-blur rounded-xl text-[10px] text-amber-300 font-bold border border-white/10 flex items-center gap-1 z-10">
+                <Camera className="w-3 h-3" />
+                <span>Foto Rekaman Street View</span>
+              </div>
+            </div>
+          ) : (
+            /* Standard Uploaded / Captured Image */
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={previewUrl}
+              alt="Survey Pole Preview"
+              className="w-full h-56 object-cover"
+            />
+          )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-3.5">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-3.5 z-10 pointer-events-auto">
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
               <CheckCircle className="w-4 h-4" />
               <span>Foto Lapangan Siap</span>
@@ -186,10 +203,10 @@ export default function PhotoUploader({
               type="button"
               onClick={onPhotoRemoved}
               disabled={isUploading}
-              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-lg backdrop-blur transition-all active:scale-95"
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-lg backdrop-blur transition-all active:scale-95 cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Ambil Ulang</span>
+              <span>Ganti / Ambil Ulang</span>
             </button>
           </div>
 
