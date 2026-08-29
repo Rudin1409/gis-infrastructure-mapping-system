@@ -33,11 +33,21 @@ case "$RESOLVED_ARCHIVE" in
 esac
 
 RELEASE_DIR="${RELEASES_DIR}/${RELEASE_ID}"
-[[ ! -e "$RELEASE_DIR" ]] || fail "release ${RELEASE_ID} already exists"
 
 PREVIOUS_RELEASE=""
 if [[ -L "$CURRENT_LINK" ]]; then
   PREVIOUS_RELEASE="$(realpath "$CURRENT_LINK")"
+fi
+
+if [[ -e "$RELEASE_DIR" ]]; then
+  if [[ "$PREVIOUS_RELEASE" == "$RELEASE_DIR" ]]; then
+    fail "release ${RELEASE_ID} is already active"
+  fi
+
+  case "$RELEASE_DIR" in
+    "${RELEASES_DIR}"/*) rm -rf -- "$RELEASE_DIR" ;;
+    *) fail "release directory is outside ${RELEASES_DIR}" ;;
+  esac
 fi
 
 mkdir -p "$RELEASE_DIR"
