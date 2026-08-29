@@ -60,6 +60,7 @@ interface SurveyFormProps {
   deviceCoord?: Coordinates;
   gpsAccuracy?: number;
   distanceFromDevice?: number;
+  initialPhotoUrl?: string;
   providers: Provider[];
   onBackToMap: () => void;
 }
@@ -71,6 +72,7 @@ export default function SurveyForm({
   deviceCoord,
   gpsAccuracy,
   distanceFromDevice,
+  initialPhotoUrl,
   providers,
   onBackToMap,
 }: SurveyFormProps) {
@@ -86,7 +88,7 @@ export default function SurveyForm({
 
   // --- 2. DOKUMENTASI FOTO ---
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(undefined);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(initialPhotoUrl);
 
   const [infrastructureCategory, setInfrastructureCategory] = useState<InfrastructureCategory>('FO_WIFI');
   const [cableInstallationType, setCableInstallationType] = useState<CableInstallationType>('UDARA');

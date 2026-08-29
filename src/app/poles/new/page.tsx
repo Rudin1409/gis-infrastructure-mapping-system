@@ -14,6 +14,7 @@ export default function NewPoleSurveyPage() {
     deviceCoord?: Coordinates;
     gpsAccuracy?: number;
     distanceFromDevice?: number;
+    photoUrl?: string;
   } | null>(null);
 
   const [providers, setProviders] = useState<Provider[]>(DEFAULT_PROVIDERS);
@@ -41,6 +42,7 @@ export default function NewPoleSurveyPage() {
     deviceCoord?: Coordinates;
     gpsAccuracy?: number;
     distanceFromDevice?: number;
+    photoUrl?: string;
   }) => {
     setConfirmedLocation(data);
     setStep('FORM');
@@ -118,6 +120,7 @@ export default function NewPoleSurveyPage() {
                 deviceCoord={confirmedLocation.deviceCoord}
                 gpsAccuracy={confirmedLocation.gpsAccuracy}
                 distanceFromDevice={confirmedLocation.distanceFromDevice}
+                initialPhotoUrl={confirmedLocation.photoUrl}
                 providers={providers}
                 onBackToMap={handleBackToMap}
               />
