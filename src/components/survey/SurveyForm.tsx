@@ -61,6 +61,7 @@ interface SurveyFormProps {
   gpsAccuracy?: number;
   distanceFromDevice?: number;
   initialPhotoUrl?: string;
+  initialRoadSide?: 'KIRI' | 'KANAN';
   providers: Provider[];
   onBackToMap: () => void;
 }
@@ -73,6 +74,7 @@ export default function SurveyForm({
   gpsAccuracy,
   distanceFromDevice,
   initialPhotoUrl,
+  initialRoadSide,
   providers,
   onBackToMap,
 }: SurveyFormProps) {
@@ -84,7 +86,9 @@ export default function SurveyForm({
   const [kecamatan, setKecamatan] = useState(KECAMATAN_LUBUKLINGGAU[0].name);
   const [kelurahan, setKelurahan] = useState(KECAMATAN_LUBUKLINGGAU[0].kelurahan[0]);
   const [patokanLokasi, setPatokanLokasi] = useState('');
-  const [sisiJalan, setSisiJalan] = useState<SisiJalan>('TIDAK_DITENTUKAN');
+  const [sisiJalan, setSisiJalan] = useState<SisiJalan>(
+    initialRoadSide || 'TIDAK_DITENTUKAN'
+  );
 
   // --- 2. DOKUMENTASI FOTO ---
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
@@ -169,7 +173,7 @@ export default function SurveyForm({
         if (data.road) setRoad(data.road);
         if (data.kecamatan) setKecamatan(data.kecamatan);
         if (data.kelurahan) setKelurahan(data.kelurahan);
-        if (data.sisiJalan) setSisiJalan(data.sisiJalan);
+        if (!initialRoadSide && data.sisiJalan) setSisiJalan(data.sisiJalan);
         if (data.infrastructureCategory) setInfrastructureCategory(data.infrastructureCategory);
         if (data.cableInstallationType) setCableInstallationType(data.cableInstallationType);
         if (data.pjuLampType) setPjuLampType(data.pjuLampType);
@@ -186,7 +190,7 @@ export default function SurveyForm({
     } catch (e) {
       console.warn('Smart memory load notice:', e);
     }
-  }, []);
+  }, [initialRoadSide]);
 
   // 2. Auto-reverse geocode location from GPS coordinate (Always syncs with confirmed pin location)
   useEffect(() => {
@@ -266,11 +270,30 @@ export default function SurveyForm({
       let photoFileId = '';
       let photoUrl = '';
 
-      // Step 1: Upload Photo to Google Drive / API if selected
-      if (selectedPhotoFile) {
+      // Street View captures are clean static images. Convert them to a real file so the
+      // existing upload pipeline stores a durable copy in Drive instead of an iframe URL.
+      let photoFileForUpload = selectedPhotoFile;
+      if (!photoFileForUpload && photoPreviewUrl?.includes('/api/streetview/photo?')) {
+        const captureResponse = await fetch(photoPreviewUrl, { cache: 'no-store' });
+        if (!captureResponse.ok) {
+          throw new Error('Foto Street View terkunci gagal diambil. Periksa konfigurasi API Google Maps.');
+        }
+        const blob = await captureResponse.blob();
+        if (!blob.type.startsWith('image/')) {
+          throw new Error('Hasil tangkapan Street View bukan berkas gambar yang valid.');
+        }
+        photoFileForUpload = new File(
+          [blob],
+          `streetview-pole-${Date.now()}.jpg`,
+          { type: blob.type || 'image/jpeg' }
+        );
+      }
+
+      // Step 1: Upload Photo to Google Drive / API if selected or captured from Street View
+      if (photoFileForUpload) {
         setSubmitStage('UPLOADING_PHOTO');
         const uploadFormData = new FormData();
-        uploadFormData.append('photo', selectedPhotoFile);
+        uploadFormData.append('photo', photoFileForUpload);
 
         const uploadRes = await fetch('/api/upload', {
           method: 'POST',

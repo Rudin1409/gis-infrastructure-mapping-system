@@ -10,14 +10,14 @@ export function getStreetViewImageUrl(
   pitch = 10,
   fov = 90
 ): string {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
-  
-  if (apiKey) {
-    return `https://maps.googleapis.com/maps/api/streetview?size=640x420&location=${coord.lat},${coord.lng}&heading=${Math.round(heading)}&pitch=${pitch}&fov=${fov}&key=${apiKey}`;
-  }
-
-  // Fallback high-res static representation / panorama metadata proxy
-  return `https://maps.googleapis.com/maps/api/streetview?size=640x420&location=${coord.lat},${coord.lng}&heading=${Math.round(heading)}&pitch=${pitch}&fov=${fov}`;
+  const params = new URLSearchParams({
+    lat: String(coord.lat),
+    lng: String(coord.lng),
+    heading: String(Math.round(heading)),
+    pitch: String(Math.round(pitch)),
+    fov: String(Math.round(fov)),
+  });
+  return `/api/streetview/photo?${params.toString()}`;
 }
 
 /**

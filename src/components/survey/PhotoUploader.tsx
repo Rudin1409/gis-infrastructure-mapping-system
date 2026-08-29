@@ -169,7 +169,20 @@ export default function PhotoUploader({
       {/* Photo Preview State */}
       {previewUrl ? (
         <div className="relative rounded-3xl overflow-hidden border border-slate-200 bg-slate-900 group shadow-md">
-          {previewUrl.includes('google.com') || previewUrl.includes('svembed') ? (
+          {previewUrl.includes('/api/streetview/photo?') ? (
+            <div className="relative w-full h-56 bg-slate-950 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt="Foto Street View tiang yang terkunci"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-emerald-700/90 backdrop-blur rounded-xl text-[10px] text-white font-bold border border-emerald-400/30 flex items-center gap-1 z-10">
+                <Camera className="w-3 h-3" />
+                <span>Foto Street View Bersih</span>
+              </div>
+            </div>
+          ) : previewUrl.includes('google.com') || previewUrl.includes('svembed') ? (
             /* Clean & Pure Street View Photo — CSS-cropped to remove Google Maps UI chrome */
             <div className="relative w-full h-56 bg-slate-950 overflow-hidden">
               {/* The iframe is scaled up and shifted to crop out the Google Maps top address bar, 
