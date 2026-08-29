@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import TopHeader from './TopHeader';
 import BottomNav from './BottomNav';
+import GisAiAssistantModal from '@/components/ai/GisAiAssistantModal';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ViewModeProvider, useViewMode } from '@/context/ViewModeContext';
 
@@ -95,6 +96,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
+
+      {/* AI Assistant Floating Copilot (except login) */}
+      {!isLoginPage && <GisAiAssistantModal />}
 
       {/* Modern Mobile Bottom Navigation (except login) */}
       {!isLoginPage && isAuthenticated && <BottomNav />}
