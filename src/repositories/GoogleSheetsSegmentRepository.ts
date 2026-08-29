@@ -9,13 +9,36 @@ import {
 import { ISegmentRepository } from './interfaces/ISegmentRepository';
 import { NetworkSegment, CreateSegmentInput } from '@/types/segment';
 import { generateSegmentId } from '@/lib/utils/idGenerator';
-import { isSupabaseConfigured } from './PoleRepositoryFactory';
 import { supabase } from '@/lib/supabase';
+import { buildInsertSql, dbQuery, isPostgresConfigured } from '@/lib/postgres';
 
 let MOCK_SEGMENTS: NetworkSegment[] = [];
 
 export class SupabaseSegmentRepository implements ISegmentRepository {
   async findAll(): Promise<NetworkSegment[]> {
+    if (isPostgresConfigured()) {
+      const { rows } = await dbQuery('SELECT * FROM segments ORDER BY created_at DESC');
+      if (!rows || rows.length === 0) {
+        return MOCK_SEGMENTS;
+      }
+
+      return rows.map((d: any) => ({
+        id: d.id,
+        segmentCode: d.segment_code,
+        fromNodeId: d.from_node_id,
+        toNodeId: d.to_node_id,
+        providerId: d.provider_id,
+        providerName: d.provider_name,
+        networkType: d.network_type || 'FIBER_OPTIC',
+        installationType: d.installation_type || 'AERIAL',
+        estimatedDistance: parseFloat(d.estimated_distance || 0),
+        status: d.status || 'ACTIVE',
+        description: d.description,
+        createdAt: d.created_at,
+        updatedAt: d.updated_at,
+      }));
+    }
+
     const { data, error } = await supabase
       .from('segments')
       .select('*')
@@ -43,6 +66,26 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
   }
 
   async findById(id: string): Promise<NetworkSegment | null> {
+    if (isPostgresConfigured()) {
+      const { rows } = await dbQuery('SELECT * FROM segments WHERE id = $1 LIMIT 1', [id]);
+      if (!rows[0]) return null;
+      return {
+        id: rows[0].id,
+        segmentCode: rows[0].segment_code,
+        fromNodeId: rows[0].from_node_id,
+        toNodeId: rows[0].to_node_id,
+        providerId: rows[0].provider_id,
+        providerName: rows[0].provider_name,
+        networkType: rows[0].network_type || 'FIBER_OPTIC',
+        installationType: rows[0].installation_type || 'AERIAL',
+        estimatedDistance: parseFloat(rows[0].estimated_distance || 0),
+        status: rows[0].status || 'ACTIVE',
+        description: rows[0].description,
+        createdAt: rows[0].created_at,
+        updatedAt: rows[0].updated_at,
+      };
+    }
+
     const { data, error } = await supabase
       .from('segments')
       .select('*')
@@ -68,6 +111,29 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
   }
 
   async findByNodeId(nodeId: string): Promise<NetworkSegment[]> {
+    if (isPostgresConfigured()) {
+      const { rows } = await dbQuery(
+        'SELECT * FROM segments WHERE from_node_id = $1 OR to_node_id = $1 ORDER BY created_at DESC',
+        [nodeId]
+      );
+
+      return rows.map((d: any) => ({
+        id: d.id,
+        segmentCode: d.segment_code,
+        fromNodeId: d.from_node_id,
+        toNodeId: d.to_node_id,
+        providerId: d.provider_id,
+        providerName: d.provider_name,
+        networkType: d.network_type || 'FIBER_OPTIC',
+        installationType: d.installation_type || 'AERIAL',
+        estimatedDistance: parseFloat(d.estimated_distance || 0),
+        status: d.status || 'ACTIVE',
+        description: d.description,
+        createdAt: d.created_at,
+        updatedAt: d.updated_at,
+      }));
+    }
+
     const { data, error } = await supabase
       .from('segments')
       .select('*')
@@ -114,6 +180,37 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
       updated_at: now,
     };
 
+    if (isPostgresConfigured()) {
+      const { text, values } = buildInsertSql('segments', row);
+      const { rows } = await dbQuery(`${text} RETURNING *`, values);
+      const data = rows[0];
+      if (!data) {
+        return {
+          id,
+          ...input,
+          estimatedDistance: input.estimatedDistance ?? 0,
+          createdAt: now,
+          updatedAt: now,
+        };
+      }
+
+      return {
+        id: data.id,
+        segmentCode: data.segment_code,
+        fromNodeId: data.from_node_id,
+        toNodeId: data.to_node_id,
+        providerId: data.provider_id,
+        providerName: data.provider_name,
+        networkType: data.network_type,
+        installationType: data.installation_type,
+        estimatedDistance: parseFloat(data.estimated_distance || 0),
+        status: data.status,
+        description: data.description,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+    }
+
     const { data, error } = await supabase.from('segments').insert(row).select().single();
     if (error || !data) {
       return {
@@ -143,6 +240,11 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
   }
 
   async delete(id: string): Promise<boolean> {
+    if (isPostgresConfigured()) {
+      const { rowCount } = await dbQuery('DELETE FROM segments WHERE id = $1', [id]);
+      return rowCount > 0;
+    }
+
     const { error } = await supabase.from('segments').delete().eq('id', id);
     return !error;
   }
@@ -242,8 +344,5 @@ export class GoogleSheetsSegmentRepository implements ISegmentRepository {
 }
 
 export function getSegmentRepository(): ISegmentRepository {
-  if (isSupabaseConfigured()) {
-    return new SupabaseSegmentRepository();
-  }
-  return new GoogleSheetsSegmentRepository();
+  return new SupabaseSegmentRepository();
 }

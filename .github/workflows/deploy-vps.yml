@@ -1,0 +1,73 @@
+name: Deploy VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Verify dependencies and types
+        run: |
+          npm ci --no-audit --no-fund
+          npx tsc --noEmit
+
+      - name: Package committed source
+        run: git archive --format=tar.gz --output=release.tar.gz "$GITHUB_SHA"
+
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          VPS_PORT="${VPS_PORT:-22}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          VPS_PORT="${VPS_PORT:-22}"
+          test -n "$VPS_USER"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p /home/admin/gis-deploy/incoming"
+          scp -P "$VPS_PORT" release.tar.gz "$VPS_USER@$VPS_HOST:/home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz"
+          scp -P "$VPS_PORT" scripts/vps-deploy.sh "$VPS_USER@$VPS_HOST:/home/admin/gis-deploy/vps-deploy.sh"
+
+      - name: Activate release
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          VPS_PORT="${VPS_PORT:-22}"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "chmod 700 /home/admin/gis-deploy/vps-deploy.sh && /home/admin/gis-deploy/vps-deploy.sh /home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz $GITHUB_SHA"

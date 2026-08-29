@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useDeferredValue } from 'react';
 import type L from 'leaflet';
 import {
   Pole,
@@ -122,11 +122,13 @@ export default function GISOverviewMap({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const selectionLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const segmentsLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const boundariesLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const measureLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const corridorLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
+  const markerIconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
 
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
   const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
@@ -146,12 +148,22 @@ export default function GISOverviewMap({
   }, [viewMode, isFullscreen]);
 
   // Merge default providers with any custom provider records passed
-  const allCombinedProviders = useMemo(() => {
+  const providerById = useMemo(() => {
     const map = new Map<string, Provider>();
     DEFAULT_PROVIDERS.forEach((p) => map.set(p.id, p));
     providers.forEach((p) => map.set(p.id, { ...map.get(p.id), ...p }));
-    return Array.from(map.values());
+    return map;
   }, [providers]);
+
+  const allCombinedProviders = useMemo(() => Array.from(providerById.values()), [providerById]);
+
+  const livePoleById = useMemo(() => {
+    const map: Record<string, Pole> = {};
+    livePoles.forEach((pole) => {
+      map[pole.id] = pole;
+    });
+    return map;
+  }, [livePoles]);
 
   // Multi-Pole Sequential Ruler & Auto-Corridor Routing State
   const [isMeasuring, setIsMeasuring] = useState(false);
@@ -196,6 +208,11 @@ export default function GISOverviewMap({
 
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState(initialQuery || '');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const normalizedSearchQuery = useMemo(
+    () => deferredSearchQuery.toLowerCase().trim(),
+    [deferredSearchQuery]
+  );
   const [selectedProvider, setSelectedProvider] = useState(initialProvider || 'ALL');
   const [selectedCondition, setSelectedCondition] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL'); // FO_WIFI, PJU_MANDIRI, GABUNG_PLN_PJU, PLN_MURNI, etc.
@@ -281,6 +298,7 @@ export default function GISOverviewMap({
     // Create Layer Groups
     markersLayerGroupRef.current = L.layerGroup().addTo(map);
     segmentsLayerGroupRef.current = L.layerGroup().addTo(map);
+    selectionLayerGroupRef.current = L.layerGroup().addTo(map);
     measureLayerGroupRef.current = L.layerGroup().addTo(map);
     corridorLayerGroupRef.current = L.layerGroup().addTo(map);
     userLocationLayerGroupRef.current = L.layerGroup().addTo(map);
@@ -329,6 +347,7 @@ export default function GISOverviewMap({
       }
       map.remove();
       mapInstanceRef.current = null;
+      selectionLayerGroupRef.current = null;
     };
   }, [leafletLib]);
 
@@ -902,181 +921,200 @@ export default function GISOverviewMap({
   };
 
   // Comprehensive Multi-Parameter Pole Filtering
-  const filteredPoles = livePoles.filter((pole) => {
-    // 0. Resolve accurate provider and category
-    const resolved = resolveProviderInfo({
-      providerId: pole.providerId,
-      providerName: pole.providerName,
-      infrastructureCategory: pole.infrastructureCategory,
-    });
+  const filteredPoles = useMemo(() => {
+    const query = normalizedSearchQuery;
+    const selectedProviderLower = selectedProvider.toLowerCase().trim();
+    const selectedCategoryLower = selectedCategory;
+    const selectedConditionUpper = selectedCondition.toUpperCase();
+    const selectedTypeUpper = selectedType.toUpperCase();
+    const selectedHeightValue = selectedHeight;
+    const selectedCableTypeValue = selectedCableType;
 
-    const effectiveCategory = resolved.category || pole.infrastructureCategory || 'FO_WIFI';
-    const effectiveProviderId = resolved.providerId || pole.providerId || '';
-    const effectiveProviderName = resolved.providerName || pole.providerName || '';
+    const targetProvObj = selectedProvider !== 'ALL' ? providerById.get(selectedProvider) : undefined;
 
-    // 1. Provider Filter
-    if (selectedProvider !== 'ALL') {
-      const selLower = selectedProvider.toLowerCase().trim();
-      const matchId =
-        effectiveProviderId.toLowerCase() === selLower ||
-        (pole.providerId || '').toLowerCase() === selLower;
+    return livePoles.filter((pole) => {
+      // 0. Resolve accurate provider and category
+      const resolved = resolveProviderInfo({
+        providerId: pole.providerId,
+        providerName: pole.providerName,
+        infrastructureCategory: pole.infrastructureCategory,
+      });
 
-      const matchName =
-        effectiveProviderName.toLowerCase().includes(selLower) ||
-        selLower.includes(effectiveProviderName.toLowerCase()) ||
-        (pole.providerName || '').toLowerCase().includes(selLower);
+      const effectiveCategory = resolved.category || pole.infrastructureCategory || 'FO_WIFI';
+      const effectiveProviderId = resolved.providerId || pole.providerId || '';
+      const effectiveProviderName = resolved.providerName || pole.providerName || '';
 
-      const targetProvObj = allCombinedProviders.find((p) => p.id === selectedProvider);
-      const matchTargetObj =
-        targetProvObj &&
-        ((targetProvObj.name &&
-          effectiveProviderName
-            .toLowerCase()
-            .includes(targetProvObj.name.toLowerCase().replace(/^\d+\.\s*/, ''))) ||
-          (targetProvObj.code &&
-            (pole.poleCode || '').toLowerCase().includes(targetProvObj.code.toLowerCase())));
+      // 1. Provider Filter
+      if (selectedProvider !== 'ALL') {
+        const matchId =
+          effectiveProviderId.toLowerCase() === selectedProviderLower ||
+          (pole.providerId || '').toLowerCase() === selectedProviderLower;
 
-      if (!matchId && !matchName && !matchTargetObj) return false;
-    }
+        const matchName =
+          effectiveProviderName.toLowerCase().includes(selectedProviderLower) ||
+          selectedProviderLower.includes(effectiveProviderName.toLowerCase()) ||
+          (pole.providerName || '').toLowerCase().includes(selectedProviderLower);
 
-    // 2. Condition Filter
-    if (selectedCondition !== 'ALL') {
-      const normPoleCond = (pole.condition || '').toUpperCase();
-      const normSelCond = selectedCondition.toUpperCase();
-      if (normPoleCond !== normSelCond) {
-        if (normSelCond === 'GOOD' && normPoleCond === 'BAIK') {
-          // match
-        } else if (
-          normSelCond === 'NEEDS_REPAIR' &&
-          (normPoleCond === 'PERLU_PERBAIKAN' || normPoleCond === 'PERLU_SERVIS')
+        const matchTargetObj =
+          targetProvObj &&
+          ((targetProvObj.name &&
+            effectiveProviderName
+              .toLowerCase()
+              .includes(targetProvObj.name.toLowerCase().replace(/^\d+\.\s*/, ''))) ||
+            (targetProvObj.code &&
+              (pole.poleCode || '').toLowerCase().includes(targetProvObj.code.toLowerCase())));
+
+        if (!matchId && !matchName && !matchTargetObj) return false;
+      }
+
+      // 2. Condition Filter
+      if (selectedCondition !== 'ALL') {
+        const normPoleCond = (pole.condition || '').toUpperCase();
+        if (normPoleCond !== selectedConditionUpper) {
+          if (selectedConditionUpper === 'GOOD' && normPoleCond === 'BAIK') {
+            // match
+          } else if (
+            selectedConditionUpper === 'NEEDS_REPAIR' &&
+            (normPoleCond === 'PERLU_PERBAIKAN' || normPoleCond === 'PERLU_SERVIS')
+          ) {
+            // match
+          } else if (selectedConditionUpper === 'DAMAGED' && normPoleCond === 'RUSAK') {
+            // match
+          } else {
+            return false;
+          }
+        }
+      }
+
+      // 3. Infrastructure Category (PJU Mandiri, Gabung PLN+PJU, PLN Murni, FO/WiFi)
+      if (selectedCategoryLower !== 'ALL') {
+        if (effectiveCategory !== selectedCategoryLower) {
+          if (selectedCategoryLower === 'PLN_MURNI' && effectiveProviderId === 'PRV_PLN_DISTRIBUSI') {
+            // match
+          } else if (
+            selectedCategoryLower === 'GABUNG_PLN_PJU' &&
+            effectiveProviderId === 'PRV_PLN_PJU_GABUNG'
+          ) {
+            // match
+          } else if (selectedCategoryLower === 'PJU_MANDIRI' && effectiveProviderId === 'PRV_PJU_PEMKOT') {
+            // match
+          } else {
+            return false;
+          }
+        }
+      }
+
+      // 3b. PJU Network Cable Tumpangan Filter (Khusus PJU)
+      if (selectedPjuCableFilter !== 'ALL') {
+        const isPju = effectiveCategory === 'PJU_MANDIRI' || effectiveCategory === 'GABUNG_PLN_PJU';
+        if (selectedPjuCableFilter === 'WITH_CABLE') {
+          if (!isPju || !pole.hasNetworkCable) return false;
+        } else if (selectedPjuCableFilter === 'WITHOUT_CABLE') {
+          if (!isPju || pole.hasNetworkCable) return false;
+        }
+      }
+
+      // 4. Kecamatan Filter (Resilient matching)
+      if (selectedKecamatan !== 'ALL') {
+        const cleanPoleKec = (pole.kecamatan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanTargetKec = selectedKecamatan.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!cleanPoleKec.includes(cleanTargetKec) && !cleanTargetKec.includes(cleanPoleKec)) {
+          return false;
+        }
+      }
+
+      // 5. Kelurahan Filter (Resilient matching)
+      if (selectedKelurahan !== 'ALL') {
+        const cleanPoleKel = (pole.kelurahan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanTargetKel = selectedKelurahan.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!cleanPoleKel.includes(cleanTargetKel) && !cleanTargetKel.includes(cleanPoleKel)) {
+          return false;
+        }
+      }
+
+      // 6. Pole Material Type Filter (Beton, Besi, Kayu)
+      if (selectedType !== 'ALL') {
+        if ((pole.poleType || '').toUpperCase() !== selectedTypeUpper) return false;
+      }
+
+      // 6b. Pole Height Filter (5m, 6m, 7m, 9m, 12m)
+      if (selectedHeightValue !== 'ALL') {
+        const pHeight = pole.height || '5m';
+        if (pHeight !== selectedHeightValue) return false;
+      }
+
+      // 7. Cable Installation Type (Udara, Bawah Tanah, Riser)
+      if (selectedCableTypeValue !== 'ALL') {
+        const cableType = pole.cableInstallationType || 'UDARA';
+        if (cableType !== selectedCableTypeValue) return false;
+      }
+
+      // 8. Hazard / Risk Filter
+      if (selectedHazard === 'HAZARD_ONLY') {
+        const isProblem =
+          pole.isTilted ||
+          pole.isMessyCable ||
+          pole.isLowCable ||
+          pole.isCorroded ||
+          pole.isObstructing ||
+          pole.isHazardous;
+        if (!isProblem) return false;
+      } else if (selectedHazard === 'TILTED') {
+        if (!pole.isTilted) return false;
+      } else if (selectedHazard === 'MESSY') {
+        if (!pole.isMessyCable) return false;
+      } else if (selectedHazard === 'LOW') {
+        if (!pole.isLowCable) return false;
+      }
+
+      // 9. Search Query Filter
+      if (query) {
+        const matchId = (pole.id || '').toLowerCase().includes(query);
+        const matchCode = (pole.poleCode || '').toLowerCase().includes(query);
+        const matchRoad = (pole.road || '').toLowerCase().includes(query);
+        const matchKec = (pole.kecamatan || '').toLowerCase().includes(query);
+        const matchKel = (pole.kelurahan || '').toLowerCase().includes(query);
+        const matchProviderId = effectiveProviderId.toLowerCase().includes(query);
+        const matchProviderName = effectiveProviderName.toLowerCase().includes(query);
+        const matchDesc = (pole.description || '').toLowerCase().includes(query);
+        const matchPatokan = (pole.patokanLokasi || '').toLowerCase().includes(query);
+        const matchSurveyor = (pole.surveyorName || '').toLowerCase().includes(query);
+        const matchType = (pole.poleType || '').toLowerCase().includes(query);
+
+        if (
+          !matchId &&
+          !matchCode &&
+          !matchRoad &&
+          !matchKec &&
+          !matchKel &&
+          !matchProviderId &&
+          !matchProviderName &&
+          !matchDesc &&
+          !matchPatokan &&
+          !matchSurveyor &&
+          !matchType
         ) {
-          // match
-        } else if (normSelCond === 'DAMAGED' && normPoleCond === 'RUSAK') {
-          // match
-        } else {
           return false;
         }
       }
-    }
 
-    // 3. Infrastructure Category (PJU Mandiri, Gabung PLN+PJU, PLN Murni, FO/WiFi)
-    if (selectedCategory !== 'ALL') {
-      if (effectiveCategory !== selectedCategory) {
-        if (selectedCategory === 'PLN_MURNI' && effectiveProviderId === 'PRV_PLN_DISTRIBUSI') {
-          // match
-        } else if (selectedCategory === 'GABUNG_PLN_PJU' && effectiveProviderId === 'PRV_PLN_PJU_GABUNG') {
-          // match
-        } else if (selectedCategory === 'PJU_MANDIRI' && effectiveProviderId === 'PRV_PJU_PEMKOT') {
-          // match
-        } else {
-          return false;
-        }
-      }
-    }
-
-    // 3b. PJU Network Cable Tumpangan Filter (Khusus PJU)
-    if (selectedPjuCableFilter !== 'ALL') {
-      const isPju = effectiveCategory === 'PJU_MANDIRI' || effectiveCategory === 'GABUNG_PLN_PJU';
-      if (selectedPjuCableFilter === 'WITH_CABLE') {
-        if (!isPju || !pole.hasNetworkCable) return false;
-      } else if (selectedPjuCableFilter === 'WITHOUT_CABLE') {
-        if (!isPju || pole.hasNetworkCable) return false;
-      }
-    }
-
-    // 4. Kecamatan Filter (Resilient matching)
-    if (selectedKecamatan !== 'ALL') {
-      const cleanPoleKec = (pole.kecamatan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const cleanTargetKec = selectedKecamatan.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (
-        !cleanPoleKec.includes(cleanTargetKec) &&
-        !cleanTargetKec.includes(cleanPoleKec)
-      ) {
-        return false;
-      }
-    }
-
-    // 5. Kelurahan Filter (Resilient matching)
-    if (selectedKelurahan !== 'ALL') {
-      const cleanPoleKel = (pole.kelurahan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const cleanTargetKel = selectedKelurahan.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (
-        !cleanPoleKel.includes(cleanTargetKel) &&
-        !cleanTargetKel.includes(cleanPoleKel)
-      ) {
-        return false;
-      }
-    }
-
-    // 6. Pole Material Type Filter (Beton, Besi, Kayu)
-    if (selectedType !== 'ALL') {
-      if ((pole.poleType || '').toUpperCase() !== selectedType.toUpperCase()) return false;
-    }
-
-    // 6b. Pole Height Filter (5m, 6m, 7m, 9m, 12m)
-    if (selectedHeight !== 'ALL') {
-      const pHeight = pole.height || '5m';
-      if (pHeight !== selectedHeight) return false;
-    }
-
-    // 7. Cable Installation Type (Udara, Bawah Tanah, Riser)
-    if (selectedCableType !== 'ALL') {
-      const cableType = pole.cableInstallationType || 'UDARA';
-      if (cableType !== selectedCableType) return false;
-    }
-
-    // 8. Hazard / Risk Filter
-    if (selectedHazard === 'HAZARD_ONLY') {
-      const isProblem =
-        pole.isTilted ||
-        pole.isMessyCable ||
-        pole.isLowCable ||
-        pole.isCorroded ||
-        pole.isObstructing ||
-        pole.isHazardous;
-      if (!isProblem) return false;
-    } else if (selectedHazard === 'TILTED') {
-      if (!pole.isTilted) return false;
-    } else if (selectedHazard === 'MESSY') {
-      if (!pole.isMessyCable) return false;
-    } else if (selectedHazard === 'LOW') {
-      if (!pole.isLowCable) return false;
-    }
-
-    // 9. Search Query Filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchId = (pole.id || '').toLowerCase().includes(q);
-      const matchCode = (pole.poleCode || '').toLowerCase().includes(q);
-      const matchRoad = (pole.road || '').toLowerCase().includes(q);
-      const matchKec = (pole.kecamatan || '').toLowerCase().includes(q);
-      const matchKel = (pole.kelurahan || '').toLowerCase().includes(q);
-      const matchProviderId = effectiveProviderId.toLowerCase().includes(q);
-      const matchProviderName = effectiveProviderName.toLowerCase().includes(q);
-      const matchDesc = (pole.description || '').toLowerCase().includes(q);
-      const matchPatokan = (pole.patokanLokasi || '').toLowerCase().includes(q);
-      const matchSurveyor = (pole.surveyorName || '').toLowerCase().includes(q);
-      const matchType = (pole.poleType || '').toLowerCase().includes(q);
-
-      if (
-        !matchId &&
-        !matchCode &&
-        !matchRoad &&
-        !matchKec &&
-        !matchKel &&
-        !matchProviderId &&
-        !matchProviderName &&
-        !matchDesc &&
-        !matchPatokan &&
-        !matchSurveyor &&
-        !matchType
-      ) {
-        return false;
-      }
-    }
-
-    return true;
-  });
+      return true;
+    });
+  }, [
+    livePoles,
+    providerById,
+    normalizedSearchQuery,
+    selectedProvider,
+    selectedCondition,
+    selectedCategory,
+    selectedPjuCableFilter,
+    selectedKecamatan,
+    selectedKelurahan,
+    selectedType,
+    selectedHeight,
+    selectedCableType,
+    selectedHazard,
+  ]);
 
   // Handle Pole Marker Clicks with Smart Auto-Routing & Batch Delete
   const handlePoleClick = (pole: Pole) => {
@@ -1140,16 +1178,11 @@ export default function GISOverviewMap({
       segmentsLayerGroupRef.current.clearLayers();
     }
 
-    const poleMapById: Record<string, Pole> = {};
-    livePoles.forEach((p) => {
-      poleMapById[p.id] = p;
-    });
-
     // Render Cable Segments (Polylines)
     if (segmentsLayerGroupRef.current) {
       segments.forEach((seg) => {
-        const fromPole = poleMapById[seg.fromNodeId];
-        const toPole = poleMapById[seg.toNodeId];
+        const fromPole = livePoleById[seg.fromNodeId];
+        const toPole = livePoleById[seg.toNodeId];
 
         if (fromPole && toPole) {
           const latlngs: [number, number][] = [
@@ -1166,7 +1199,9 @@ export default function GISOverviewMap({
           });
 
           polyline.bindTooltip(
-            `<b>${seg.segmentCode || seg.id}</b><br/>${seg.installationType === 'UNDERGROUND' ? 'Kabel Bawah Tanah' : 'Kabel Udara'}<br/>Est. Jarak: ${seg.estimatedDistance}m`,
+            `<b>${seg.segmentCode || seg.id}</b><br/>${
+              seg.installationType === 'UNDERGROUND' ? 'Kabel Bawah Tanah' : 'Kabel Udara'
+            }<br/>Est. Jarak: ${seg.estimatedDistance}m`,
             { sticky: true }
           );
 
@@ -1177,19 +1212,26 @@ export default function GISOverviewMap({
 
     // Render Pole Markers with Provider Color & Smart GIS Code
     filteredPoles.forEach((pole) => {
-      const provObj =
-        providers.find((pr) => pr.id === pole.providerId) ||
-        DEFAULT_PROVIDERS.find((pr) => pr.id === pole.providerId);
+      const provObj = providerById.get(pole.providerId);
+      const cacheKey = [
+        provObj?.id || pole.providerId || '',
+        pole.condition || 'GOOD',
+        pole.poleCode || pole.id,
+        provObj?.code || '',
+        pole.infrastructureCategory || '',
+      ].join('|');
 
-      const isSelectedForDelete = isBatchDeleteMode && selectedDeleteIds.includes(pole.id);
-
-      const markerIcon = createProviderPoleMarkerIcon(L, {
-        colorHex: provObj?.colorHex || '#2563eb',
-        condition: pole.condition,
-        label: pole.poleCode || pole.id,
-        providerCode: provObj?.code,
-        category: pole.infrastructureCategory,
-      });
+      let markerIcon = markerIconCacheRef.current.get(cacheKey);
+      if (!markerIcon) {
+        markerIcon = createProviderPoleMarkerIcon(L, {
+          colorHex: provObj?.colorHex || '#2563eb',
+          condition: pole.condition,
+          label: pole.poleCode || pole.id,
+          providerCode: provObj?.code,
+          category: pole.infrastructureCategory,
+        });
+        markerIconCacheRef.current.set(cacheKey, markerIcon);
+      }
 
       const marker = L.marker([pole.poleLatitude, pole.poleLongitude], {
         icon: markerIcon,
@@ -1200,39 +1242,38 @@ export default function GISOverviewMap({
       });
 
       marker.addTo(markersLayerGroupRef.current!);
-
-      // If selected for batch delete, render pulsing red selection halo
-      if (isSelectedForDelete) {
-        const deleteRing = L.circleMarker([pole.poleLatitude, pole.poleLongitude], {
-          radius: 18,
-          color: '#ef4444',
-          fillColor: '#ef4444',
-          fillOpacity: 0.4,
-          weight: 3,
-          dashArray: '3, 3',
-        });
-        deleteRing.addTo(markersLayerGroupRef.current!);
-      }
     });
 
     // Auto fit bounds if search query is entered
-    if (filteredPoles.length > 0 && searchQuery) {
-      const bounds = L.latLngBounds(
-        filteredPoles.map((p) => [p.poleLatitude, p.poleLongitude])
-      );
+    if (filteredPoles.length > 0 && normalizedSearchQuery) {
+      const bounds = L.latLngBounds(filteredPoles.map((p) => [p.poleLatitude, p.poleLongitude]));
       mapInstanceRef.current.fitBounds(bounds, { maxZoom: 16, padding: [50, 50] });
     }
-  }, [
-    filteredPoles,
-    segments,
-    leafletLib,
-    searchQuery,
-    isMeasuring,
-    measuredPoles,
-    autoRouteMode,
-    isBatchDeleteMode,
-    selectedDeleteIds,
-  ]);
+  }, [filteredPoles, segments, leafletLib, normalizedSearchQuery, providerById, livePoleById]);
+
+  // Render batch delete selection halos only when the selection changes
+  useEffect(() => {
+    if (!leafletLib || !selectionLayerGroupRef.current) return;
+    const L = leafletLib;
+
+    selectionLayerGroupRef.current.clearLayers();
+    if (!isBatchDeleteMode || selectedDeleteIds.length === 0) return;
+
+    const selectedSet = new Set(selectedDeleteIds);
+    filteredPoles.forEach((pole) => {
+      if (!selectedSet.has(pole.id)) return;
+
+      const deleteRing = L.circleMarker([pole.poleLatitude, pole.poleLongitude], {
+        radius: 18,
+        color: '#ef4444',
+        fillColor: '#ef4444',
+        fillOpacity: 0.4,
+        weight: 3,
+        dashArray: '3, 3',
+      });
+      deleteRing.addTo(selectionLayerGroupRef.current!);
+    });
+  }, [filteredPoles, isBatchDeleteMode, selectedDeleteIds, leafletLib]);
 
   // Render Multi-Pole Measurement Route & Distance Badges
   useEffect(() => {

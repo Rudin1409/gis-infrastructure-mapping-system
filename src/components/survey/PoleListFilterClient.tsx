@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import Link from 'next/link';
 import { Pole } from '@/types/pole';
 import { Provider } from '@/types/provider';
@@ -49,6 +49,7 @@ export default function PoleListFilterClient({
 
   // --- Filter States ---
   const [searchQuery, setSearchQuery] = useState(initialQuery || '');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedProvider, setSelectedProvider] = useState(initialProvider || 'ALL');
   const [selectedKecamatan, setSelectedKecamatan] = useState(initialKecamatan || 'ALL');
@@ -132,8 +133,8 @@ export default function PoleListFilterClient({
       const effectiveProviderName = resolved.providerName || pole.providerName || '';
 
       // 1. Search Query Filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (deferredSearchQuery.trim()) {
+        const q = deferredSearchQuery.toLowerCase().trim();
         const matchId = (pole.id || '').toLowerCase().includes(q);
         const matchCode = (pole.poleCode || '').toLowerCase().includes(q);
         const matchRoad = (pole.road || '').toLowerCase().includes(q);
@@ -276,7 +277,7 @@ export default function PoleListFilterClient({
     });
   }, [
     livePoles,
-    searchQuery,
+    deferredSearchQuery,
     selectedCategory,
     selectedProvider,
     selectedKecamatan,

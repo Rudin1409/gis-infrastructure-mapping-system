@@ -2,6 +2,7 @@ import { IPoleRepository, PoleFilterOptions } from './interfaces/IPoleRepository
 import { Pole, CreatePoleInput, UpdatePoleInput } from '@/types/pole';
 import { supabase } from '@/lib/supabase';
 import { resolveProviderInfo } from '@/config/providers';
+import { buildInsertSql, buildUpdateSql, dbQuery, isPostgresConfigured } from '@/lib/postgres';
 
 function mapDbToPole(row: any): Pole {
   const resolved = resolveProviderInfo({
@@ -114,6 +115,42 @@ function mapPoleToDb(pole: Partial<Pole>): Record<string, any> {
 
 export class SupabasePoleRepository implements IPoleRepository {
   async findAll(filters?: PoleFilterOptions): Promise<Pole[]> {
+    if (isPostgresConfigured()) {
+      const { rows } = await dbQuery('SELECT * FROM poles ORDER BY created_at DESC');
+      let poles = rows.map(mapDbToPole);
+
+      if (filters) {
+        if (filters.providerId && filters.providerId !== 'ALL') {
+          poles = poles.filter((p) => p.providerId === filters.providerId);
+        }
+        if (filters.condition && filters.condition !== 'ALL') {
+          poles = poles.filter((p) => p.condition === filters.condition);
+        }
+        if (filters.kecamatan && filters.kecamatan !== 'ALL') {
+          poles = poles.filter((p) => p.kecamatan === filters.kecamatan);
+        }
+        if (filters.kelurahan && filters.kelurahan !== 'ALL') {
+          poles = poles.filter((p) => p.kelurahan === filters.kelurahan);
+        }
+        if (filters.poleType && filters.poleType !== 'ALL') {
+          poles = poles.filter((p) => p.poleType === filters.poleType);
+        }
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          poles = poles.filter(
+            (p) =>
+              p.id.toLowerCase().includes(q) ||
+              p.road.toLowerCase().includes(q) ||
+              p.kecamatan.toLowerCase().includes(q) ||
+              p.kelurahan.toLowerCase().includes(q) ||
+              (p.providerName && p.providerName.toLowerCase().includes(q))
+          );
+        }
+      }
+
+      return poles;
+    }
+
     let query = supabase.from('poles').select('*').order('created_at', { ascending: false });
 
     if (filters?.providerId) {
@@ -145,6 +182,12 @@ export class SupabasePoleRepository implements IPoleRepository {
   }
 
   async findById(id: string): Promise<Pole | null> {
+    if (isPostgresConfigured()) {
+      const { rows } = await dbQuery('SELECT * FROM poles WHERE id = $1 LIMIT 1', [id]);
+      if (!rows[0]) return null;
+      return mapDbToPole(rows[0]);
+    }
+
     const { data, error } = await supabase.from('poles').select('*').eq('id', id).single();
     if (error || !data) return null;
     return mapDbToPole(data);
@@ -165,6 +208,16 @@ export class SupabasePoleRepository implements IPoleRepository {
     };
 
     const row = mapPoleToDb(newPole);
+
+    if (isPostgresConfigured()) {
+      const { text, values } = buildInsertSql('poles', row);
+      const result = await dbQuery(`${text} RETURNING *`, values);
+      if (!result.rows[0]) {
+        throw new Error('Gagal menyimpan data ke database VPS');
+      }
+      return mapDbToPole(result.rows[0]);
+    }
+
     const { data, error } = await supabase.from('poles').insert(row).select().single();
     if (error) {
       console.error('Server DB create error:', error);
@@ -177,6 +230,15 @@ export class SupabasePoleRepository implements IPoleRepository {
     const now = new Date().toISOString();
     const row = mapPoleToDb({ ...input, updatedAt: now });
 
+    if (isPostgresConfigured()) {
+      const { text, values } = buildUpdateSql('poles', row, 'id = $1', [id]);
+      const result = await dbQuery(`${text} RETURNING *`, values);
+      if (!result.rows[0]) {
+        throw new Error(`Gagal mengupdate data VPS untuk pole ${id}`);
+      }
+      return mapDbToPole(result.rows[0]);
+    }
+
     const { data, error } = await supabase.from('poles').update(row).eq('id', id).select().single();
     if (error) {
       console.error('Server DB update error:', error);
@@ -186,6 +248,11 @@ export class SupabasePoleRepository implements IPoleRepository {
   }
 
   async delete(id: string): Promise<boolean> {
+    if (isPostgresConfigured()) {
+      const { rowCount } = await dbQuery('DELETE FROM poles WHERE id = $1', [id]);
+      return rowCount > 0;
+    }
+
     const { error } = await supabase.from('poles').delete().eq('id', id);
     if (error) {
       console.error('Server DB delete error:', error);
@@ -195,6 +262,11 @@ export class SupabasePoleRepository implements IPoleRepository {
   }
 
   async getExistingIds(): Promise<string[]> {
+    if (isPostgresConfigured()) {
+      const { rows } = await dbQuery('SELECT id FROM poles ORDER BY created_at DESC');
+      return rows.map((d: any) => d.id);
+    }
+
     const { data, error } = await supabase.from('poles').select('id');
     if (error || !data) return [];
     return data.map((d: any) => d.id);

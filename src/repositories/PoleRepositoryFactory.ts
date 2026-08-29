@@ -1,15 +1,11 @@
-import { isGoogleConfigured } from '@/lib/google/sheets';
-import { isAppsScriptConfigured } from '@/lib/google/appsScriptClient';
+import { isPostgresConfigured } from '@/lib/postgres';
 import { IPoleRepository } from './interfaces/IPoleRepository';
-import { GoogleSheetsPoleRepository } from './GoogleSheetsPoleRepository';
-import { AppsScriptPoleRepository } from './AppsScriptPoleRepository';
 import { SupabasePoleRepository } from './SupabasePoleRepository';
-import { MockLocalPoleRepository } from './MockLocalPoleRepository';
 
 let repositoryInstance: IPoleRepository | null = null;
 
 export function isSupabaseConfigured(): boolean {
-  return true;
+  return !isPostgresConfigured();
 }
 
 export function getPoleRepository(): IPoleRepository {

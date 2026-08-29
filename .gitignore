@@ -23,6 +23,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# local deployment artifacts and one-off credential helpers
+/*.tar
+/scripts/check-ssh.ts
+/scripts/deploy-vps.ts
+/scripts/test-key.ts
+/scripts/gen-key.ts
+/.deploy-key/
+
 # local env files (keep your secrets safe!)
 .env*.local
 .env

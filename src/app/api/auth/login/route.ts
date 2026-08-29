@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DEFAULT_ACCOUNTS } from '@/types/auth';
 import { isAppsScriptConfigured, APPS_SCRIPT_URL } from '@/lib/google/appsScriptClient';
+import { dbQuery, isPostgresConfigured } from '@/lib/postgres';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,34 +20,76 @@ export async function POST(request: NextRequest) {
     const trimmedEmail = email.trim().toLowerCase();
     const cleanPhoneQuery = trimmedEmail.replace(/[^0-9]/g, '');
 
-    // 1. Verifikasi kredensial langsung via Database Supabase (Instant <10ms)
-    try {
-      const { supabase } = await import('@/lib/supabase');
-      const { data: dbUser, error: dbErr } = await supabase
-        .from('users')
-        .select('*')
-        .or(`email.ilike.${trimmedEmail},phone.ilike.%${cleanPhoneQuery.length >= 8 ? cleanPhoneQuery : 'NOMATCH'}%`)
-        .eq('password', password)
-        .single();
+    // 1. Verifikasi kredensial langsung via database utama
+    if (isPostgresConfigured()) {
+      try {
+        const phoneLike = cleanPhoneQuery.length >= 8 ? cleanPhoneQuery : 'NOMATCH';
+        const { rows } = await dbQuery(
+          `
+            SELECT *
+            FROM users
+            WHERE password = $1
+              AND (
+                LOWER(email) = LOWER($2)
+                OR (
+                  $3 <> 'NOMATCH'
+                  AND regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g') LIKE '%' || $3 || '%'
+                )
+              )
+            LIMIT 1
+          `,
+          [password, trimmedEmail, phoneLike]
+        );
 
-      if (!dbErr && dbUser) {
-        return NextResponse.json({
-          success: true,
-          user: {
-            id: dbUser.id,
-            name: dbUser.name,
-            email: dbUser.email,
-            role: dbUser.role,
-            roleLabel: dbUser.role === 'ADMIN_KOMINFO' ? 'Administrator DISKOMINFOTIKSAN' : 'Petugas Survei Spasial',
-            agency: dbUser.agency || 'DISKOMINFOTIKSAN Kota Lubuklinggau',
-            phone: dbUser.phone,
-            avatar: dbUser.role === 'ADMIN_KOMINFO' ? '🏢' : '👨‍💼',
-          },
-          source: 'SERVER_DATABASE',
-        });
+        const dbUser = rows[0];
+        if (dbUser) {
+          return NextResponse.json({
+            success: true,
+            user: {
+              id: dbUser.id,
+              name: dbUser.name,
+              email: dbUser.email,
+              role: dbUser.role,
+              roleLabel: dbUser.role === 'ADMIN_KOMINFO' ? 'Administrator DISKOMINFOTIKSAN' : 'Petugas Survei Spasial',
+              agency: dbUser.agency || 'DISKOMINFOTIKSAN Kota Lubuklinggau',
+              phone: dbUser.phone,
+              avatar: dbUser.role === 'ADMIN_KOMINFO' ? '🏢' : '👨‍💼',
+            },
+            source: 'SERVER_DATABASE',
+          });
+        }
+      } catch (dbErr) {
+        console.warn('Server auth notice:', dbErr);
       }
-    } catch (supaErr) {
-      console.warn('Server auth notice:', supaErr);
+    } else {
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const { data: dbUser, error: dbErr } = await supabase
+          .from('users')
+          .select('*')
+          .or(`email.ilike.${trimmedEmail},phone.ilike.%${cleanPhoneQuery.length >= 8 ? cleanPhoneQuery : 'NOMATCH'}%`)
+          .eq('password', password)
+          .single();
+
+        if (!dbErr && dbUser) {
+          return NextResponse.json({
+            success: true,
+            user: {
+              id: dbUser.id,
+              name: dbUser.name,
+              email: dbUser.email,
+              role: dbUser.role,
+              roleLabel: dbUser.role === 'ADMIN_KOMINFO' ? 'Administrator DISKOMINFOTIKSAN' : 'Petugas Survei Spasial',
+              agency: dbUser.agency || 'DISKOMINFOTIKSAN Kota Lubuklinggau',
+              phone: dbUser.phone,
+              avatar: dbUser.role === 'ADMIN_KOMINFO' ? '🏢' : '👨‍💼',
+            },
+            source: 'SERVER_DATABASE',
+          });
+        }
+      } catch (supaErr) {
+        console.warn('Server auth notice:', supaErr);
+      }
     }
 
     // 2. Fallback Apps Script

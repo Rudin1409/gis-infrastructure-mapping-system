@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { poleService } from '@/services/PoleService';
 import { sheetsBackupService } from '@/services/sheetsBackupService';
+import { dbQuery, isPostgresConfigured } from '@/lib/postgres';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,6 +14,36 @@ export async function POST(req: NextRequest) {
         { success: false, error: 'Array IDs tiang wajib diisi dan tidak boleh kosong' },
         { status: 400 }
       );
+    }
+
+    // 1. Delete associated segments and poles in primary database
+    if (isPostgresConfigured()) {
+      try {
+        await dbQuery('DELETE FROM segments WHERE from_node_id = ANY($1::text[]) OR to_node_id = ANY($1::text[])', [ids]);
+      } catch (segErr) {
+        console.warn('Warning deleting connected segments:', segErr);
+      }
+
+      const { rowCount } = await dbQuery('DELETE FROM poles WHERE id = ANY($1::text[])', [ids]);
+
+      // 3. Fire-and-forget: Full sync remaining poles to Google Sheets
+      poleService
+        .getPoles()
+        .then((remainingPoles) => {
+          sheetsBackupService.fullSyncPolesToSheets(remainingPoles).catch((err) => {
+            console.warn('[Sheets Backup] Batch delete mirror error:', err);
+          });
+        })
+        .catch(() => {});
+
+      return NextResponse.json({
+        success: true,
+        message: `Berhasil menghapus ${ids.length} tiang terpilih beserta kabelnya`,
+        data: {
+          deletedCount: rowCount || ids.length,
+          deletedIds: ids,
+        },
+      });
     }
 
     // 1. Delete associated segments in Supabase
@@ -38,16 +69,6 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-
-    // 3. Fire-and-forget: Full sync remaining poles to Google Sheets
-    poleService
-      .getPoles()
-      .then((remainingPoles) => {
-        sheetsBackupService.fullSyncPolesToSheets(remainingPoles).catch((err) => {
-          console.warn('[Sheets Backup] Batch delete mirror error:', err);
-        });
-      })
-      .catch(() => {});
 
     return NextResponse.json({
       success: true,

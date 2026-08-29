@@ -9,11 +9,25 @@ import {
 import { IProviderRepository } from './interfaces/IProviderRepository';
 import { Provider } from '@/types/provider';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
-import { isSupabaseConfigured } from './PoleRepositoryFactory';
 import { supabase } from '@/lib/supabase';
+import { buildInsertSql, dbQuery, isPostgresConfigured } from '@/lib/postgres';
 
 export class SupabaseProviderRepository implements IProviderRepository {
   async findAll(): Promise<Provider[]> {
+    if (isPostgresConfigured()) {
+      const { rows } = await dbQuery('SELECT * FROM providers ORDER BY name ASC');
+      if (!rows || rows.length === 0) {
+        return DEFAULT_PROVIDERS;
+      }
+      return rows.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        code: d.code,
+        colorHex: d.color || d.colorHex || '#3b82f6',
+        status: d.status,
+      }));
+    }
+
     const { data, error } = await supabase.from('providers').select('*').order('name', { ascending: true });
     if (error || !data || data.length === 0) {
       return DEFAULT_PROVIDERS;
@@ -28,6 +42,20 @@ export class SupabaseProviderRepository implements IProviderRepository {
   }
 
   async findById(id: string): Promise<Provider | null> {
+    if (isPostgresConfigured()) {
+      const { rows } = await dbQuery('SELECT * FROM providers WHERE id = $1 LIMIT 1', [id]);
+      if (!rows[0]) {
+        return DEFAULT_PROVIDERS.find((p) => p.id === id) || null;
+      }
+      return {
+        id: rows[0].id,
+        name: rows[0].name,
+        code: rows[0].code,
+        colorHex: rows[0].color || rows[0].colorHex || '#3b82f6',
+        status: rows[0].status,
+      };
+    }
+
     const { data, error } = await supabase.from('providers').select('*').eq('id', id).single();
     if (error || !data) {
       return DEFAULT_PROVIDERS.find((p) => p.id === id) || null;
@@ -42,6 +70,22 @@ export class SupabaseProviderRepository implements IProviderRepository {
   }
 
   async create(provider: Provider): Promise<Provider> {
+    if (isPostgresConfigured()) {
+      const row = {
+        id: provider.id,
+        name: provider.name,
+        code: provider.code,
+        color: provider.colorHex || '#3b82f6',
+        status: provider.status,
+      };
+      const { text, values } = buildInsertSql('providers', row);
+      await dbQuery(
+        `${text} ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, code = EXCLUDED.code, color = EXCLUDED.color, status = EXCLUDED.status`,
+        values
+      );
+      return provider;
+    }
+
     await supabase.from('providers').upsert({
       id: provider.id,
       name: provider.name,
@@ -133,8 +177,5 @@ export class GoogleSheetsProviderRepository implements IProviderRepository {
 }
 
 export function getProviderRepository(): IProviderRepository {
-  if (isSupabaseConfigured()) {
-    return new SupabaseProviderRepository();
-  }
-  return new GoogleSheetsProviderRepository();
+  return new SupabaseProviderRepository();
 }

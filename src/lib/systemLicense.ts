@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import fs from 'fs';
 import path from 'path';
+import { dbQuery, isPostgresConfigured } from './postgres';
 
 export interface SystemLicenseConfig {
   isLocked: boolean;
@@ -19,26 +20,49 @@ const LOCAL_FALLBACK_FILE = path.join(process.cwd(), '.system_license_state.json
 const SYSTEM_LICENSE_USER_ID = '_SYSTEM_LICENSE_';
 
 export async function getSystemLicenseConfig(): Promise<SystemLicenseConfig> {
-  try {
-    // 1. Primary: Query Supabase users table with special system id
-    const { data, error } = await supabase
-      .from('users')
-      .select('status, role, agency, created_at')
-      .eq('id', SYSTEM_LICENSE_USER_ID)
-      .maybeSingle();
+  if (isPostgresConfigured()) {
+    try {
+      const { rows } = await dbQuery(
+        'SELECT status, role, agency, created_at FROM users WHERE id = $1 LIMIT 1',
+        [SYSTEM_LICENSE_USER_ID]
+      );
 
-    if (!error && data) {
-      const isLocked = data.status === 'LOCKED' || data.role === 'LOCKED';
-      const reason = data.agency || DEFAULT_CONFIG.reason;
-      const updatedAt = data.created_at || new Date().toISOString();
-      return {
-        isLocked,
-        reason,
-        updatedAt,
-      };
+      const data = rows[0];
+      if (data) {
+        const isLocked = data.status === 'LOCKED' || data.role === 'LOCKED';
+        const reason = data.agency || DEFAULT_CONFIG.reason;
+        const updatedAt = data.created_at || new Date().toISOString();
+        return {
+          isLocked,
+          reason,
+          updatedAt,
+        };
+      }
+    } catch (err) {
+      console.error('Error fetching system license from database:', err);
     }
-  } catch (err) {
-    console.error('Error fetching system license from database:', err);
+  } else {
+    try {
+      // 1. Primary: Query Supabase users table with special system id
+      const { data, error } = await supabase
+        .from('users')
+        .select('status, role, agency, created_at')
+        .eq('id', SYSTEM_LICENSE_USER_ID)
+        .maybeSingle();
+
+      if (!error && data) {
+        const isLocked = data.status === 'LOCKED' || data.role === 'LOCKED';
+        const reason = data.agency || DEFAULT_CONFIG.reason;
+        const updatedAt = data.created_at || new Date().toISOString();
+        return {
+          isLocked,
+          reason,
+          updatedAt,
+        };
+      }
+    } catch (err) {
+      console.error('Error fetching system license from database:', err);
+    }
   }
 
   // 2. Secondary: Local file fallback
@@ -75,24 +99,51 @@ export async function setSystemLicenseConfig(
     fs.writeFileSync(LOCAL_FALLBACK_FILE, JSON.stringify(newConfig, null, 2), 'utf-8');
   } catch (_) {}
 
-  // 2. Primary: Persist to Supabase users table with special system record
+  // 2. Primary: Persist to database utama
   try {
-    const { error } = await supabase.from('users').upsert({
-      id: SYSTEM_LICENSE_USER_ID,
-      name: 'SYSTEM_LICENSE_LOCK',
-      email: 'license.system@internal.gateway',
-      password: 'SYSTEM_PROTECTED',
-      role: isLocked ? 'LOCKED' : 'ACTIVE',
-      status: isLocked ? 'LOCKED' : 'ACTIVE',
-      agency: chosenReason,
-      created_at: updatedAt,
-    });
+    if (isPostgresConfigured()) {
+      await dbQuery(
+        `
+          INSERT INTO users (id, name, email, password, role, agency, status, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            email = EXCLUDED.email,
+            password = EXCLUDED.password,
+            role = EXCLUDED.role,
+            agency = EXCLUDED.agency,
+            status = EXCLUDED.status,
+            created_at = EXCLUDED.created_at
+        `,
+        [
+          SYSTEM_LICENSE_USER_ID,
+          'SYSTEM_LICENSE_LOCK',
+          'license.system@internal.gateway',
+          'SYSTEM_PROTECTED',
+          isLocked ? 'LOCKED' : 'ACTIVE',
+          chosenReason,
+          isLocked ? 'LOCKED' : 'ACTIVE',
+          updatedAt,
+        ]
+      );
+    } else {
+      const { error } = await supabase.from('users').upsert({
+        id: SYSTEM_LICENSE_USER_ID,
+        name: 'SYSTEM_LICENSE_LOCK',
+        email: 'license.system@internal.gateway',
+        password: 'SYSTEM_PROTECTED',
+        role: isLocked ? 'LOCKED' : 'ACTIVE',
+        status: isLocked ? 'LOCKED' : 'ACTIVE',
+        agency: chosenReason,
+        created_at: updatedAt,
+      });
 
-    if (error) {
-      console.error('Supabase upsert license error:', error);
+      if (error) {
+        console.error('Supabase upsert license error:', error);
+      }
     }
   } catch (err) {
-    console.error('Supabase set license error:', err);
+    console.error('Database set license error:', err);
   }
 
   return newConfig;
