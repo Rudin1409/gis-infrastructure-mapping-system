@@ -228,7 +228,8 @@ export class SupabasePoleRepository implements IPoleRepository {
 
   async update(id: string, input: UpdatePoleInput): Promise<Pole> {
     const now = new Date().toISOString();
-    const row = mapPoleToDb({ ...input, updatedAt: now });
+    const { id: _inputId, ...updateInput } = input;
+    const row = mapPoleToDb({ ...updateInput, updatedAt: now });
 
     if (isPostgresConfigured()) {
       const { text, values } = buildUpdateSql('poles', row, 'id = $1', [id]);

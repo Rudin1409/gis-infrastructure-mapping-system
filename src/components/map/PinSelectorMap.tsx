@@ -57,6 +57,7 @@ export default function PinSelectorMap({
   onConfirmLocation,
   onCancel,
 }: PinSelectorMapProps) {
+  const isEditingSavedLocation = Boolean(originalCoord);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const pinMarkerRef = useRef<L.Marker | null>(null);
@@ -248,12 +249,14 @@ export default function PinSelectorMap({
       }, delay);
     });
 
-    // Trigger high-accuracy geolocation
-    requestGpsLocation(map, L, pinMarker);
+    // New surveys can start from GPS automatically; edits should stay on the saved point.
+    if (!isEditingSavedLocation) {
+      requestGpsLocation(map, L, pinMarker);
+    }
 
     // Watch position continuously for live satellite refinement
     let watchId: number | null = null;
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+    if (!isEditingSavedLocation && typeof navigator !== 'undefined' && navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           if (!isMountedRef.current || !mapInstanceRef.current) return;

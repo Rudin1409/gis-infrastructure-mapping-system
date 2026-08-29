@@ -84,9 +84,12 @@ export function buildUpdateSql(
 
   const setClause = entries.map(([key], index) => `${key} = $${index + 1}`).join(', ');
   const values = [...entries.map(([, value]) => value), ...whereValues];
+  const shiftedWhereClause = whereClause.replace(/\$(\d+)/g, (_match, index) => {
+    return `$${Number(index) + entries.length}`;
+  });
 
   return {
-    text: `UPDATE ${table} SET ${setClause} WHERE ${whereClause}`,
+    text: `UPDATE ${table} SET ${setClause} WHERE ${shiftedWhereClause}`,
     values,
   };
 }
