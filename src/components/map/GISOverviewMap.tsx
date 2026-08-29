@@ -294,6 +294,34 @@ export default function GISOverviewMap({
     };
   }, []);
 
+  // ⚡ INFRA-AI Map Action Listener (Auto-filter & Auto-pan on AI voice / chat commands)
+  useEffect(() => {
+    const handleAiAction = (e: any) => {
+      const detail = e.detail || {};
+      if (detail.providerId !== undefined) {
+        setSelectedProvider(detail.providerId);
+      }
+      if (detail.condition !== undefined) {
+        setSelectedCondition(detail.condition);
+      }
+      if (detail.category !== undefined) {
+        setSelectedCategory(detail.category);
+      }
+      if (detail.search !== undefined) {
+        setSearchQuery(detail.search);
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('gis:ai-action', handleAiAction as EventListener);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('gis:ai-action', handleAiAction as EventListener);
+      }
+    };
+  }, []);
+
   // Cleanup map instance if locked
   useEffect(() => {
     if (isLocked && mapInstanceRef.current) {

@@ -209,11 +209,87 @@ PANDUAN GAYA JAWABAN:
       usedModel = 'INFRA-AI Embedded Engine';
     }
 
+    // 5. Ekstrak aksi filter peta interaktif dari maksud pertanyaan user
+    const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || '';
+    let mapAction: any = null;
+
+    if (lastUserMsg.includes('telkom')) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        providerId: 'PRV_TELKOM',
+        providerName: 'Telkom Indonesia',
+        label: '🗺️ Filter Tiang Telkom di Peta',
+      };
+    } else if (lastUserMsg.includes('myrep') || lastUserMsg.includes('myrepublic')) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        providerId: 'PRV_MYREP_1',
+        providerName: 'MyRepublic',
+        label: '🗺️ Filter Tiang MyRepublic di Peta',
+      };
+    } else if (lastUserMsg.includes('biznet')) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        providerId: 'PRV_BIZNET',
+        providerName: 'Biznet',
+        label: '🗺️ Filter Tiang Biznet di Peta',
+      };
+    } else if (
+      lastUserMsg.includes('rusak') ||
+      lastUserMsg.includes('bahaya') ||
+      lastUserMsg.includes('kritis') ||
+      lastUserMsg.includes('miring')
+    ) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        condition: 'DAMAGED',
+        label: '🗺️ Tampilkan Tiang Rusak di Peta',
+      };
+    } else if (
+      lastUserMsg.includes('perlu cek') ||
+      lastUserMsg.includes('perlu perbaikan') ||
+      lastUserMsg.includes('kendur')
+    ) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        condition: 'NEEDS_REPAIR',
+        label: '🗺️ Tampilkan Tiang Perlu Cek di Peta',
+      };
+    } else if (lastUserMsg.includes('pju')) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        category: 'PJU_MANDIRI',
+        label: '🗺️ Tampilkan Tiang PJU Mandiri Pemkot',
+      };
+    } else if (lastUserMsg.includes('pln')) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        category: 'PLN_MURNI',
+        label: '🗺️ Tampilkan Tiang Listrik PLN di Peta',
+      };
+    } else if (lastUserMsg.includes('semua') || lastUserMsg.includes('reset filter')) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        providerId: 'ALL',
+        condition: 'ALL',
+        category: 'ALL',
+        search: '',
+        label: '🗺️ Tampilkan Semua Tiang',
+      };
+    } else if (lastUserMsg.includes('garuda')) {
+      mapAction = {
+        type: 'FILTER_MAP',
+        search: 'Jalan Garuda',
+        label: '🗺️ Sorot Jalan Garuda di Peta',
+      };
+    }
+
     return NextResponse.json({
       success: true,
       data: {
         reply: finalReply,
         model: usedModel,
+        action: mapAction,
       },
     });
   } catch (error: any) {
