@@ -9,6 +9,7 @@ import { PoleMiniGraphic } from '@/components/survey/PoleVisualGuideModal';
 import { formatGoogleDriveImageUrl, getGoogleDriveThumbnailUrl } from '@/lib/utils/driveImage';
 import { formatIndonesianDate } from '@/lib/utils/formatDate';
 import PoleDetailActions from '@/components/survey/PoleDetailActions';
+import BackButton from '@/components/common/BackButton';
 import {
   ChevronLeft,
   MapPin,
@@ -79,13 +80,7 @@ export default async function PoleDetailPage({
     <div className="p-4 space-y-3.5 text-slate-800 font-sans pb-24 animate-in fade-in duration-150">
       {/* Top Breadcrumb & Actions */}
       <div className="flex items-center justify-between pt-1">
-        <Link
-          href="/poles"
-          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 py-1.5 px-3 rounded-xl bg-white border border-slate-200 shadow-2xs transition-all"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Kembali</span>
-        </Link>
+        <BackButton fallbackUrl="/map" />
 
         <PoleDetailActions poleId={pole.id} poleCode={pole.poleCode} />
       </div>

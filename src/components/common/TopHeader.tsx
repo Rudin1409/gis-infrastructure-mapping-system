@@ -88,12 +88,14 @@ export default function TopHeader() {
   };
 
   const handleBack = () => {
-    if (pathname.startsWith('/poles/new')) {
-      router.push('/');
-    } else if (pathname.startsWith('/poles/')) {
-      router.push('/poles');
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
     } else {
-      router.push('/');
+      if (pathname.startsWith('/poles/new') || pathname.startsWith('/poles/')) {
+        router.push('/map');
+      } else {
+        router.push('/');
+      }
     }
   };
 
