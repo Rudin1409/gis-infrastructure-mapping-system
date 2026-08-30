@@ -865,7 +865,7 @@ export default function PinSelectorMap({
 
             <iframe
               key={streetViewKey}
-              src={getStreetViewEmbedUrl(pinCoord, 0, 10, 75)}
+              src={getStreetViewEmbedUrl(pinCoord, 0, 16, 75)}
               title="Street View untuk cek lokasi"
               className="absolute inset-0 h-full w-full border-0"
               allowFullScreen
@@ -876,7 +876,14 @@ export default function PinSelectorMap({
             {/* Top Instruction Pill */}
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-[92vw] bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none text-center">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Street View untuk melihat lokasi. Titik disimpan dari peta.</span>
+              <span>Geser layar 360° untuk melihat tiang. Titik dikunci dari peta.</span>
+            </div>
+
+            {/* Bottom Road Click Shield (Protects against accidental road arrow clicks) */}
+            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent pointer-events-auto z-15 flex items-end justify-center pb-2">
+              <span className="text-[10px] text-slate-300/90 font-bold bg-slate-900/80 px-3 py-1 rounded-full border border-white/10 backdrop-blur-sm pointer-events-none">
+                🔒 Geser 360° di area atas. Untuk pindah posisi, gunakan Peta 2D.
+              </span>
             </div>
           </div>
 
