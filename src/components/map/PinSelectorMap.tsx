@@ -685,7 +685,7 @@ export default function PinSelectorMap({
             type="button"
             onClick={openStreetView}
             className="group relative w-28 h-20 sm:w-32 sm:h-22 rounded-2xl overflow-hidden border-2 border-white shadow-2xl bg-slate-900 flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ring-2 ring-black/15"
-            title="Lihat Street View untuk verifikasi visual lokasi"
+            title="Lihat Street View untuk cek lokasi"
           >
             {/* Street View preview for visual checking near the selected map pin. */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center bg-slate-900">
@@ -805,10 +805,10 @@ export default function PinSelectorMap({
               <div>
                 <div className="flex items-center gap-1.5">
                   <h3 className="text-xs font-black tracking-tight text-white">
-                    Verifikasi Street View
+                    Lihat Street View
                   </h3>
                   <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-sky-500/20 text-sky-200 border border-sky-400/30">
-                    REFERENSI VISUAL
+                    CEK LOKASI
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-mono">
@@ -866,7 +866,7 @@ export default function PinSelectorMap({
             <iframe
               key={streetViewKey}
               src={getStreetViewEmbedUrl(pinCoord, 0, 10, 75)}
-              title="Street View untuk verifikasi visual lokasi"
+              title="Street View untuk cek lokasi"
               className="absolute inset-0 h-full w-full border-0"
               allowFullScreen
               loading="eager"
@@ -876,16 +876,16 @@ export default function PinSelectorMap({
             {/* Top Instruction Pill */}
             <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-[92vw] bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none text-center">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Street View hanya untuk cek visual. Titik yang tersimpan tetap dari pin peta 2D.</span>
+              <span>Street View untuk melihat lokasi. Titik disimpan dari peta.</span>
             </div>
           </div>
 
           {/* Bottom Action Footer */}
           <div className="p-3 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 flex-shrink-0">
             <div className="w-full sm:max-w-md rounded-2xl border border-slate-700 bg-slate-800/70 px-3 py-2">
-              <p className="text-[11px] font-bold text-slate-100">Mode verifikasi lokasi</p>
+              <p className="text-[11px] font-bold text-slate-100">Cek lokasi</p>
               <p className="mt-0.5 text-[10px] leading-relaxed text-slate-400">
-                Jika posisi belum pas, kembali ke peta lalu geser pin. Klik simpan hanya saat pin 2D sudah sesuai.
+                Jika belum pas, kembali ke peta lalu geser titik.
               </p>
             </div>
 
@@ -896,7 +896,7 @@ export default function PinSelectorMap({
                 onClick={() => setShowStreetViewModal(false)}
                 className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-2xl transition-all cursor-pointer"
               >
-                Kembali &amp; Geser Pin
+                Kembali &amp; Geser Titik
               </button>
 
               <button
@@ -908,7 +908,7 @@ export default function PinSelectorMap({
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>PAKAI TITIK PETA INI &rarr;</span>
+                <span>PAKAI TITIK INI &rarr;</span>
               </button>
             </div>
           </div>
