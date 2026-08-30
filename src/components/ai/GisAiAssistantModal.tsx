@@ -42,6 +42,10 @@ interface Message {
 
 const QUICK_PROMPTS = [
   {
+    label: '👤 Data per Surveyor',
+    prompt: 'Berapa titik pin yang sudah didata oleh masing-masing orang / surveyor?',
+  },
+  {
     label: '🔴 Filter Tiang Rusak',
     prompt: 'Tolong bantu saya filter dan tampilkan tiang yang rusak/bahaya di peta.',
   },
@@ -58,8 +62,8 @@ const QUICK_PROMPTS = [
     prompt: 'Berapa total data tiang dan rincian kondisinya saat ini?',
   },
   {
-    label: '📋 Panduan SOP Survei',
-    prompt: 'Bagaimana SOP pengisian kondisi tiang yang benar?',
+    label: '🗺️ Reset Semua Filter',
+    prompt: 'Tampilkan semua tiang dan reset semua filter peta.',
   },
 ];
 
@@ -249,25 +253,25 @@ export default function GisAiAssistantModal() {
 
   return (
     <>
-      {/* FLOATING TRIGGER BUTTON (Compact Pill Design) */}
+      {/* FLOATING TRIGGER BUTTON (Elevated above bottom navigation bar) */}
       {!isOpen && (
-        <div className="fixed bottom-20 right-3.5 z-40 sm:bottom-6 sm:right-6 animate-in fade-in zoom-in duration-150">
+        <div className="fixed bottom-28 right-3.5 z-40 sm:bottom-8 sm:right-8 animate-in fade-in zoom-in duration-150">
           <button
             type="button"
             onClick={() => {
               setIsOpen(true);
               setViewState('NORMAL');
             }}
-            className="group flex items-center gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 text-white font-bold text-xs rounded-full shadow-lg shadow-indigo-500/25 transition-all border border-white/20 cursor-pointer"
+            className="group flex items-center gap-2 px-3.5 py-2.5 sm:px-4 sm:py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 text-white font-bold text-xs rounded-full shadow-2xl shadow-indigo-500/35 transition-all border border-white/25 cursor-pointer ring-2 ring-indigo-500/20"
             aria-label="Buka Asisten AI GIS"
           >
-            <span className="relative flex h-2 w-2">
+            <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
             </span>
 
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-            <span className="text-[11px] tracking-tight">Tanya AI</span>
+            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            <span className="text-xs font-bold tracking-tight">Tanya AI</span>
           </button>
         </div>
       )}
@@ -275,12 +279,12 @@ export default function GisAiAssistantModal() {
       {/* COMPACT CHAT DRAWER / BOTTOM SHEET */}
       {isOpen && (
         <div
-          className={`fixed z-50 transition-all duration-300 ease-out flex flex-col bg-white shadow-2xl border border-slate-200/90 font-sans ${
+          className={`fixed z-50 transition-all duration-300 ease-out flex flex-col bg-white shadow-[0_20px_60px_rgba(15,23,42,0.25)] border border-slate-200 font-sans ${
             viewState === 'MINIMIZED'
-              ? 'bottom-2 sm:bottom-6 right-2 sm:right-6 w-[calc(100vw-16px)] sm:w-[380px] h-[52px] rounded-2xl overflow-hidden'
+              ? 'bottom-24 sm:bottom-8 right-3 sm:right-8 w-[calc(100vw-24px)] sm:w-[390px] h-[54px] rounded-2xl overflow-hidden'
               : viewState === 'EXPANDED'
               ? 'inset-3 sm:inset-6 rounded-3xl'
-              : 'bottom-2 sm:bottom-6 right-2 sm:right-6 w-[calc(100vw-16px)] sm:w-[380px] h-[330px] sm:h-[460px] max-h-[50vh] sm:max-h-[calc(100vh-40px)] rounded-3xl'
+              : 'bottom-24 sm:bottom-8 right-3 sm:right-8 w-[calc(100vw-24px)] sm:w-[390px] h-[370px] sm:h-[480px] max-h-[60vh] sm:max-h-[calc(100vh-60px)] rounded-3xl'
           }`}
         >
           {/* Header */}

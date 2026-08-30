@@ -702,16 +702,50 @@ export default function PinSelectorMap({
           </button>
         </div>
 
-        {/* Draggable & Tap Hint Pill */}
-        <div className="absolute top-3 left-3 z-[400] bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-200 text-[10px] font-bold text-slate-700 shadow-md flex items-center gap-1.5 pointer-events-none">
-          <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-          <span>Geser pin atau ketuk peta untuk pindah</span>
+        {/* Top-Left Floating Live Coordinates & GPS Quality Card */}
+        <div className="absolute top-3 left-3 z-[400] bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-2xl border border-white/15 text-white shadow-xl flex flex-col gap-1 max-w-[230px] select-none pointer-events-auto animate-in fade-in">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+              <MapPin className="w-3 h-3" />
+              <span>Titik Tiang</span>
+            </span>
+            <span className="text-[8px] font-bold px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">
+              Live Pin
+            </span>
+          </div>
+
+          <div className="font-mono text-[10px] text-slate-100 font-bold leading-tight">
+            <div>Lat: <span className="text-emerald-300">{pinCoord.lat.toFixed(6)}</span></div>
+            <div>Lng: <span className="text-emerald-300">{pinCoord.lng.toFixed(6)}</span></div>
+          </div>
+
+          <div className="text-[9px] text-slate-400 border-t border-white/10 pt-1 flex items-center justify-between">
+            <span>Akurasi: <strong className="text-slate-200">{gpsReading ? `±${gpsReading.accuracy.toFixed(0)}m` : '-'}</strong></span>
+            {distance > 0 && (
+              <span className={`font-bold ${locationQC.isWarningDistance ? 'text-amber-400' : 'text-emerald-400'}`}>
+                {formatDistance(distance)}
+              </span>
+            )}
+          </div>
+
+          {originalCoord && (
+            <div className="text-[8px] text-amber-300 border-t border-white/10 pt-0.5 flex items-center justify-between">
+              <span>Geser: <strong>{formatDistance(shiftFromOriginal)}</strong></span>
+              <button
+                type="button"
+                onClick={resetToOriginal}
+                className="px-1 py-0.2 bg-amber-500/30 hover:bg-amber-500/50 text-amber-200 rounded text-[8px] font-bold cursor-pointer"
+              >
+                Reset
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ======================================================= */}
         {/* 🚶 GOOGLE MAPS STYLE LIVE STREET VIEW MINI-BOX INSET */}
         {/* ======================================================= */}
-        <div className="absolute bottom-36 sm:bottom-32 left-3 z-[410] animate-in fade-in zoom-in duration-200">
+        <div className="absolute bottom-20 sm:bottom-24 left-3 z-[410] animate-in fade-in zoom-in duration-200">
           <button
             type="button"
             onClick={openStreetView}
@@ -743,79 +777,12 @@ export default function PinSelectorMap({
         </div>
       </div>
 
-      {/* Floating Bottom Data Card & Action */}
-      <div className="absolute bottom-4 left-3 right-3 z-[400] bg-white/98 backdrop-blur-xl rounded-3xl p-3 border border-slate-200/90 shadow-[0_10px_35px_rgba(15,23,42,0.18)] animate-in slide-in-from-bottom-2">
-        {originalCoord ? (
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            {/* New Moving Position */}
-            <div className="bg-emerald-50/80 rounded-2xl p-2 border border-emerald-200">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
-                  <span>📌</span> Titik Baru
-                </span>
-                <span className="text-[8px] font-bold px-1.5 py-0.2 bg-emerald-600 text-white rounded-md">
-                  Aktif
-                </span>
-              </div>
-              <div className="font-mono text-[10px] text-slate-800 font-bold">
-                <div>Lat: <span className="text-emerald-700">{pinCoord.lat.toFixed(6)}</span></div>
-                <div>Lng: <span className="text-emerald-700">{pinCoord.lng.toFixed(6)}</span></div>
-              </div>
-            </div>
-
-            {/* Original Saved Position */}
-            <div className="bg-amber-50/80 rounded-2xl p-2 border border-amber-200">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[9px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
-                  <span>📍</span> Titik Awal
-                </span>
-                <button
-                  type="button"
-                  onClick={resetToOriginal}
-                  className="text-[8px] font-bold px-1.5 py-0.5 bg-white text-amber-900 border border-amber-300 hover:bg-amber-100 rounded-md flex items-center gap-0.5 cursor-pointer"
-                  title="Kembalikan pin ke posisi awal"
-                >
-                  <RotateCcw className="w-2.5 h-2.5" />
-                  <span>Reset</span>
-                </button>
-              </div>
-              <div className="text-[10px] text-slate-700">
-                <div>Geser: <span className="font-bold text-amber-900">{formatDistance(shiftFromOriginal)}</span></div>
-                <div className="text-[9px] text-slate-500 truncate">{poleCode || 'Posisi Awal'}</div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            {/* Pole Coordinates */}
-            <div className="bg-slate-50 rounded-2xl p-2 border border-slate-100">
-              <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block mb-0.5 flex items-center gap-1">
-                <MapPin className="w-3 h-3" /> Koordinat Tiang
-              </span>
-              <div className="font-mono text-[10px] text-slate-800 font-bold">
-                <div>Lat: <span className="text-emerald-600">{pinCoord.lat.toFixed(6)}</span></div>
-                <div>Lng: <span className="text-emerald-600">{pinCoord.lng.toFixed(6)}</span></div>
-              </div>
-            </div>
-
-            {/* Surveyor GPS & Distance Info */}
-            <div className="bg-slate-50 rounded-2xl p-2 border border-slate-100">
-              <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider block mb-0.5 flex items-center gap-1">
-                <Locate className="w-3 h-3" /> Posisi Surveyor
-              </span>
-              <div className="text-[10px] text-slate-600">
-                <div>Akurasi: <span className="font-bold text-slate-900">{gpsReading ? `±${gpsReading.accuracy.toFixed(0)}m${gpsReading.accuracy > 30 ? ' (WiFi)' : ''}` : '-'}</span></div>
-                <div>Jarak: <span className={`font-bold ${locationQC.isWarningDistance ? 'text-amber-600' : 'text-emerald-600'}`}>{formatDistance(distance)}</span></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Confirmation Button */}
+      {/* Floating Bottom Full Confirmation Action */}
+      <div className="absolute bottom-3.5 left-3 right-3 z-[400] animate-in slide-in-from-bottom-2">
         <button
           type="button"
           onClick={handleConfirm}
-          className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+          className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-[0.99] text-white font-black text-xs sm:text-sm rounded-2xl shadow-xl shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer border border-white/20"
         >
           <CheckCircle2 className="w-4 h-4" />
           <span>KONFIRMASI TITIK LOKASI INI &rarr;</span>

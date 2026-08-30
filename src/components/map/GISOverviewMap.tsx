@@ -307,7 +307,15 @@ export default function GISOverviewMap({
       if (detail.category !== undefined) {
         setSelectedCategory(detail.category);
       }
-      if (detail.search !== undefined) {
+      if (detail.kecamatan !== undefined) {
+        setSelectedKecamatan(detail.kecamatan);
+      }
+      if (detail.kelurahan !== undefined) {
+        setSelectedKelurahan(detail.kelurahan);
+      }
+      if (detail.surveyorName !== undefined) {
+        setSearchQuery(detail.surveyorName);
+      } else if (detail.search !== undefined) {
         setSearchQuery(detail.search);
       }
     };
@@ -2240,7 +2248,7 @@ export default function GISOverviewMap({
       {/* ============================================================ */}
       {/* FLOATING MAP CONTROLS (LOCATE ME)                            */}
       {/* ============================================================ */}
-      <div className="absolute right-3.5 bottom-24 sm:bottom-28 z-[400] flex flex-col items-center gap-2 pointer-events-auto select-none">
+      <div className="absolute right-3.5 bottom-44 sm:bottom-28 z-[400] flex flex-col items-center gap-2 pointer-events-auto select-none">
         {/* Locate Me Floating GPS Button */}
         <button
           type="button"
