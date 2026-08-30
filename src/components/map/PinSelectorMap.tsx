@@ -116,37 +116,6 @@ export default function PinSelectorMap({
   const [showStreetViewModal, setShowStreetViewModal] = useState<boolean>(false);
   const [streetViewKey, setStreetViewKey] = useState<number>(1);
   const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
-  const [streetViewHeading, setStreetViewHeading] = useState<number>(0);
-  const [streetViewPitch, setStreetViewPitch] = useState<number>(15);
-  const dragStartXRef = useRef<number | null>(null);
-  const dragStartHeadingRef = useRef<number>(0);
-  const [isDraggingPano, setIsDraggingPano] = useState<boolean>(false);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    dragStartXRef.current = e.clientX;
-    dragStartHeadingRef.current = streetViewHeading;
-    setIsDraggingPano(true);
-    try {
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    } catch {}
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDraggingPano || dragStartXRef.current === null) return;
-    const deltaX = e.clientX - dragStartXRef.current;
-    const newHeading = Math.round((dragStartHeadingRef.current - deltaX * 0.45 + 360) % 360);
-    setStreetViewHeading(newHeading);
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (isDraggingPano) {
-      setIsDraggingPano(false);
-      dragStartXRef.current = null;
-      try {
-        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-      } catch {}
-    }
-  };
 
   const openStreetView = () => {
     setIsStreetViewLoading(true);
@@ -583,7 +552,6 @@ export default function PinSelectorMap({
   if (isLoadingLicense) {
     return (
       <div className="w-full h-full min-h-[450px] bg-slate-900 flex flex-col items-center justify-center p-6 select-none relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b12_1px,transparent_1px),linear-gradient(to_bottom,#1e293b12_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
         <div className="w-14 h-14 rounded-2xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-slate-400 mb-3.5 shadow-xl animate-pulse">
           <Loader2 className="w-7 h-7 animate-spin text-blue-500" />
         </div>
@@ -850,109 +818,44 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Street View Viewport — 100% LOCKED against walking forward, but allows full 360° rotation */}
+          {/* Street View Viewport — Native 60 FPS Smooth WebGL 360° Rotation without Black Screen Reloads */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
-                <p className="text-xs font-bold text-slate-300">Memuat Panorama 360°...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Sudut: {streetViewHeading}° • Titik Terkunci</p>
+                <p className="text-xs font-bold text-slate-300">Memuat Street View 360°...</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Tahan &amp; geser layar untuk melihat sekeliling</p>
               </div>
             )}
 
-            {/* Google Street View Iframe — POINTER EVENTS DISABLED so Google NEVER receives walk-forward commands! */}
+            {/* Google Street View Iframe — Native WebGL 360 Rotation (Silky Smooth 60 FPS) */}
             <iframe
-              key={`${streetViewKey}-${streetViewHeading}`}
-              src={getStreetViewEmbedUrl(pinCoord, streetViewHeading, streetViewPitch, 75)}
-              title="Street View 360 Terkunci"
-              className="absolute inset-0 h-full w-full border-0 pointer-events-none"
+              key={streetViewKey}
+              src={getStreetViewEmbedUrl(pinCoord, 0, 16, 75)}
+              title="Street View 360 untuk Verifikasi Lokasi"
+              className="absolute inset-0 h-full w-full border-0 pointer-events-auto"
+              allowFullScreen
               loading="eager"
               onLoad={() => setIsStreetViewLoading(false)}
             />
 
-            {/* Gesture Controller Layer (Directly on top: captures touch/drag 360°, BLOCKS all forward-walk clicks) */}
-            <div
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              className="absolute inset-0 z-20 cursor-grab active:cursor-grabbing touch-none select-none"
-              title="Tahan & geser layar untuk memutar 360°"
-            >
-              {/* Central Target Reticle */}
-              <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                <div className="flex flex-col items-center -translate-y-3">
-                  <div className="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-2xl border-2 border-white flex items-center gap-1">
-                    <MapPin className="w-3 h-3 fill-white" />
-                    <span>TITIK TIANG TERKUNCI</span>
-                  </div>
-                  <div className="w-2.5 h-2.5 bg-red-600 rotate-45 -mt-1 shadow-md border-r-2 border-b-2 border-white" />
-                </div>
-                <div className="w-12 h-12 rounded-full border-2 border-dashed border-red-400/80 flex items-center justify-center shadow-lg">
-                  <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm ring-2 ring-red-300/50" />
-                </div>
-              </div>
-
-              {/* Quick Rotation Buttons on Left & Right */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsStreetViewLoading(true);
-                  setStreetViewHeading((h) => (h - 30 + 360) % 360);
-                }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-slate-800 text-white border border-white/20 flex items-center justify-center shadow-2xl cursor-pointer active:scale-90 transition-all z-30 pointer-events-auto"
-                title="Putar Kiri 30°"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsStreetViewLoading(true);
-                  setStreetViewHeading((h) => (h + 30) % 360);
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-slate-800 text-white border border-white/20 flex items-center justify-center shadow-2xl cursor-pointer active:scale-90 transition-all z-30 pointer-events-auto"
-                title="Putar Kanan 30°"
-              >
-                <ChevronLeft className="w-6 h-6 rotate-180" />
-              </button>
-
-              {/* Top Instruction Pill */}
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 max-w-[92vw] bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none text-center">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Geser layar atau klik panah untuk putar 360°. Posisi tiang terkunci 100%.</span>
-              </div>
-
-              {/* Bottom Compass Orientation Indicator */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 flex items-center gap-2 text-[10px] font-bold text-white shadow-xl pointer-events-none">
-                <Compass className="w-3.5 h-3.5 text-amber-400" />
-                <span className="font-mono">{streetViewHeading}°</span>
-                <span className="text-slate-400">
-                  {streetViewHeading >= 337.5 || streetViewHeading < 22.5 ? 'Utara' :
-                   streetViewHeading < 67.5 ? 'Timur Laut' :
-                   streetViewHeading < 112.5 ? 'Timur' :
-                   streetViewHeading < 157.5 ? 'Tenggara' :
-                   streetViewHeading < 202.5 ? 'Selatan' :
-                   streetViewHeading < 247.5 ? 'Barat Daya' :
-                   streetViewHeading < 292.5 ? 'Barat' : 'Barat Laut'}
-                </span>
-                <span className="text-emerald-400 border-l border-white/20 pl-2">🔒 Posisi Terkunci</span>
-              </div>
+            {/* Top Instruction Pill — Clear & Informative */}
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 max-w-[94vw] bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full border border-white/15 text-[11px] font-bold text-slate-200 shadow-2xl flex items-center gap-2 pointer-events-none text-center z-20">
+              <Sparkles className="w-4 h-4 text-amber-300 flex-shrink-0" />
+              <span>Geser layar 360° untuk cek tiang &amp; kabel. Titik koordinat tersimpan dari Peta 2D.</span>
             </div>
           </div>
 
           {/* Bottom Action Footer */}
-          <div className="p-3 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 flex-shrink-0">
-            <div className="w-full sm:max-w-md rounded-2xl border border-slate-700 bg-slate-800/70 px-3 py-2">
-              <p className="text-[11px] font-bold text-slate-100">Cek lokasi</p>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-slate-400">
-                Jika belum pas, kembali ke peta lalu geser titik.
+          <div className="p-3.5 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 flex-shrink-0">
+            <div className="w-full sm:max-w-md rounded-2xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5">
+              <p className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Verifikasi Posisi Tiang</span>
+              </p>
+              <p className="mt-0.5 text-[10.5px] leading-relaxed text-slate-300">
+                Lihat fisik tiang &amp; lingkungan. Jika letak titik belum pas, klik <strong>&quot;Kembali &amp; Geser Titik di Peta&quot;</strong>.
               </p>
             </div>
 
@@ -961,9 +864,9 @@ export default function PinSelectorMap({
               <button
                 type="button"
                 onClick={() => setShowStreetViewModal(false)}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-2xl transition-all cursor-pointer"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-2xl transition-all cursor-pointer border border-white/10 flex-shrink-0"
               >
-                Kembali &amp; Geser Titik
+                ◀ Kembali &amp; Geser Titik di Peta
               </button>
 
               <button
@@ -972,10 +875,10 @@ export default function PinSelectorMap({
                   setShowStreetViewModal(false);
                   handleConfirm();
                 }}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 text-white font-black text-xs rounded-2xl shadow-xl shadow-blue-500/25 transition-all cursor-pointer border border-white/20"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>PAKAI TITIK INI &rarr;</span>
+                <span>PAKAI TITIK INI &amp; LANJUT ISI DATA &rarr;</span>
               </button>
             </div>
           </div>
