@@ -116,6 +116,7 @@ export default function PinSelectorMap({
   const [showStreetViewModal, setShowStreetViewModal] = useState<boolean>(false);
   const [streetViewKey, setStreetViewKey] = useState<number>(1);
   const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
+  const [showRoadLockToast, setShowRoadLockToast] = useState<boolean>(false);
 
   const openStreetView = () => {
     setIsStreetViewLoading(true);
@@ -818,7 +819,7 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Street View Viewport — Native 60 FPS Smooth WebGL 360° Rotation without Black Screen Reloads */}
+          {/* Street View Viewport — Native 60 FPS Smooth WebGL 360° Rotation with Road Shield Lock */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
@@ -840,11 +841,40 @@ export default function PinSelectorMap({
               onLoad={() => setIsStreetViewLoading(false)}
             />
 
-            {/* Top Instruction Pill — Clear & Informative */}
+            {/* Anti-Walk Road Shield (Blocks all clicks on road surface & chevron navigation arrows) */}
+            <div
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowRoadLockToast(true);
+                setTimeout(() => setShowRoadLockToast(false), 3000);
+              }}
+              onDoubleClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              className="absolute bottom-0 left-0 right-0 h-[44%] z-20 pointer-events-auto cursor-grab active:cursor-grabbing select-none"
+              title="Navigasi jalan dikunci agar koordinat tiang tidak bergeser"
+            >
+              {/* Bottom Centered Lock Indicator Badge */}
+              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-emerald-500/40 text-[10.5px] font-bold text-emerald-300 shadow-2xl flex items-center gap-1.5 pointer-events-none">
+                <span>🔒</span>
+                <span>Posisi Tiang Terkunci (Pindah titik lewat Peta 2D)</span>
+              </div>
+            </div>
+
+            {/* Top Instruction Pill */}
             <div className="absolute top-3 left-1/2 -translate-x-1/2 max-w-[94vw] bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full border border-white/15 text-[11px] font-bold text-slate-200 shadow-2xl flex items-center gap-2 pointer-events-none text-center z-20">
               <Sparkles className="w-4 h-4 text-amber-300 flex-shrink-0" />
-              <span>Geser layar 360° untuk cek tiang &amp; kabel. Titik koordinat tersimpan dari Peta 2D.</span>
+              <span>Geser bagian atas layar untuk putar 360°. Posisi tiang terkunci 100%.</span>
             </div>
+
+            {/* Interactive Lock Warning Toast */}
+            {showRoadLockToast && (
+              <div className="absolute top-14 left-1/2 -translate-x-1/2 max-w-[90vw] sm:max-w-md bg-red-950/95 border border-red-500 text-red-100 px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-md text-xs font-bold text-center z-30 animate-in fade-in zoom-in duration-150">
+                🔒 Navigasi maju jalan dikunci agar titik tiang tidak berpindah. Untuk memindahkan lokasi, gunakan tombol <strong>&quot;Kembali &amp; Geser Titik di Peta&quot;</strong> di bawah.
+              </div>
+            )}
           </div>
 
           {/* Bottom Action Footer */}
