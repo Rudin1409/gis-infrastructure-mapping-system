@@ -116,6 +116,37 @@ export default function PinSelectorMap({
   const [showStreetViewModal, setShowStreetViewModal] = useState<boolean>(false);
   const [streetViewKey, setStreetViewKey] = useState<number>(1);
   const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
+  const [streetViewHeading, setStreetViewHeading] = useState<number>(0);
+  const [streetViewPitch, setStreetViewPitch] = useState<number>(15);
+  const dragStartXRef = useRef<number | null>(null);
+  const dragStartHeadingRef = useRef<number>(0);
+  const [isDraggingPano, setIsDraggingPano] = useState<boolean>(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    dragStartXRef.current = e.clientX;
+    dragStartHeadingRef.current = streetViewHeading;
+    setIsDraggingPano(true);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingPano || dragStartXRef.current === null) return;
+    const deltaX = e.clientX - dragStartXRef.current;
+    const newHeading = Math.round((dragStartHeadingRef.current - deltaX * 0.45 + 360) % 360);
+    setStreetViewHeading(newHeading);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isDraggingPano) {
+      setIsDraggingPano(false);
+      dragStartXRef.current = null;
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {}
+    }
+  };
 
   const openStreetView = () => {
     setIsStreetViewLoading(true);
@@ -852,38 +883,100 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Interactive iframe is display-only from the app's point of view. */}
+          {/* Street View Viewport — 100% LOCKED against walking forward, but allows full 360° rotation */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
-                <p className="text-xs font-bold text-slate-300">Memuat Street View...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Gunakan untuk memastikan lingkungan sekitar titik</p>
+                <p className="text-xs font-bold text-slate-300">Memuat Panorama 360°...</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Sudut: {streetViewHeading}° • Titik Terkunci</p>
               </div>
             )}
 
+            {/* Google Street View Iframe — POINTER EVENTS DISABLED so Google NEVER receives walk-forward commands! */}
             <iframe
-              key={streetViewKey}
-              src={getStreetViewEmbedUrl(pinCoord, 0, 16, 75)}
-              title="Street View untuk cek lokasi"
-              className="absolute inset-0 h-full w-full border-0"
-              allowFullScreen
+              key={`${streetViewKey}-${streetViewHeading}`}
+              src={getStreetViewEmbedUrl(pinCoord, streetViewHeading, streetViewPitch, 75)}
+              title="Street View 360 Terkunci"
+              className="absolute inset-0 h-full w-full border-0 pointer-events-none"
               loading="eager"
               onLoad={() => setIsStreetViewLoading(false)}
             />
 
-            {/* Top Instruction Pill */}
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-[92vw] bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none text-center">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Geser layar 360° untuk melihat tiang. Titik dikunci dari peta.</span>
-            </div>
+            {/* Gesture Controller Layer (Directly on top: captures touch/drag 360°, BLOCKS all forward-walk clicks) */}
+            <div
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              className="absolute inset-0 z-20 cursor-grab active:cursor-grabbing touch-none select-none"
+              title="Tahan & geser layar untuk memutar 360°"
+            >
+              {/* Central Target Reticle */}
+              <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                <div className="flex flex-col items-center -translate-y-3">
+                  <div className="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-2xl border-2 border-white flex items-center gap-1">
+                    <MapPin className="w-3 h-3 fill-white" />
+                    <span>TITIK TIANG TERKUNCI</span>
+                  </div>
+                  <div className="w-2.5 h-2.5 bg-red-600 rotate-45 -mt-1 shadow-md border-r-2 border-b-2 border-white" />
+                </div>
+                <div className="w-12 h-12 rounded-full border-2 border-dashed border-red-400/80 flex items-center justify-center shadow-lg">
+                  <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm ring-2 ring-red-300/50" />
+                </div>
+              </div>
 
-            {/* Bottom Road Click Shield (Protects against accidental road arrow clicks) */}
-            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent pointer-events-auto z-15 flex items-end justify-center pb-2">
-              <span className="text-[10px] text-slate-300/90 font-bold bg-slate-900/80 px-3 py-1 rounded-full border border-white/10 backdrop-blur-sm pointer-events-none">
-                🔒 Geser 360° di area atas. Untuk pindah posisi, gunakan Peta 2D.
-              </span>
+              {/* Quick Rotation Buttons on Left & Right */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsStreetViewLoading(true);
+                  setStreetViewHeading((h) => (h - 30 + 360) % 360);
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-slate-800 text-white border border-white/20 flex items-center justify-center shadow-2xl cursor-pointer active:scale-90 transition-all z-30 pointer-events-auto"
+                title="Putar Kiri 30°"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsStreetViewLoading(true);
+                  setStreetViewHeading((h) => (h + 30) % 360);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-slate-800 text-white border border-white/20 flex items-center justify-center shadow-2xl cursor-pointer active:scale-90 transition-all z-30 pointer-events-auto"
+                title="Putar Kanan 30°"
+              >
+                <ChevronLeft className="w-6 h-6 rotate-180" />
+              </button>
+
+              {/* Top Instruction Pill */}
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 max-w-[92vw] bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none text-center">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Geser layar atau klik panah untuk putar 360°. Posisi tiang terkunci 100%.</span>
+              </div>
+
+              {/* Bottom Compass Orientation Indicator */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 flex items-center gap-2 text-[10px] font-bold text-white shadow-xl pointer-events-none">
+                <Compass className="w-3.5 h-3.5 text-amber-400" />
+                <span className="font-mono">{streetViewHeading}°</span>
+                <span className="text-slate-400">
+                  {streetViewHeading >= 337.5 || streetViewHeading < 22.5 ? 'Utara' :
+                   streetViewHeading < 67.5 ? 'Timur Laut' :
+                   streetViewHeading < 112.5 ? 'Timur' :
+                   streetViewHeading < 157.5 ? 'Tenggara' :
+                   streetViewHeading < 202.5 ? 'Selatan' :
+                   streetViewHeading < 247.5 ? 'Barat Daya' :
+                   streetViewHeading < 292.5 ? 'Barat' : 'Barat Laut'}
+                </span>
+                <span className="text-emerald-400 border-l border-white/20 pl-2">🔒 Posisi Terkunci</span>
+              </div>
             </div>
           </div>
 
