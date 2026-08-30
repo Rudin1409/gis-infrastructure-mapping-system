@@ -39,12 +39,9 @@ import {
   Maximize2,
   X,
   RefreshCw,
-  Target,
-  Navigation,
 } from 'lucide-react';
 import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
-import { getStreetViewImageUrl, getStreetViewEmbedUrl, getStreetViewDirectUrl, projectCoordinateAlongHeading } from '@/lib/gis/streetview';
-import StreetViewSurvey, { StreetViewCameraState } from './StreetViewSurvey';
+import { getStreetViewEmbedUrl, getStreetViewDirectUrl } from '@/lib/gis/streetview';
 
 interface PinSelectorMapProps {
   initialPinCoord?: Coordinates;
@@ -115,37 +112,15 @@ export default function PinSelectorMap({
     }
   );
 
-  // 🚶 Google Street View Inset Thumbnail & Fullscreen State
+  // Street View is used as a visual reference only. The saved coordinate always comes from the 2D map pin.
   const [showStreetViewModal, setShowStreetViewModal] = useState<boolean>(false);
-  const [streetViewPhotoUrl, setStreetViewPhotoUrl] = useState<string>('');
-  const [streetViewCameraCoord, setStreetViewCameraCoord] = useState<Coordinates>(
-    initialPinCoord || {
-      lat: LUBUKLINGGAU_CENTER.lat,
-      lng: LUBUKLINGGAU_CENTER.lng,
-    }
-  );
-  const [streetViewHeading, setStreetViewHeading] = useState<number>(0);
-  const [streetViewPitch, setStreetViewPitch] = useState<number>(10);
-  const [streetViewSide, setStreetViewSide] = useState<'KIRI' | 'KANAN'>('KIRI');
   const [streetViewKey, setStreetViewKey] = useState<number>(1);
   const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
-  const [isStreetViewReady, setIsStreetViewReady] = useState<boolean>(false);
-  const [streetViewTargetDistance, setStreetViewTargetDistance] = useState<number>(8);
 
   const openStreetView = () => {
-    setStreetViewCameraCoord(pinCoord);
-    setStreetViewHeading(0);
-    setStreetViewPitch(10);
-    setIsStreetViewReady(false);
     setIsStreetViewLoading(true);
     setShowStreetViewModal(true);
     setStreetViewKey((key) => key + 1);
-  };
-
-  const handleStreetViewCameraChange = (camera: StreetViewCameraState) => {
-    setStreetViewCameraCoord(camera.position);
-    setStreetViewHeading(camera.heading);
-    setStreetViewPitch(camera.pitch);
   };
 
   // Load Leaflet library dynamically client-side only when verified NOT locked
@@ -563,11 +538,6 @@ export default function PinSelectorMap({
 
   const locationQC = evaluateLocationQC(pinCoord, deviceCoord);
   const gpsQuality = getGpsQuality(gpsReading?.accuracy);
-  const streetViewTargetCoord = projectCoordinateAlongHeading(
-    streetViewCameraCoord,
-    streetViewHeading,
-    streetViewTargetDistance
-  );
 
   // Handle confirmation
   const handleConfirm = () => {
@@ -576,7 +546,6 @@ export default function PinSelectorMap({
       deviceCoord: deviceCoord || undefined,
       gpsAccuracy: gpsReading?.accuracy,
       distanceFromDevice: distance,
-      photoUrl: streetViewPhotoUrl || undefined,
     });
   };
 
@@ -716,15 +685,15 @@ export default function PinSelectorMap({
             type="button"
             onClick={openStreetView}
             className="group relative w-28 h-20 sm:w-32 sm:h-22 rounded-2xl overflow-hidden border-2 border-white shadow-2xl bg-slate-900 flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ring-2 ring-black/15"
-            title="Klik untuk membuka Street View 360° Penuh"
+            title="Lihat Street View untuk verifikasi visual lokasi"
           >
-            {/* Live Interactive Street View Embed (Scaled down for mini-box preview) */}
+            {/* Street View preview for visual checking near the selected map pin. */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center bg-slate-900">
               <iframe
                 src={getStreetViewEmbedUrl(pinCoord, 0)}
                 className="w-[280px] h-[190px] border-0 pointer-events-none opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
                 loading="lazy"
-                title="Street View Mini Thumbnail"
+                title="Preview Street View lokasi"
               />
             </div>
 
@@ -737,7 +706,7 @@ export default function PinSelectorMap({
             {/* Hover Expand Hint */}
             <div className="absolute inset-0 bg-blue-950/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white font-bold text-[9px] gap-0.5 backdrop-blur-2xs pointer-events-none z-20">
               <Maximize2 className="w-4 h-4" />
-              <span>Buka 360°</span>
+              <span>Cek Visual</span>
             </div>
           </button>
         </div>
@@ -823,7 +792,7 @@ export default function PinSelectorMap({
       </div>
 
       {/* ======================================================= */}
-      {/* 🚶 FULLSCREEN 360° STREET VIEW VIEWER & SURVEYOR */}
+      {/* Street View visual verification */}
       {/* ======================================================= */}
       {showStreetViewModal && (
         <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950 text-white animate-in fade-in duration-200">
@@ -836,17 +805,14 @@ export default function PinSelectorMap({
               <div>
                 <div className="flex items-center gap-1.5">
                   <h3 className="text-xs font-black tracking-tight text-white">
-                    Google Street View 360°
+                    Verifikasi Street View
                   </h3>
-                  <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-purple-500/30 text-purple-300 border border-purple-400/30">
-                    LIVE PANORAMA
+                  <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-sky-500/20 text-sky-200 border border-sky-400/30">
+                    REFERENSI VISUAL
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-mono">
-                  Kamera: {streetViewCameraCoord.lat.toFixed(6)}, {streetViewCameraCoord.lng.toFixed(6)}
-                </p>
-                <p className="text-[10px] text-emerald-400 font-mono">
-                  Target: {streetViewTargetCoord.lat.toFixed(6)}, {streetViewTargetCoord.lng.toFixed(6)}
+                  Pin peta: {pinCoord.lat.toFixed(6)}, {pinCoord.lng.toFixed(6)}
                 </p>
               </div>
             </div>
@@ -857,18 +823,17 @@ export default function PinSelectorMap({
                 type="button"
                 onClick={() => {
                   setIsStreetViewLoading(true);
-                  setIsStreetViewReady(false);
                   setStreetViewKey((k) => k + 1);
                 }}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                title="Muat Ulang Tampilan Panorama jika loading terhambat"
+                title="Muat ulang tampilan Street View"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isStreetViewLoading ? 'animate-spin text-purple-400' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${isStreetViewLoading ? 'animate-spin text-sky-300' : ''}`} />
                 <span className="hidden sm:inline">Segarkan</span>
               </button>
 
               <a
-                href={getStreetViewDirectUrl(streetViewCameraCoord, streetViewHeading)}
+                href={getStreetViewDirectUrl(pinCoord, 0)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-300 transition-all"
@@ -887,95 +852,41 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Interactive 360° Panorama Frame Container — FULLY INTERACTIVE (Free touch, drag, zoom, look around) */}
+          {/* Interactive iframe is display-only from the app's point of view. */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
-                <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-2" />
-                <p className="text-xs font-bold text-slate-300">Memuat Panorama 360° Jalan...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Sentuh &amp; geser layar untuk melihat sekeliling</p>
+                <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
+                <p className="text-xs font-bold text-slate-300">Memuat Street View...</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Gunakan untuk memastikan lingkungan sekitar titik</p>
               </div>
             )}
 
-            {/* Official panorama API reports the live camera position and POV back to the form. */}
-            <StreetViewSurvey
+            <iframe
               key={streetViewKey}
-              initialPosition={pinCoord}
-              initialHeading={streetViewHeading}
-              initialPitch={streetViewPitch}
-              onCameraChange={handleStreetViewCameraChange}
-              onReadyChange={(ready) => {
-                setIsStreetViewReady(ready);
-                setIsStreetViewLoading(false);
-              }}
+              src={getStreetViewEmbedUrl(pinCoord, 0, 10, 75)}
+              title="Street View untuk verifikasi visual lokasi"
+              className="absolute inset-0 h-full w-full border-0"
+              allowFullScreen
+              loading="eager"
+              onLoad={() => setIsStreetViewLoading(false)}
             />
 
-            {/* Floating Central Pin Target Reticle Overlay */}
-            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center z-20">
-              <div className="flex flex-col items-center -translate-y-4">
-                <div className="bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-2xl border-2 border-white flex items-center gap-1">
-                  <MapPin className="w-3 h-3 fill-white" />
-                  <span>PIN TIANG TARGET</span>
-                </div>
-                <div className="w-2.5 h-2.5 bg-red-600 rotate-45 -mt-1 shadow-md border-r-2 border-b-2 border-white" />
-                <div className="w-3 h-1 bg-black/40 rounded-full blur-[1px] mt-1" />
-              </div>
-
-              {/* Aiming Reticle Crosshair */}
-              <div className="w-14 h-14 rounded-full border-2 border-dashed border-red-400/70 flex items-center justify-center pointer-events-none shadow-lg">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm ring-2 ring-red-300/50" />
-              </div>
-            </div>
-
             {/* Top Instruction Pill */}
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none">
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-[92vw] bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10px] font-bold text-slate-200 shadow-xl flex items-center gap-1.5 pointer-events-none text-center">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Geser layar bebas 360°, posisikan tiang ke titik merah, lalu klik Kunci</span>
+              <span>Street View hanya untuk cek visual. Titik yang tersimpan tetap dari pin peta 2D.</span>
             </div>
           </div>
 
           {/* Bottom Action Footer */}
           <div className="p-3 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 flex-shrink-0">
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-              <label className="flex items-center gap-2 text-[10px] font-bold text-slate-300">
-                <Target className="w-3.5 h-3.5 text-purple-400" />
-                <span>Jarak tiang {streetViewTargetDistance} m</span>
-                <input
-                  type="range"
-                  min="3"
-                  max="25"
-                  step="1"
-                  value={streetViewTargetDistance}
-                  onChange={(event) => setStreetViewTargetDistance(Number(event.target.value))}
-                  className="w-24 accent-purple-500 cursor-pointer"
-                  aria-label="Perkiraan jarak kamera Street View ke tiang"
-                />
-              </label>
-              <div className="inline-flex bg-slate-800 p-0.5 rounded-xl border border-white/10" title="Konfirmasi sisi jalan untuk isian formulir">
-                <button
-                  type="button"
-                  onClick={() => setStreetViewSide('KIRI')}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                    streetViewSide === 'KIRI'
-                      ? 'bg-purple-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  ◀ Sisi Kiri
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStreetViewSide('KANAN')}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                    streetViewSide === 'KANAN'
-                      ? 'bg-purple-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Sisi Kanan ▶
-                </button>
-              </div>
+            <div className="w-full sm:max-w-md rounded-2xl border border-slate-700 bg-slate-800/70 px-3 py-2">
+              <p className="text-[11px] font-bold text-slate-100">Mode verifikasi lokasi</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-slate-400">
+                Jika posisi belum pas, kembali ke peta lalu geser pin. Klik simpan hanya saat pin 2D sudah sesuai.
+              </p>
             </div>
 
             {/* Action Buttons */}
@@ -985,47 +896,19 @@ export default function PinSelectorMap({
                 onClick={() => setShowStreetViewModal(false)}
                 className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-2xl transition-all cursor-pointer"
               >
-                Kembali ke Peta
+                Kembali &amp; Geser Pin
               </button>
 
               <button
                 type="button"
-                disabled={!isStreetViewReady}
                 onClick={() => {
                   setShowStreetViewModal(false);
-                  // The target reticle points along the current POV from the latest panorama position.
-                  const finalPoleCoord = projectCoordinateAlongHeading(
-                    streetViewCameraCoord,
-                    streetViewHeading || 0,
-                    streetViewTargetDistance
-                  );
-                  setPinCoord(finalPoleCoord);
-                  if (pinMarkerRef.current) {
-                    pinMarkerRef.current.setLatLng([finalPoleCoord.lat, finalPoleCoord.lng]);
-                  }
-                  const cleanPhoto = getStreetViewImageUrl(
-                    streetViewCameraCoord,
-                    streetViewHeading || 0,
-                    streetViewPitch,
-                    75
-                  );
-                  setStreetViewPhotoUrl(cleanPhoto);
-                  const finalDistance = deviceCoord
-                    ? calculateHaversineDistance(deviceCoord, finalPoleCoord)
-                    : 0;
-                  onConfirmLocation({
-                    poleCoord: finalPoleCoord,
-                    deviceCoord: deviceCoord || undefined,
-                    gpsAccuracy: gpsReading?.accuracy,
-                    distanceFromDevice: finalDistance,
-                    photoUrl: cleanPhoto,
-                    roadSide: streetViewSide,
-                  });
+                  handleConfirm();
                 }}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black text-xs rounded-2xl shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>📸 KUNCI TITIK INI &amp; AMBIL GAMBAR &rarr;</span>
+                <span>PAKAI TITIK PETA INI &rarr;</span>
               </button>
             </div>
           </div>
