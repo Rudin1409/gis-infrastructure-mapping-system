@@ -253,9 +253,9 @@ export default function GisAiAssistantModal() {
 
   return (
     <>
-      {/* FLOATING TRIGGER BUTTON (Elevated above bottom navigation bar) */}
+      {/* FLOATING TRIGGER BUTTON (Elevated above bottom navigation bar and all map controls) */}
       {!isOpen && (
-        <div className="fixed bottom-28 right-3.5 z-40 sm:bottom-8 sm:right-8 animate-in fade-in zoom-in duration-150">
+        <div className="fixed bottom-28 right-3.5 z-[900] sm:bottom-8 sm:right-8 animate-in fade-in zoom-in duration-150">
           <button
             type="button"
             onClick={() => {
@@ -276,10 +276,10 @@ export default function GisAiAssistantModal() {
         </div>
       )}
 
-      {/* COMPACT CHAT DRAWER / BOTTOM SHEET */}
+      {/* COMPACT CHAT DRAWER / BOTTOM SHEET (Top-most z-index above all map buttons and controls) */}
       {isOpen && (
         <div
-          className={`fixed z-50 transition-all duration-300 ease-out flex flex-col bg-white shadow-[0_20px_60px_rgba(15,23,42,0.25)] border border-slate-200 font-sans ${
+          className={`fixed z-[1000] transition-all duration-300 ease-out flex flex-col bg-white shadow-[0_25px_70px_rgba(15,23,42,0.4)] border border-slate-200 font-sans ${
             viewState === 'MINIMIZED'
               ? 'bottom-24 sm:bottom-8 right-3 sm:right-8 w-[calc(100vw-24px)] sm:w-[390px] h-[54px] rounded-2xl overflow-hidden'
               : viewState === 'EXPANDED'
