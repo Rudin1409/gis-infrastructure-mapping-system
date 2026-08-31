@@ -117,6 +117,19 @@ export default function PinSelectorMap({
   const [showStreetViewModal, setShowStreetViewModal] = useState<boolean>(false);
   const [streetViewKey, setStreetViewKey] = useState<number>(1);
   const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
+  const [showStreetViewLockHint, setShowStreetViewLockHint] = useState<boolean>(false);
+  const streetViewLockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showLockedStreetViewHint = () => {
+    setShowStreetViewLockHint(true);
+    if (streetViewLockTimerRef.current) {
+      clearTimeout(streetViewLockTimerRef.current);
+    }
+    streetViewLockTimerRef.current = setTimeout(() => {
+      setShowStreetViewLockHint(false);
+      streetViewLockTimerRef.current = null;
+    }, 1700);
+  };
 
   const openStreetView = () => {
     setIsStreetViewLoading(true);
@@ -823,55 +836,75 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Street View Viewport — Native 60 FPS Smooth WebGL 360° Rotation with Solid Road Shield Lock */}
+          {/* Street View Viewport: visual-only preview locked to the selected map pin */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
-                <p className="text-xs font-bold text-slate-300">Memuat Street View 360°...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Tahan &amp; geser layar untuk melihat sekeliling</p>
+                <p className="text-xs font-bold text-slate-300">Memuat Street View...</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Tampilan dikunci agar koordinat tetap sesuai pin peta</p>
               </div>
             )}
 
-            {/* Google Street View Iframe — Native WebGL 360 Rotation (Silky Smooth 60 FPS) */}
+            {/* Google Street View iframe is intentionally non-interactive inside the app. */}
             <iframe
               key={streetViewKey}
               src={getStreetViewEmbedUrl(pinCoord, 0, 16, 75)}
-              title="Street View 360 untuk Verifikasi Lokasi"
-              className="absolute inset-0 h-full w-full border-0 pointer-events-auto"
+              title="Street View untuk cek lokasi"
+              className="absolute inset-0 h-full w-full border-0 pointer-events-none"
               allowFullScreen
               loading="eager"
               onLoad={() => setIsStreetViewLoading(false)}
             />
 
-            {/* Anti-Walk Road Shield (Solidly covers lower 60% to block all clicks on asphalt & chevron arrows) */}
+            {/* Full interaction shield: blocks click, double tap, scroll, and drag from reaching Google iframe. */}
             <div
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                showLockedStreetViewHint();
               }}
               onDoubleClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                showLockedStreetViewHint();
               }}
               onPointerDown={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
+                showLockedStreetViewHint();
               }}
-              className="absolute bottom-0 left-0 right-0 h-[60%] z-20 pointer-events-auto cursor-default select-none"
-              title="Posisi Terkunci"
+              onWheel={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showLockedStreetViewHint();
+              }}
+              className="absolute inset-0 z-20 pointer-events-auto cursor-not-allowed select-none"
+              title="Street View dikunci. Geser titik dari peta 2D."
             >
-              {/* Bottom Centered Minimal Lock Indicator */}
-              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/40 text-[10px] font-bold text-emerald-300 shadow-2xl flex items-center gap-1.5 pointer-events-none">
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/40 text-[10px] font-bold text-emerald-300 shadow-2xl flex items-center gap-1.5 pointer-events-none">
                 <Lock className="w-3 h-3 text-emerald-400" />
-                <span>Posisi Terkunci</span>
+                <span>Street View Terkunci</span>
               </div>
             </div>
 
+            {showStreetViewLockHint && (
+              <div className="absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-emerald-400/50 bg-slate-950/92 px-5 py-4 text-center shadow-2xl backdrop-blur-md animate-in fade-in zoom-in duration-150 pointer-events-none">
+                <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/40">
+                  <Lock className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-black text-white">Tampilan dikunci</p>
+                <p className="mt-1 max-w-[260px] text-[11px] leading-relaxed text-slate-300">
+                  Titik disimpan dari pin peta. Kembali ke peta untuk mengubah posisi.
+                </p>
+              </div>
+            )}
+
             {/* Top Instruction Pill */}
             <div className="absolute top-3 left-1/2 -translate-x-1/2 max-w-[94vw] bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10.5px] font-bold text-slate-200 shadow-2xl flex items-center gap-1.5 pointer-events-none text-center z-20">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
-              <span>Geser bagian atas layar untuk putar 360°</span>
+              <Lock className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
+              <span>Street View hanya untuk cek visual. Geser titik dari peta 2D.</span>
             </div>
           </div>
 

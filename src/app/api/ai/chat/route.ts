@@ -273,7 +273,7 @@ PANDUAN GAYA JAWABAN:
     if (matchedSurveyor && (lastUserMsg.includes('tampil') || lastUserMsg.includes('filter') || lastUserMsg.includes('titik') || lastUserMsg.includes('data') || lastUserMsg.includes('lihat'))) {
       mapAction = {
         type: 'FILTER_MAP',
-        surveyorName: matchedSurveyor,
+        surveyor: matchedSurveyor,
         search: matchedSurveyor,
         label: `🗺️ Filter Tiang oleh: ${matchedSurveyor}`,
       };
@@ -361,6 +361,7 @@ PANDUAN GAYA JAWABAN:
         providerId: 'ALL',
         condition: 'ALL',
         category: 'ALL',
+        surveyor: 'ALL',
         search: '',
         label: '🗺️ Tampilkan Semua Tiang',
       };

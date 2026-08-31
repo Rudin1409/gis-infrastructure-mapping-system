@@ -113,7 +113,7 @@ export default function GisAiAssistantModal() {
         const params = new URLSearchParams();
         if (action.providerId && action.providerId !== 'ALL') params.set('provider', action.providerId);
         if (action.condition && action.condition !== 'ALL') params.set('condition', action.condition);
-        if (action.search) params.set('search', action.search);
+        if (action.search) params.set('q', action.search);
         router.push(`/map?${params.toString()}`);
       }
 

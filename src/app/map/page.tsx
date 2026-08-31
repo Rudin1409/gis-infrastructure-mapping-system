@@ -14,6 +14,8 @@ export default async function MapPage({
   searchParams?: {
     provider?: string;
     q?: string;
+    search?: string;
+    surveyor?: string;
     kecamatan?: string;
     kelurahan?: string;
   };
@@ -36,7 +38,8 @@ export default async function MapPage({
         segments={segments}
         providers={providers}
         initialProvider={searchParams?.provider}
-        initialQuery={searchParams?.q}
+        initialQuery={searchParams?.q || searchParams?.search}
+        initialSurveyor={searchParams?.surveyor}
         isLicenseLocked={licenseConfig.isLocked}
         licenseReason={licenseConfig.reason}
       />

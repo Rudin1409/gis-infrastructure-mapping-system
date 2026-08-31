@@ -85,6 +85,7 @@ interface GISOverviewMapProps {
   providers?: Provider[];
   initialProvider?: string;
   initialQuery?: string;
+  initialSurveyor?: string;
   isLicenseLocked?: boolean;
   licenseReason?: string;
 }
@@ -116,12 +117,17 @@ function poleIsInsideBounds(pole: Pole, bounds: MapRenderBounds) {
   );
 }
 
+function getPoleSurveyorLabel(pole: Pole) {
+  return (pole.surveyorName || pole.surveyorId || 'Tidak diketahui').trim();
+}
+
 export default function GISOverviewMap({
   poles,
   segments = [],
   providers = [],
   initialProvider,
   initialQuery,
+  initialSurveyor,
   isLicenseLocked = false,
   licenseReason,
 }: GISOverviewMapProps) {
@@ -185,6 +191,17 @@ export default function GISOverviewMap({
 
   const allCombinedProviders = useMemo(() => Array.from(providerById.values()), [providerById]);
 
+  const surveyorOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    livePoles.forEach((pole) => {
+      const label = getPoleSurveyorLabel(pole);
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [livePoles]);
+
   const livePoleById = useMemo(() => {
     const map: Record<string, Pole> = {};
     livePoles.forEach((pole) => {
@@ -244,6 +261,7 @@ export default function GISOverviewMap({
   const [selectedProvider, setSelectedProvider] = useState(initialProvider || 'ALL');
   const [selectedCondition, setSelectedCondition] = useState('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL'); // FO_WIFI, PJU_MANDIRI, GABUNG_PLN_PJU, PLN_MURNI, etc.
+  const [selectedSurveyor, setSelectedSurveyor] = useState(initialSurveyor || 'ALL');
   const [selectedPjuCableFilter, setSelectedPjuCableFilter] = useState<'ALL' | 'WITH_CABLE' | 'WITHOUT_CABLE'>('ALL');
   const [selectedKecamatan, setSelectedKecamatan] = useState('ALL');
   const [selectedKelurahan, setSelectedKelurahan] = useState('ALL');
@@ -313,9 +331,13 @@ export default function GISOverviewMap({
       if (detail.kelurahan !== undefined) {
         setSelectedKelurahan(detail.kelurahan);
       }
+      if (detail.surveyor !== undefined) {
+        setSelectedSurveyor(detail.surveyor);
+      }
       if (detail.surveyorName !== undefined) {
-        setSearchQuery(detail.surveyorName);
-      } else if (detail.search !== undefined) {
+        setSelectedSurveyor(detail.surveyorName);
+      }
+      if (detail.search !== undefined) {
         setSearchQuery(detail.search);
       }
     };
@@ -1010,6 +1032,7 @@ export default function GISOverviewMap({
     const selectedTypeUpper = selectedType.toUpperCase();
     const selectedHeightValue = selectedHeight;
     const selectedCableTypeValue = selectedCableType;
+    const selectedSurveyorLower = selectedSurveyor.toLowerCase().trim();
 
     const targetProvObj = selectedProvider !== 'ALL' ? providerById.get(selectedProvider) : undefined;
 
@@ -1024,6 +1047,19 @@ export default function GISOverviewMap({
       const effectiveCategory = resolved.category || pole.infrastructureCategory || 'FO_WIFI';
       const effectiveProviderId = resolved.providerId || pole.providerId || '';
       const effectiveProviderName = resolved.providerName || pole.providerName || '';
+
+      // 0b. Surveyor / admin filter, used by INFRA-AI and the filter drawer.
+      if (selectedSurveyor !== 'ALL') {
+        const surveyorLabel = getPoleSurveyorLabel(pole).toLowerCase();
+        const surveyorId = (pole.surveyorId || '').toLowerCase();
+        if (
+          !surveyorLabel.includes(selectedSurveyorLower) &&
+          !selectedSurveyorLower.includes(surveyorLabel) &&
+          !surveyorId.includes(selectedSurveyorLower)
+        ) {
+          return false;
+        }
+      }
 
       // 1. Provider Filter
       if (selectedProvider !== 'ALL') {
@@ -1188,6 +1224,7 @@ export default function GISOverviewMap({
     selectedProvider,
     selectedCondition,
     selectedCategory,
+    selectedSurveyor,
     selectedPjuCableFilter,
     selectedKecamatan,
     selectedKelurahan,
@@ -1203,6 +1240,7 @@ export default function GISOverviewMap({
       selectedProvider !== 'ALL' ||
       selectedCondition !== 'ALL' ||
       selectedCategory !== 'ALL' ||
+      selectedSurveyor !== 'ALL' ||
       selectedPjuCableFilter !== 'ALL' ||
       selectedKecamatan !== 'ALL' ||
       selectedKelurahan !== 'ALL' ||
@@ -1215,6 +1253,7 @@ export default function GISOverviewMap({
       selectedProvider,
       selectedCondition,
       selectedCategory,
+      selectedSurveyor,
       selectedPjuCableFilter,
       selectedKecamatan,
       selectedKelurahan,
@@ -1563,6 +1602,7 @@ export default function GISOverviewMap({
     setSelectedProvider('ALL');
     setSelectedCondition('ALL');
     setSelectedCategory('ALL');
+    setSelectedSurveyor('ALL');
     setSelectedPjuCableFilter('ALL');
     setSelectedKecamatan('ALL');
     setSelectedKelurahan('ALL');
@@ -1671,6 +1711,8 @@ export default function GISOverviewMap({
           isMeasuring ||
           selectedProvider !== 'ALL' ||
           selectedCondition !== 'ALL' ||
+          selectedCategory !== 'ALL' ||
+          selectedSurveyor !== 'ALL' ||
           selectedKecamatan !== 'ALL' ||
           selectedType !== 'ALL') && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
@@ -1718,6 +1760,8 @@ export default function GISOverviewMap({
 
             {(selectedProvider !== 'ALL' ||
               selectedCondition !== 'ALL' ||
+              selectedCategory !== 'ALL' ||
+              selectedSurveyor !== 'ALL' ||
               selectedKecamatan !== 'ALL' ||
               selectedType !== 'ALL') && (
               <button
@@ -2132,6 +2176,25 @@ export default function GISOverviewMap({
                 {availableKelurahans.map((kel) => (
                   <option key={kel} value={kel}>
                     {kel}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Surveyor / Petugas Filter */}
+            <div className="col-span-2">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Petugas / Admin Pendata
+              </label>
+              <select
+                value={selectedSurveyor}
+                onChange={(e) => setSelectedSurveyor(e.target.value)}
+                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none"
+              >
+                <option value="ALL">Semua Petugas ({surveyorOptions.length} nama)</option>
+                {surveyorOptions.map((surveyor) => (
+                  <option key={surveyor.label} value={surveyor.label}>
+                    {surveyor.label} ({surveyor.count} titik)
                   </option>
                 ))}
               </select>
