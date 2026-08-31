@@ -846,18 +846,18 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Street View Viewport: panorama can rotate, but road navigation is locked to preserve the 2D map pin. */}
+          {/* Street View Viewport: 360° rotation enabled across 74% screen, road chevrons locked at bottom */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
                 <p className="text-xs font-bold text-slate-300">Memuat Street View...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Putar dari area atas. Maju/mundur dikunci.</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Tahan &amp; geser layar untuk melihat sekeliling</p>
               </div>
             )}
 
-            {/* Google iframe remains interactive so users can rotate the panorama. */}
+            {/* Google iframe remains interactive so users can freely rotate the 360° panorama */}
             <iframe
               key={streetViewKey}
               src={getStreetViewEmbedUrl(pinCoord, 0, 16, 75)}
@@ -868,7 +868,7 @@ export default function PinSelectorMap({
               onLoad={() => setIsStreetViewLoading(false)}
             />
 
-            {/* Navigation shield: blocks the lower road/chevron area while keeping upper panorama drag active. */}
+            {/* Navigation shield: protects the bottom 26% road chevron area from forward walk clicks */}
             <div
               onClick={(e) => {
                 e.preventDefault();
@@ -881,48 +881,19 @@ export default function PinSelectorMap({
                 showLockedStreetViewHint();
               }}
               onPointerDown={(e) => {
-                e.preventDefault();
                 e.stopPropagation();
-                showLockedStreetViewHint();
               }}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                showLockedStreetViewHint();
-              }}
-              onWheel={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                showLockedStreetViewHint();
-              }}
-              className="absolute bottom-0 left-0 right-0 h-[72%] z-20 pointer-events-auto cursor-not-allowed select-none touch-none"
+              className="absolute bottom-0 left-0 right-0 h-[26%] z-20 pointer-events-auto cursor-default select-none"
               title="Maju dan mundur dikunci. Geser titik dari peta 2D."
-            >
-              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-red-950/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-red-400/45 text-[9px] font-bold text-red-100 shadow-2xl flex items-center gap-1 pointer-events-none">
-                <Lock className="w-2.5 h-2.5 text-red-300" />
-                <span>Navigasi dikunci</span>
-              </div>
-            </div>
+            />
 
+            {/* Top Red Lock Alert Badge (Only appears when someone tries to click/step forward) */}
             {showStreetViewLockHint && (
-              <div className="absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-red-400/50 bg-slate-950/92 px-4 py-3 text-center shadow-2xl backdrop-blur-md animate-in fade-in zoom-in duration-150 pointer-events-none">
-                <div className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/15 text-red-300 ring-1 ring-red-400/40">
-                  <Lock className="h-4 w-4" />
-                </div>
-                <p className="text-xs font-black text-white">Maju / mundur dikunci</p>
-                <p className="mt-1 max-w-[220px] text-[10px] leading-relaxed text-slate-300">
-                  Putar dari area atas. Ubah titik lewat peta 2D.
-                </p>
+              <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-600 text-white border border-red-400/80 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in duration-150 pointer-events-none">
+                <Lock className="w-3.5 h-3.5 fill-white text-white" />
+                <span className="text-[10.5px] font-black tracking-tight">Posisi Terkunci (Ganti lewat Peta 2D)</span>
               </div>
             )}
-
-            {/* Small lock indicator */}
-            <div
-              className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-950/85 text-red-200 border border-red-400/45 shadow-xl pointer-events-none"
-              title="Maju dan mundur dikunci"
-            >
-              <Lock className="w-3.5 h-3.5" />
-            </div>
           </div>
 
           {/* Bottom Action Footer */}
