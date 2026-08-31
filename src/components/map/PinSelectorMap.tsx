@@ -33,6 +33,7 @@ import {
   Info,
   Shield,
   ChevronLeft,
+  ChevronRight,
   RotateCcw,
   Camera,
   ExternalLink,
@@ -116,6 +117,7 @@ export default function PinSelectorMap({
   // Street View is used as a visual reference only. The saved coordinate always comes from the 2D map pin.
   const [showStreetViewModal, setShowStreetViewModal] = useState<boolean>(false);
   const [streetViewKey, setStreetViewKey] = useState<number>(1);
+  const [streetViewHeading, setStreetViewHeading] = useState<number>(0);
   const [isStreetViewLoading, setIsStreetViewLoading] = useState<boolean>(false);
   const [showStreetViewLockHint, setShowStreetViewLockHint] = useState<boolean>(false);
   const streetViewLockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -141,6 +143,7 @@ export default function PinSelectorMap({
 
   const openStreetView = () => {
     setIsStreetViewLoading(true);
+    setStreetViewHeading(0);
     setShowStreetViewModal(true);
     setStreetViewKey((key) => key + 1);
   };
@@ -846,21 +849,21 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Street View Viewport: 360° rotation enabled across 74% screen, road chevrons locked at bottom */}
+          {/* Street View Viewport: 360° rotation with quick turn buttons and 56% road chevron lock shield */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
                 <p className="text-xs font-bold text-slate-300">Memuat Street View...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Tahan &amp; geser layar untuk melihat sekeliling</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Tahan &amp; geser layar atau gunakan tombol putar</p>
               </div>
             )}
 
-            {/* Google iframe remains interactive so users can freely rotate the 360° panorama */}
+            {/* Google iframe with Street View */}
             <iframe
-              key={streetViewKey}
-              src={getStreetViewEmbedUrl(pinCoord, 0, 16, 75)}
+              key={`${streetViewKey}-${streetViewHeading}`}
+              src={getStreetViewEmbedUrl(pinCoord, streetViewHeading, 16, 75)}
               title="Street View untuk cek lokasi"
               className="absolute inset-0 h-full w-full border-0 pointer-events-auto"
               allowFullScreen
@@ -868,7 +871,36 @@ export default function PinSelectorMap({
               onLoad={() => setIsStreetViewLoading(false)}
             />
 
-            {/* Navigation shield: protects the bottom 26% road chevron area from forward walk clicks */}
+            {/* Quick 45-degree Rotation Controls on Left & Right */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsStreetViewLoading(true);
+                setStreetViewHeading((h) => (h - 45 + 360) % 360);
+              }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex items-center gap-1 px-3 py-2 rounded-2xl bg-slate-900/85 hover:bg-slate-800 text-white border border-white/20 shadow-2xl backdrop-blur-md text-xs font-bold transition-all active:scale-95 cursor-pointer"
+              title="Putar Kiri 45°"
+            >
+              <ChevronLeft className="w-4 h-4 text-sky-400" />
+              <span className="hidden sm:inline">Putar Kiri</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsStreetViewLoading(true);
+                setStreetViewHeading((h) => (h + 45) % 360);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex items-center gap-1 px-3 py-2 rounded-2xl bg-slate-900/85 hover:bg-slate-800 text-white border border-white/20 shadow-2xl backdrop-blur-md text-xs font-bold transition-all active:scale-95 cursor-pointer"
+              title="Putar Kanan 45°"
+            >
+              <span className="hidden sm:inline">Putar Kanan</span>
+              <ChevronRight className="w-4 h-4 text-sky-400" />
+            </button>
+
+            {/* High-Coverage Road & Chevron Interceptor Shield (Covers lower 56% road corridor) */}
             <div
               onClick={(e) => {
                 e.preventDefault();
@@ -883,8 +915,8 @@ export default function PinSelectorMap({
               onPointerDown={(e) => {
                 e.stopPropagation();
               }}
-              className="absolute bottom-0 left-0 right-0 h-[26%] z-20 pointer-events-auto cursor-default select-none"
-              title="Maju dan mundur dikunci. Geser titik dari peta 2D."
+              className="absolute bottom-0 left-0 right-0 h-[56%] z-20 pointer-events-auto cursor-default select-none"
+              title="Posisi tiang terkunci. Pindah titik lewat peta 2D."
             />
 
             {/* Top Red Lock Alert Badge (Only appears when someone tries to click/step forward) */}
@@ -904,7 +936,7 @@ export default function PinSelectorMap({
                 <span>Verifikasi Posisi Tiang</span>
               </p>
               <p className="mt-0.5 text-[10px] leading-relaxed text-slate-300">
-                Putar dari area atas untuk cek visual. Jika belum pas, geser titik dari peta.
+                Putar 360° untuk cek lingkungan sekitar tiang. Geser titik dari peta 2D jika belum pas.
               </p>
             </div>
 
