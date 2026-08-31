@@ -131,6 +131,14 @@ export default function PinSelectorMap({
     }, 1700);
   };
 
+  useEffect(() => {
+    return () => {
+      if (streetViewLockTimerRef.current) {
+        clearTimeout(streetViewLockTimerRef.current);
+      }
+    };
+  }, []);
+
   const openStreetView = () => {
     setIsStreetViewLoading(true);
     setShowStreetViewModal(true);
@@ -790,9 +798,11 @@ export default function PinSelectorMap({
                   <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-sky-500/20 text-sky-200 border border-sky-400/30">
                     CEK LOKASI
                   </span>
-                  <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                  <span
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500/15 text-red-300 border border-red-400/40"
+                    title="Maju dan mundur dikunci"
+                  >
                     <Lock className="w-2.5 h-2.5" />
-                    <span>Terkunci</span>
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-mono">
@@ -836,29 +846,29 @@ export default function PinSelectorMap({
             </div>
           </div>
 
-          {/* Street View Viewport: visual-only preview locked to the selected map pin */}
+          {/* Street View Viewport: panorama can rotate, but road navigation is locked to preserve the 2D map pin. */}
           <div className="flex-1 w-full relative bg-slate-950 overflow-hidden select-none">
             {/* Loading Indicator Overlay */}
             {isStreetViewLoading && (
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
                 <p className="text-xs font-bold text-slate-300">Memuat Street View...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Tampilan dikunci agar koordinat tetap sesuai pin peta</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Bisa diputar 360°, pindah maju/mundur dikunci</p>
               </div>
             )}
 
-            {/* Google Street View iframe is intentionally non-interactive inside the app. */}
+            {/* Google iframe remains interactive so users can rotate the panorama. */}
             <iframe
               key={streetViewKey}
               src={getStreetViewEmbedUrl(pinCoord, 0, 16, 75)}
               title="Street View untuk cek lokasi"
-              className="absolute inset-0 h-full w-full border-0 pointer-events-none"
+              className="absolute inset-0 h-full w-full border-0 pointer-events-auto"
               allowFullScreen
               loading="eager"
               onLoad={() => setIsStreetViewLoading(false)}
             />
 
-            {/* Full interaction shield: blocks click, double tap, scroll, and drag from reaching Google iframe. */}
+            {/* Navigation shield: blocks the lower road/chevron area while keeping upper panorama drag active. */}
             <div
               onClick={(e) => {
                 e.preventDefault();
@@ -875,59 +885,66 @@ export default function PinSelectorMap({
                 e.stopPropagation();
                 showLockedStreetViewHint();
               }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showLockedStreetViewHint();
+              }}
               onWheel={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 showLockedStreetViewHint();
               }}
-              className="absolute inset-0 z-20 pointer-events-auto cursor-not-allowed select-none"
-              title="Street View dikunci. Geser titik dari peta 2D."
+              className="absolute bottom-0 left-0 right-0 h-[48%] z-20 pointer-events-auto cursor-not-allowed select-none touch-none"
+              title="Maju dan mundur dikunci. Geser titik dari peta 2D."
             >
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/40 text-[10px] font-bold text-emerald-300 shadow-2xl flex items-center gap-1.5 pointer-events-none">
-                <Lock className="w-3 h-3 text-emerald-400" />
-                <span>Street View Terkunci</span>
+              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-red-950/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-red-400/45 text-[9px] font-bold text-red-100 shadow-2xl flex items-center gap-1 pointer-events-none">
+                <Lock className="w-2.5 h-2.5 text-red-300" />
+                <span>Navigasi dikunci</span>
               </div>
             </div>
 
             {showStreetViewLockHint && (
-              <div className="absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-3xl border border-emerald-400/50 bg-slate-950/92 px-5 py-4 text-center shadow-2xl backdrop-blur-md animate-in fade-in zoom-in duration-150 pointer-events-none">
-                <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/40">
-                  <Lock className="h-5 w-5" />
+              <div className="absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-red-400/50 bg-slate-950/92 px-4 py-3 text-center shadow-2xl backdrop-blur-md animate-in fade-in zoom-in duration-150 pointer-events-none">
+                <div className="mx-auto mb-1.5 flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/15 text-red-300 ring-1 ring-red-400/40">
+                  <Lock className="h-4 w-4" />
                 </div>
-                <p className="text-sm font-black text-white">Tampilan dikunci</p>
-                <p className="mt-1 max-w-[260px] text-[11px] leading-relaxed text-slate-300">
-                  Titik disimpan dari pin peta. Kembali ke peta untuk mengubah posisi.
+                <p className="text-xs font-black text-white">Maju / mundur dikunci</p>
+                <p className="mt-1 max-w-[220px] text-[10px] leading-relaxed text-slate-300">
+                  Putar 360° tetap bisa. Ubah titik lewat peta 2D.
                 </p>
               </div>
             )}
 
-            {/* Top Instruction Pill */}
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 max-w-[94vw] bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-[10.5px] font-bold text-slate-200 shadow-2xl flex items-center gap-1.5 pointer-events-none text-center z-20">
-              <Lock className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
-              <span>Street View hanya untuk cek visual. Geser titik dari peta 2D.</span>
+            {/* Small lock indicator */}
+            <div
+              className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-950/85 text-red-200 border border-red-400/45 shadow-xl pointer-events-none"
+              title="Maju dan mundur dikunci"
+            >
+              <Lock className="w-3.5 h-3.5" />
             </div>
           </div>
 
           {/* Bottom Action Footer */}
-          <div className="p-3.5 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 flex-shrink-0">
-            <div className="w-full sm:max-w-md rounded-2xl border border-slate-700 bg-slate-800/80 px-3.5 py-2.5">
-              <p className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+          <div className="p-3 bg-slate-900/98 backdrop-blur-xl border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 flex-shrink-0">
+            <div className="w-full sm:max-w-md rounded-2xl border border-slate-700 bg-slate-800/80 px-3 py-2">
+              <p className="text-[11px] font-bold text-slate-100 flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Verifikasi Posisi Tiang</span>
               </p>
-              <p className="mt-0.5 text-[10.5px] leading-relaxed text-slate-300">
-                Lihat fisik tiang &amp; lingkungan. Jika letak titik belum pas, klik <strong>&quot;Kembali &amp; Geser Titik di Peta&quot;</strong>.
+              <p className="mt-0.5 text-[10px] leading-relaxed text-slate-300">
+                Putar 360° untuk cek visual. Jika belum pas, geser titik dari peta.
               </p>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-[0.9fr_1.1fr] gap-2 w-full sm:flex sm:w-auto">
               <button
                 type="button"
                 onClick={() => setShowStreetViewModal(false)}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-2xl transition-all cursor-pointer border border-white/10 flex-shrink-0"
+                className="min-h-12 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-[10px] sm:text-xs rounded-2xl transition-all cursor-pointer border border-white/10 flex items-center justify-center text-center"
               >
-                ◀ Kembali &amp; Geser Titik di Peta
+                Geser di Peta
               </button>
 
               <button
@@ -936,10 +953,10 @@ export default function PinSelectorMap({
                   setShowStreetViewModal(false);
                   handleConfirm();
                 }}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 text-white font-black text-xs rounded-2xl shadow-xl shadow-blue-500/25 transition-all cursor-pointer border border-white/20"
+                className="min-h-12 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95 text-white font-black text-[10px] sm:text-xs rounded-2xl shadow-xl shadow-blue-500/25 transition-all cursor-pointer border border-white/20 text-center leading-tight"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>PAKAI TITIK INI &amp; LANJUT ISI DATA &rarr;</span>
+                <span>PAKAI TITIK INI &rarr;</span>
               </button>
             </div>
           </div>

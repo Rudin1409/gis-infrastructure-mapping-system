@@ -85,7 +85,11 @@ interface GISOverviewMapProps {
   providers?: Provider[];
   initialProvider?: string;
   initialQuery?: string;
+  initialCondition?: string;
+  initialCategory?: string;
   initialSurveyor?: string;
+  initialKecamatan?: string;
+  initialKelurahan?: string;
   isLicenseLocked?: boolean;
   licenseReason?: string;
 }
@@ -127,7 +131,11 @@ export default function GISOverviewMap({
   providers = [],
   initialProvider,
   initialQuery,
+  initialCondition,
+  initialCategory,
   initialSurveyor,
+  initialKecamatan,
+  initialKelurahan,
   isLicenseLocked = false,
   licenseReason,
 }: GISOverviewMapProps) {
@@ -259,12 +267,12 @@ export default function GISOverviewMap({
     [deferredSearchQuery]
   );
   const [selectedProvider, setSelectedProvider] = useState(initialProvider || 'ALL');
-  const [selectedCondition, setSelectedCondition] = useState('ALL');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL'); // FO_WIFI, PJU_MANDIRI, GABUNG_PLN_PJU, PLN_MURNI, etc.
+  const [selectedCondition, setSelectedCondition] = useState(initialCondition || 'ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'ALL'); // FO_WIFI, PJU_MANDIRI, GABUNG_PLN_PJU, PLN_MURNI, etc.
   const [selectedSurveyor, setSelectedSurveyor] = useState(initialSurveyor || 'ALL');
   const [selectedPjuCableFilter, setSelectedPjuCableFilter] = useState<'ALL' | 'WITH_CABLE' | 'WITHOUT_CABLE'>('ALL');
-  const [selectedKecamatan, setSelectedKecamatan] = useState('ALL');
-  const [selectedKelurahan, setSelectedKelurahan] = useState('ALL');
+  const [selectedKecamatan, setSelectedKecamatan] = useState(initialKecamatan || 'ALL');
+  const [selectedKelurahan, setSelectedKelurahan] = useState(initialKelurahan || 'ALL');
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedHeight, setSelectedHeight] = useState('ALL'); // ALL, 5m, 6m, 7m, 9m, 12m
   const [selectedCableType, setSelectedCableType] = useState('ALL'); // UDARA, BAWAH_TANAH, TRANSISI_RISER
