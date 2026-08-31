@@ -783,7 +783,7 @@ export default function PinSelectorMap({
       {/* Street View visual verification */}
       {/* ======================================================= */}
       {showStreetViewModal && (
-        <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950 text-white animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[1200] flex flex-col bg-slate-950 text-white animate-in fade-in duration-200">
           {/* Header */}
           <div className="px-3.5 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2.5">
@@ -853,7 +853,7 @@ export default function PinSelectorMap({
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
                 <p className="text-xs font-bold text-slate-300">Memuat Street View...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Bisa diputar 360°, pindah maju/mundur dikunci</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Putar dari area atas. Maju/mundur dikunci.</p>
               </div>
             )}
 
@@ -895,7 +895,7 @@ export default function PinSelectorMap({
                 e.stopPropagation();
                 showLockedStreetViewHint();
               }}
-              className="absolute bottom-0 left-0 right-0 h-[48%] z-20 pointer-events-auto cursor-not-allowed select-none touch-none"
+              className="absolute bottom-0 left-0 right-0 h-[72%] z-20 pointer-events-auto cursor-not-allowed select-none touch-none"
               title="Maju dan mundur dikunci. Geser titik dari peta 2D."
             >
               <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 bg-red-950/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-red-400/45 text-[9px] font-bold text-red-100 shadow-2xl flex items-center gap-1 pointer-events-none">
@@ -911,7 +911,7 @@ export default function PinSelectorMap({
                 </div>
                 <p className="text-xs font-black text-white">Maju / mundur dikunci</p>
                 <p className="mt-1 max-w-[220px] text-[10px] leading-relaxed text-slate-300">
-                  Putar 360° tetap bisa. Ubah titik lewat peta 2D.
+                  Putar dari area atas. Ubah titik lewat peta 2D.
                 </p>
               </div>
             )}
@@ -933,7 +933,7 @@ export default function PinSelectorMap({
                 <span>Verifikasi Posisi Tiang</span>
               </p>
               <p className="mt-0.5 text-[10px] leading-relaxed text-slate-300">
-                Putar 360° untuk cek visual. Jika belum pas, geser titik dari peta.
+                Putar dari area atas untuk cek visual. Jika belum pas, geser titik dari peta.
               </p>
             </div>
 
