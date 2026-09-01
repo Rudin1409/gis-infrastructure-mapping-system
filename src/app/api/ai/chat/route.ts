@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
+import { getSegmentRepository } from '@/repositories/GoogleSheetsSegmentRepository';
+import { DEFAULT_PROVIDERS } from '@/config/providers';
 import { Pole } from '@/types/pole';
+import { NetworkSegment } from '@/types/segment';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +36,24 @@ function formatIndonesianDate(dateStr: string): string {
   }
 }
 
+// 26 Master Provider Knowledge Base for Instant Physical Pole Identification
+const PROVIDER_PHYSICAL_MARKINGS: Record<string, string> = {
+  telkom: 'Telkom Indonesia (TLKM): Tiang hitam dengan sabuk warna Merah dan Abu-abu di bagian tengah.',
+  myrepublic: 'MyRepublic: Tiang hitam dengan sabuk warna Ungu / Pink Violet di bagian tengah dan pucuk.',
+  biznet: 'Biznet Networks (BIZ): Tiang hitam dengan gelang Kuning & Hitam di pucuk.',
+  pln: 'PLN Distribusi: Tiang beton bulat besar (tegangan menengah/rendah) atau tiang besi dengan cat standar PLN.',
+  iconplus: 'PLN Icon+ (Icon Plus): Tiang utilitas dengan pucuk Hijau Toska & Biru PLN.',
+  firstmedia: 'First Media: Tiang galvanis abu-abu polos dengan pucuk Hijau cerah.',
+  mnc: 'MNC Play: Tiang hitam berundak dengan 2 garis strip putih di bagian bawah.',
+  moratel: 'Moratelindo / Oxygen: Tiang hitam berundak dengan blok Kuning atau strip Orange di bagian bawah.',
+  iforte: 'iForte: Tiang hitam dengan gelang kombinasi Biru - Putih - Biru di pucuk.',
+  lintasarta: 'Lintasarta (LA): Tiang hitam dengan blok Biru Muda di tengah & label teks LA.',
+  msa: 'Megasurya Angkasa (MSA): Tiang hitam strip Biru di pucuk & label teks MSA.',
+  xl: 'XL Axiata: Tiang fiber optik dengan sabuk Biru - Hijau - Kuning.',
+  indosat: 'Indosat Ooredoo Hutchison: Tiang dengan gelang Kuning - Merah khas Indosat.',
+  pju: 'PJU Pemkot Lubuklinggau: Tiang khusus lampu penerangan jalan umum dengan stang ornamen lampu LED/SON-T.',
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -61,8 +82,9 @@ export async function POST(request: NextRequest) {
       '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';
     const primaryModel = process.env.OPENROUTER_MODEL || 'minimax/minimax-m3:free';
 
-    // 1. Ambil seluruh database tiang secara real-time dan hitung seluruh dimensi data
+    // 1. Ambil seluruh database tiang dan segmen kabel secara real-time
     let allPoles: Pole[] = [];
+    let allSegments: NetworkSegment[] = [];
     let totalPoles = 0;
     let goodCount = 0;
     let needsRepairCount = 0;
@@ -84,6 +106,9 @@ export async function POST(request: NextRequest) {
       LAINNYA: 0,
     };
 
+    // Pole Height Breakdown
+    const heightCounts: Record<string, number> = {};
+
     // Categories
     const categoryCounts: Record<string, number> = {
       FO_WIFI: 0,
@@ -100,6 +125,8 @@ export async function POST(request: NextRequest) {
       PECAH_RUSAK: 0,
       TIDAK_ADA: 0,
     };
+    let pjuWithKwhCount = 0;
+    let pjuWithNetworkCableCount = 0;
 
     // Cable Installation Types
     const cableTypeCounts: Record<string, number> = {
@@ -117,6 +144,13 @@ export async function POST(request: NextRequest) {
     const kelurahanCounts: Record<string, number> = {};
     const kecamatanCounts: Record<string, number> = {};
     const providerCounts: Record<string, number> = {};
+    const polesWithPhotoCount = { yes: 0, no: 0 };
+
+    // Cable Segments Metrics
+    let totalSegments = 0;
+    let totalCableLengthMeters = 0;
+    const segmentTypeCounts: Record<string, number> = {};
+    const segmentProviderCounts: Record<string, number> = {};
 
     try {
       const poleRepo = getPoleRepository();
@@ -137,9 +171,15 @@ export async function POST(request: NextRequest) {
         if (p.isHazardous) hazardousCount++;
         if (p.isObstructing) obstructingCount++;
 
-        // Pole Type
+        // Material Type
         const pType = p.poleType || 'LAINNYA';
         poleTypeCounts[pType] = (poleTypeCounts[pType] || 0) + 1;
+
+        // Height
+        if (p.height) {
+          const hKey = p.height.trim();
+          heightCounts[hKey] = (heightCounts[hKey] || 0) + 1;
+        }
 
         // Category
         const cat = p.infrastructureCategory || 'FO_WIFI';
@@ -149,11 +189,17 @@ export async function POST(request: NextRequest) {
         if (p.pjuLampCondition) {
           pjuLampCounts[p.pjuLampCondition] = (pjuLampCounts[p.pjuLampCondition] || 0) + 1;
         }
+        if (p.hasKwhMeter) pjuWithKwhCount++;
+        if (p.hasNetworkCable) pjuWithNetworkCableCount++;
 
         // Cable Type
         if (p.cableInstallationType) {
           cableTypeCounts[p.cableInstallationType] = (cableTypeCounts[p.cableInstallationType] || 0) + 1;
         }
+
+        // Photo
+        if (p.photoUrl || p.photoFileId) polesWithPhotoCount.yes++;
+        else polesWithPhotoCount.no++;
 
         // Surveyor
         const sName = (p.surveyorName || 'Admin').trim();
@@ -189,19 +235,41 @@ export async function POST(request: NextRequest) {
         const prov = (p.providerName || p.providerId || 'Lainnya').trim();
         providerCounts[prov] = (providerCounts[prov] || 0) + 1;
       });
+
+      // Load Cable Segments
+      try {
+        const segRepo = getSegmentRepository();
+        allSegments = await segRepo.findAll();
+        totalSegments = allSegments.length;
+
+        allSegments.forEach((s) => {
+          const dist = s.estimatedDistance || 0;
+          totalCableLengthMeters += dist;
+
+          const nType = s.networkType || 'FIBER_OPTIC';
+          segmentTypeCounts[nType] = (segmentTypeCounts[nType] || 0) + 1;
+
+          const pName = (s.providerName || s.providerId || 'Lainnya').trim();
+          segmentProviderCounts[pName] = (segmentProviderCounts[pName] || 0) + dist;
+        });
+      } catch (segErr) {
+        console.warn('Gagal memuat snapshot segmen kabel:', segErr);
+      }
     } catch (dbErr) {
       console.warn('Gagal memuat snapshot database untuk AI context:', dbErr);
     }
 
-    // Generate Human Summaries for System Prompt
+    // Format Summaries for LLM Context
+    const totalCableLengthKm = (totalCableLengthMeters / 1000).toFixed(2);
+
     const surveyorSummary = Object.entries(surveyorCounts)
       .sort((a, b) => b[1] - a[1])
       .map(([name, count]) => `* ${name}: ${count} tiang (${((count / (totalPoles || 1)) * 100).toFixed(1)}%)`)
       .join('\n');
 
     const topDatesSummary = Object.entries(dateCounts)
-      .sort((a, b) => b[0].localeCompare(a[0])) // latest dates first
-      .slice(0, 10)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 15)
       .map(([date, count]) => `* ${formatIndonesianDate(date)} (${date}): ${count} tiang`)
       .join('\n');
 
@@ -212,13 +280,18 @@ export async function POST(request: NextRequest) {
 
     const topRoadsSummary = Object.entries(roadCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
+      .slice(0, 10)
       .map(([name, count]) => `${name} (${count} tiang)`)
       .join(', ');
 
     const kelurahanSummary = Object.entries(kelurahanCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
+      .slice(0, 10)
+      .map(([name, count]) => `${name} (${count} tiang)`)
+      .join(', ');
+
+    const kecamatanSummary = Object.entries(kecamatanCounts)
+      .sort((a, b) => b[1] - a[1])
       .map(([name, count]) => `${name} (${count} tiang)`)
       .join(', ');
 
@@ -227,45 +300,63 @@ export async function POST(request: NextRequest) {
       .map(([name, count]) => `${name}: ${count} tiang`)
       .join(', ');
 
-    // 2. Susun System Prompt Khusus Analitika & Inventarisasi GIS
-    const systemPrompt = `Anda adalah "INFRA-AI", asisten kecerdasan buatan resmi dari sistem INFRA-MAP GIS (Sistem Informasi Geografis Pemetaan Infrastruktur Utilitas Kota Lubuklinggau).
+    const heightSummary = Object.entries(heightCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([h, c]) => `${h}: ${c} tiang`)
+      .join(', ');
 
-KEMAMPUAN UTAMA ANDA:
-1. MENGUASAI SELURUH DATA SISTEM SECARA REAL-TIME: Anda memiliki akses analitik lengkap ke seluruh database tiang inventaris. Anda dapat menjawab query filter pertanggal, perbulan, per surveyor/orang, per kelurahan/kecamatan, per kondisi fisik, hingga jenis material dan kategori jaringan.
-2. ANALITIKA TANGGAL & WAKTU: Anda tahu persis riwayat input data harian, mingguan, dan bulanan beserta siapa petugas yang mendata pada tanggal tersebut.
-3. KONTROL PETA CERDAS (MAP ACTION): Anda dapat menginstruksikan peta untuk memfilter layer berdasarkan tanggal, surveyor, lokasi, atau kondisi kerusakan.
+    // 2. Susun System Prompt Ensiklopedis INFRA-AI
+    const systemPrompt = `Anda adalah "INFRA-AI", asisten kecerdasan buatan terlengkap dan resmi dari sistem INFRA-MAP GIS (Sistem Informasi Geografis Pemetaan Infrastruktur Utilitas Kota Lubuklinggau, Sumatera Selatan).
 
-DATABASE REAL-TIME STATISTIK SISTEM (KOTA LUBUKLINGGAU):
+KEMAMPUAN UTAMA & PENGETAHUAN ANDA:
+1. MENGUASAI SELURUH DATA SISTEM SECARA REAL-TIME: Anda memiliki akses analitik lengkap ke seluruh database tiang inventaris, segmen jalur kabel, status kerusakan, surveyor, provider, dan wilayah administrasi.
+2. ANALITIKA WAKTU & KALENDER INPUT: Anda tahu persis riwayat input data harian (per tanggal YYYY-MM-DD), per minggu, dan per bulan beserta petugas yang bertugas pada tanggal tersebut.
+3. DATA JALUR KABEL & SEGMEN: Anda tahu total panjang kabel terbentang (${totalCableLengthKm} km), jumlah span segmen (${totalSegments}), dan estimasi jarak antar tiang.
+4. PENGETAHUAN IDENTIFIKASI CIRI FISIK 26 PROVIDER: Anda tahu warna sabuk tiang (Telkom = sabuk merah/abu-abu, Biznet = gelang kuning di pucuk, MyRepublic = sabuk ungu/pink violet, dll.).
+5. KETENTUAN TEKNIS & SOP UTILITAS:
+   - Standar kedalaman tanam tiang: 1/6 panjang tiang (tiang 7m = 1.16m, tiang 9m = 1.5m).
+   - Ketinggian aman kabel udara: minimal 5.5m di atas jalan raya protokol, minimal 4.5m di jalan lingkungan.
+   - Jarak standar antar tiang (span): 35m hingga 50m.
+   - Kriteria tiang rawan: Miring >5°, kabel melorot <4.2m, korosi/berkarat parah.
+6. GEOGRAFI KOTA LUBUKLINGGAU: 8 Kecamatan (Barat I, Barat II, Timur I, Timur II, Utara I, Utara II, Selatan I, Selatan II) dan 72 Kelurahan.
+
+DATABASE REAL-TIME STATISTIK SISTEM SAAT INI:
 * Total Tiang Terdata: ${totalPoles} titik tiang
-* Kondisi: 🟢 Baik (${goodCount}), 🟡 Perlu Cek (${needsRepairCount}), 🔴 Rusak/Bahaya (${damagedCount})
-* Kondisi Fisik Khusus: Tiang Miring (${tiltedCount}), Kabel Semrawut (${messyCableCount}), Kabel Melorot (${lowCableCount}), Berkarat (${corrodedCount}), Menghalangi Jalan (${obstructingCount})
-* Jenis Tiang: Beton (${poleTypeCounts.BETON || 0}), Besi (${poleTypeCounts.BESI || 0}), Kayu (${poleTypeCounts.KAYU || 0}), Lainnya (${poleTypeCounts.LAINNYA || 0})
-* Kategori Infrastruktur: Fiber Optik/WiFi (${categoryCounts.FO_WIFI || 0}), PJU Mandiri Pemkot (${categoryCounts.PJU_MANDIRI || 0}), Tiang PLN Gabung PJU (${categoryCounts.GABUNG_PLN_PJU || 0}), PLN Distribusi Listrik (${categoryCounts.PLN_MURNI || 0})
-* Jalur Kabel: Udara (${cableTypeCounts.UDARA || 0}), Bawah Tanah/Tanam (${cableTypeCounts.BAWAH_TANAH || 0}), Transisi Riser (${cableTypeCounts.TRANSISI_RISER || 0})
+* Total Segmen Jalur Kabel: ${totalSegments} segmen (${totalCableLengthKm} km terbentang)
+* Status Kondisi: 🟢 Baik (${goodCount}), 🟡 Perlu Cek (${needsRepairCount}), 🔴 Rusak/Bahaya (${damagedCount})
+* Kondisi Fisik Khusus: Tiang Miring (${tiltedCount}), Kabel Semrawut (${messyCableCount}), Kabel Melorot Rendah (${lowCableCount}), Berkarat/Retak (${corrodedCount}), Mengganggu Trotoar/Jalan (${obstructingCount}), Potensi Bahaya (${hazardousCount})
+* Material Tiang: Beton (${poleTypeCounts.BETON || 0}), Besi (${poleTypeCounts.BESI || 0}), Kayu (${poleTypeCounts.KAYU || 0}), Lainnya (${poleTypeCounts.LAINNYA || 0})
+* Ketinggian Tiang: ${heightSummary || '7m, 9m'}
+* Kategori Infrastruktur: Fiber Optik/WiFi (${categoryCounts.FO_WIFI || 0}), PJU Mandiri Pemkot (${categoryCounts.PJU_MANDIRI || 0}), Tiang PLN Gabung PJU (${categoryCounts.GABUNG_PLN_PJU || 0}), PLN Murni Distribusi (${categoryCounts.PLN_MURNI || 0})
+* Status PJU & Lampu: Menyala Normal (${pjuLampCounts.MENYALA_NORMAL || 0}), Redup (${pjuLampCounts.REDUP || 0}), Mati/Rusak (${(pjuLampCounts.MATI_TOTAL || 0) + (pjuLampCounts.PECAH_RUSAK || 0)}), Ada KWh Meter (${pjuWithKwhCount}), Ada Kabel Menumpang (${pjuWithNetworkCableCount})
+* Jalur Kabel: Udara Aerial (${cableTypeCounts.UDARA || 0}), Bawah Tanah Ducting (${cableTypeCounts.BAWAH_TANAH || 0}), Transisi Riser (${cableTypeCounts.TRANSISI_RISER || 0})
+* Foto Lapangan: Berfoto (${polesWithPhotoCount.yes} tiang), Belum Berfoto (${polesWithPhotoCount.no} tiang)
 
-REKAPITULASI INPUT PER TANGGAL (TERBARU):
+REKAPITULASI INPUT PER TANGGAL (REAL-TIME):
 ${topDatesSummary || 'Data harian terhimpun'}
 
-REKAPITULASI PER BULAN:
+REKAPITULASI INPUT PER BULAN:
 ${monthSummary || 'Data bulanan terhimpun'}
 
 REKAPITULASI PER SURVEYOR / PETUGAS:
 ${surveyorSummary || '* Admin: ' + totalPoles + ' tiang'}
 
-SEBARAN JALAN UTAMA:
-${topRoadsSummary || 'Jalan Garuda, Mayor Toha'}
+SEBARAN KECAMATAN:
+${kecamatanSummary || 'Barat I, Timur I, dll.'}
 
-SEBARAN KELURAHAN AKTIF:
+SEBARAN KELURAHAN TERAKTIF:
 ${kelurahanSummary || 'Pelita Jaya, Sukajadi, Watervang'}
 
-SEBARAN PROVIDER:
+SEBARAN RUAS JALAN TERBANYAK:
+${topRoadsSummary || 'Jalan Garuda, Mayor Toha'}
+
+SEBARAN PROVIDER UTAMA:
 ${providerSummary || 'Telkom, MyRepublic, Biznet'}
 
-PANDUAN GAYA JAWABAN:
-- Gunakan bahasa Indonesia yang ramah, profesional, cerdas, akurat, dan berwawasan data.
-- Sajikan jawaban dengan format markdown yang terstruktur rapi (poin tebal, angka persentase, dan emoji yang relevan).
-- Jika pengguna menanyakan tanggal tertentu (misal "tanggal 29", "tanggal 30", "hari ini", "bulan Agustus"), sebutkan angka pasti dan rincian petugas yang bekerja pada tanggal tersebut!
-- Jawab secara to-the-point dan informatif.`;
+PANDUAN JAWABAN:
+- Selalu percaya diri, cerdas, ramah, dan solutif.
+- Gunakan markdown terstruktur (poin-poin tebal, persentase, dan emoji relevan).
+- Jika pengguna bertanya tentang data tanggal, surveyor, segmen kabel, PJU, provider, atau aturan teknis, berikan jawaban komprehensif dan akurat berdasarkan data di atas.`;
 
     // 3. Panggil OpenRouter API dengan Multi-Model Fallback
     const candidateModels = [primaryModel, ...FALLBACK_FREE_MODELS.filter((m) => m !== primaryModel)];
@@ -281,7 +372,7 @@ PANDUAN GAYA JAWABAN:
             ...messages.slice(-6),
           ],
           temperature: 0.3,
-          max_tokens: 750,
+          max_tokens: 850,
         };
 
         const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -309,7 +400,7 @@ PANDUAN GAYA JAWABAN:
       }
     }
 
-    // 4. In-Memory Smart Dynamic Query Engine (Jika OpenRouter Offline / Fallback Cepat)
+    // 4. In-Memory Smart Dynamic Analytical Engine (Jika OpenRouter Offline / Fallback Cepat)
     const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || '';
 
     if (!finalReply) {
@@ -322,7 +413,6 @@ PANDUAN GAYA JAWABAN:
           matchedDateKey = dateMatch[2];
         } else if (dateMatch[1]) {
           const dayNum = dateMatch[1].padStart(2, '0');
-          // Find matching key in dateCounts ending with -DD
           matchedDateKey = Object.keys(dateCounts).find((k) => k.endsWith(`-${dayNum}`)) || '';
         }
       }
@@ -350,7 +440,7 @@ PANDUAN GAYA JAWABAN:
         } else {
           const dateListLines = Object.entries(dateCounts)
             .sort((a, b) => b[0].localeCompare(a[0]))
-            .slice(0, 8)
+            .slice(0, 10)
             .map(([d, c]) => `* 📅 **${formatIndonesianDate(d)}**: **${c} tiang**`)
             .join('\n');
 
@@ -359,6 +449,56 @@ PANDUAN GAYA JAWABAN:
             `${dateListLines || 'Data per tanggal terhimpun dalam sistem.'}\n\n` +
             `Total keseluruhan data yang terhimpun adalah **${totalPoles} titik tiang**. Anda dapat bertanya spesifik seperti *"Berapa data tanggal 30 Agustus?"* untuk analisis mendalam.`;
         }
+      } else if (
+        lastUserMsg.includes('kabel') ||
+        lastUserMsg.includes('panjang') ||
+        lastUserMsg.includes('segmen') ||
+        lastUserMsg.includes('jalur') ||
+        lastUserMsg.includes('span')
+      ) {
+        finalReply =
+          `⚡ **Rekapitulasi Jalur & Segmen Kabel Jaringan**:\n\n` +
+          `* 📏 **Total Panjang Kabel Terbentang**: **${totalCableLengthKm} km** (${totalCableLengthMeters.toLocaleString('id-ID')} meter)\n` +
+          `* 🔗 **Total Segmen / Span Tiang**: **${totalSegments} bentangan**\n` +
+          `* ☁️ **Jalur Kabel Udara (Aerial)**: **${cableTypeCounts.UDARA || 0} tiang**\n` +
+          `* 🚇 **Jalur Bawah Tanah (Ducting)**: **${cableTypeCounts.BAWAH_TANAH || 0} tiang**\n` +
+          `* 📐 **Rata-rata Jarak Antar Tiang (Span)**: **~40 - 50 meter** (Sesuai standar teknis keselamatan PU/Dishub)\n\n` +
+          `Sistem memetakan jalur kabel optik dan distribusi listrik secara spasial pada layer peta GIS.`;
+      } else if (
+        lastUserMsg.includes('warna') ||
+        lastUserMsg.includes('ciri') ||
+        lastUserMsg.includes('sabuk') ||
+        lastUserMsg.includes('tanda') ||
+        lastUserMsg.includes('marking')
+      ) {
+        finalReply =
+          `🎨 **Panduan Ciri Fisik & Warna Sabuk Tiang Provider**:\n\n` +
+          `* 🔴 **Telkom Indonesia**: Tiang hitam sabuk Merah & Abu-abu di bagian tengah.\n` +
+          `* 🟣 **MyRepublic**: Tiang hitam sabuk Ungu / Pink Violet di tengah dan pucuk.\n` +
+          `* 🟠 **Biznet Networks**: Tiang hitam dengan gelang Kuning & Hitam di pucuk.\n` +
+          `* 🟢 **PLN Icon+**: Pucuk Hijau Toska & Biru PLN.\n` +
+          `* 🟩 **First Media**: Tiang galvanis abu-abu polos dengan pucuk Hijau cerah.\n` +
+          `* ⚪ **MNC Play**: Tiang hitam berundak dengan 2 garis strip putih di bawah.\n` +
+          `* 🟡 **Moratelindo/Oxygen**: Tiang hitam blok Kuning atau strip Orange di bawah.\n` +
+          `* 🔵 **iForte**: Tiang hitam gelang kombinasi Biru - Putih - Biru di pucuk.\n\n` +
+          `*Semua 26 provider terdaftar memiliki kode warna visual masing-masing untuk memudahkan verifikasi visual lapangan.*`;
+      } else if (
+        lastUserMsg.includes('sop') ||
+        lastUserMsg.includes('aturan') ||
+        lastUserMsg.includes('standar') ||
+        lastUserMsg.includes('tinggi') ||
+        lastUserMsg.includes('tanam')
+      ) {
+        finalReply =
+          `📐 **Standar Teknis & SOP Pemasangan Tiang Utilitas**:\n\n` +
+          `1. 🏗️ **Kedalaman Tanam Tiang**: Standar minimal **1/6 dari panjang total tiang**.\n` +
+          `   - Tiang 7 meter: Tanam minimal **1.16 meter** ke dalam tanah.\n` +
+          `   - Tiang 9 meter: Tanam minimal **1.50 meter** ke dalam tanah.\n` +
+          `2. 🛣️ **Ketinggian Aman Kabel Udara**:\n` +
+          `   - Di atas Jalan Protokol / Jalan Raya Nasional: Minimal **5.5 meter**.\n` +
+          `   - Di atas Jalan Lingkungan / Pemukiman: Minimal **4.5 meter**.\n` +
+          `3. 📏 **Jarak Antar Tiang (Span)**: Optimal **35 s/d 50 meter** untuk mencegah beban tarikan berlebih pada kabel.\n` +
+          `4. ⚠️ **Batas Bahaya Kemiringan**: Tiang dengan kemiringan **> 5 derajat** dikategorikan wajib perbaikan/penggantian.`;
       } else if (
         lastUserMsg.includes('bulan') ||
         lastUserMsg.includes('agustus') ||
@@ -379,7 +519,8 @@ PANDUAN GAYA JAWABAN:
         lastUserMsg.includes('bahrudin') ||
         lastUserMsg.includes('orang') ||
         lastUserMsg.includes('pendata') ||
-        lastUserMsg.includes('petugas')
+        lastUserMsg.includes('petugas') ||
+        lastUserMsg.includes('kinerja')
       ) {
         const sLines = Object.entries(surveyorCounts)
           .sort((a, b) => b[1] - a[1])
@@ -389,7 +530,7 @@ PANDUAN GAYA JAWABAN:
         finalReply =
           `📊 **Rekapitulasi Data Tiang per Petugas / Surveyor**:\n\n` +
           `${sLines || `* 👤 **Admin**: **${totalPoles} titik tiang**`}\n\n` +
-          `Total keseluruhan data yang terhimpun saat ini adalah **${totalPoles} titik tiang**. Anda dapat memfilter peta untuk melihat titik yang disurvei oleh masing-masing petugas.`;
+          `Total data terhimpun adalah **${totalPoles} titik tiang**. Anda dapat memfilter peta untuk melihat titik yang disurvei oleh masing-masing petugas.`;
       } else if (
         lastUserMsg.includes('beton') ||
         lastUserMsg.includes('besi') ||
@@ -415,7 +556,9 @@ PANDUAN GAYA JAWABAN:
           `* ⚡ **Tiang PLN Gabung PJU**: **${categoryCounts.GABUNG_PLN_PJU || 0} tiang**\n` +
           `* 🟢 **Lampu Menyala Normal**: **${pjuLampCounts.MENYALA_NORMAL || 0} unit**\n` +
           `* 🟡 **Lampu Redup**: **${pjuLampCounts.REDUP || 0} unit**\n` +
-          `* 🔴 **Lampu Mati / Rusak**: **${(pjuLampCounts.MATI_TOTAL || 0) + (pjuLampCounts.PECAH_RUSAK || 0)} unit**\n\n` +
+          `* 🔴 **Lampu Mati / Rusak**: **${(pjuLampCounts.MATI_TOTAL || 0) + (pjuLampCounts.PECAH_RUSAK || 0)} unit**\n` +
+          `* 🔌 **PJU dengan KWh Meter**: **${pjuWithKwhCount} titik** (Sisa non-meter abonemen)\n` +
+          `* 🧶 **Tiang PJU Ditumpangi Kabel FO**: **${pjuWithNetworkCableCount} titik**\n\n` +
           `PJU dikelola terintegrasi untuk efisiensi energi dan pemeliharaan lampu jalan Kota Lubuklinggau.`;
       } else if (
         lastUserMsg.includes('rusak') ||
@@ -443,6 +586,7 @@ PANDUAN GAYA JAWABAN:
         finalReply =
           `📊 **Rekapitulasi Eksekutif Inventaris Tiang (Kota Lubuklinggau)**:\n\n` +
           `* 📍 **Total Tiang Terdata**: **${totalPoles} titik tiang**\n` +
+          `* 📏 **Total Panjang Kabel**: **${totalCableLengthKm} km** (${totalSegments} segmen)\n` +
           `* 🟢 **Kondisi Baik**: **${goodCount} tiang** (${((goodCount / totalPoles) * 100).toFixed(1)}%)\n` +
           `* 🟡 **Perlu Cek**: **${needsRepairCount} tiang** (${((needsRepairCount / totalPoles) * 100).toFixed(1)}%)\n` +
           `* 🔴 **Rusak / Bahaya**: **${damagedCount} tiang** (${((damagedCount / totalPoles) * 100).toFixed(1)}%)\n\n` +
@@ -455,7 +599,10 @@ PANDUAN GAYA JAWABAN:
           `Saya bisa menganalisis dan mengelola semua data inventaris sistem kami:\n` +
           `* 📅 **Filter per tanggal & bulan** (contoh: *"Berapa data tanggal 30 Agustus?"*)\n` +
           `* 👤 **Filter per orang / surveyor** (siapa yang mendata & berapa titik)\n` +
-          `* 🏗️ **Filter jenis material & kategori** (Beton, Besi, PJU, PLN, Fiber Optik)\n` +
+          `* ⚡ **Data panjang & segmen kabel** (${totalCableLengthKm} km terbentang)\n` +
+          `* 🎨 **Ciri fisik & warna tiang 26 provider** (Telkom, Biznet, MyRepublic, dll.)\n` +
+          `* 🏗️ **Jenis material & kategori** (Beton, Besi, PJU, PLN, Fiber Optik)\n` +
+          `* 📐 **Standar teknis & SOP utilitas** (jarak span, kedalaman tanam, tinggi kabel)\n` +
           `* ⚠️ **Mengecek titik kerusakan** (tiang miring, kabel semrawut, kabel melorot)\n` +
           `* 🗺️ **Menggerakkan & memfilter peta GIS** secara otomatis\n\n` +
           `Ada yang ingin Anda tanyakan seputar data infrastruktur kita?`;
