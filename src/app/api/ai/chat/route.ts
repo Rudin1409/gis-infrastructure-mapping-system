@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
+import { Pole } from '@/types/pole';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,22 @@ const FALLBACK_FREE_MODELS = [
   'google/gemma-4-31b-it:free',
   'google/gemma-4-26b-a4b-it:free',
 ];
+
+// Helper to format ISO or YYYY-MM-DD to Indonesian human date
+function formatIndonesianDate(dateStr: string): string {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr.length === 10 ? `${dateStr}T00:00:00Z` : dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  } catch {
+    return dateStr;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,69 +61,153 @@ export async function POST(request: NextRequest) {
       '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';
     const primaryModel = process.env.OPENROUTER_MODEL || 'minimax/minimax-m3:free';
 
-    // 1. Ambil ringkasan statistik real-time dari database
-    let totalPoles = 648;
-    let goodCount = 604;
-    let needsRepairCount = 35;
-    let damagedCount = 9;
+    // 1. Ambil seluruh database tiang secara real-time dan hitung seluruh dimensi data
+    let allPoles: Pole[] = [];
+    let totalPoles = 0;
+    let goodCount = 0;
+    let needsRepairCount = 0;
+    let damagedCount = 0;
+
+    // Physical Defects
     let tiltedCount = 0;
     let messyCableCount = 0;
     let lowCableCount = 0;
+    let corrodedCount = 0;
+    let hazardousCount = 0;
+    let obstructingCount = 0;
+
+    // Pole Material Types
+    const poleTypeCounts: Record<string, number> = {
+      BETON: 0,
+      BESI: 0,
+      KAYU: 0,
+      LAINNYA: 0,
+    };
+
+    // Categories
+    const categoryCounts: Record<string, number> = {
+      FO_WIFI: 0,
+      PJU_MANDIRI: 0,
+      GABUNG_PLN_PJU: 0,
+      PLN_MURNI: 0,
+    };
+
+    // PJU Lamp Conditions
+    const pjuLampCounts: Record<string, number> = {
+      MENYALA_NORMAL: 0,
+      REDUP: 0,
+      MATI_TOTAL: 0,
+      PECAH_RUSAK: 0,
+      TIDAK_ADA: 0,
+    };
+
+    // Cable Installation Types
+    const cableTypeCounts: Record<string, number> = {
+      UDARA: 0,
+      BAWAH_TANAH: 0,
+      TRANSISI_RISER: 0,
+    };
+
+    // Multi-dimensional Groupings
     const surveyorCounts: Record<string, number> = {};
+    const dateCounts: Record<string, number> = {};
+    const monthCounts: Record<string, number> = {};
+    const surveyorByDate: Record<string, Record<string, number>> = {};
     const roadCounts: Record<string, number> = {};
     const kelurahanCounts: Record<string, number> = {};
+    const kecamatanCounts: Record<string, number> = {};
     const providerCounts: Record<string, number> = {};
-    let sampleDamagedPoles: string[] = [];
 
     try {
       const poleRepo = getPoleRepository();
-      const allPoles = await poleRepo.findAll();
+      allPoles = await poleRepo.findAll();
       totalPoles = allPoles.length;
-      goodCount = allPoles.filter((p) => p.condition === 'GOOD').length;
-      needsRepairCount = allPoles.filter((p) => p.condition === 'NEEDS_REPAIR').length;
-      damagedCount = allPoles.filter((p) => p.condition === 'DAMAGED').length;
-      tiltedCount = allPoles.filter((p) => p.isTilted).length;
-      messyCableCount = allPoles.filter((p) => p.isMessyCable).length;
-      lowCableCount = allPoles.filter((p) => p.isLowCable).length;
 
-      // Group by Surveyor
       allPoles.forEach((p) => {
+        // Condition
+        if (p.condition === 'GOOD') goodCount++;
+        else if (p.condition === 'NEEDS_REPAIR') needsRepairCount++;
+        else if (p.condition === 'DAMAGED') damagedCount++;
+
+        // Defects
+        if (p.isTilted) tiltedCount++;
+        if (p.isMessyCable) messyCableCount++;
+        if (p.isLowCable) lowCableCount++;
+        if (p.isCorroded) corrodedCount++;
+        if (p.isHazardous) hazardousCount++;
+        if (p.isObstructing) obstructingCount++;
+
+        // Pole Type
+        const pType = p.poleType || 'LAINNYA';
+        poleTypeCounts[pType] = (poleTypeCounts[pType] || 0) + 1;
+
+        // Category
+        const cat = p.infrastructureCategory || 'FO_WIFI';
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+
+        // PJU Lamp
+        if (p.pjuLampCondition) {
+          pjuLampCounts[p.pjuLampCondition] = (pjuLampCounts[p.pjuLampCondition] || 0) + 1;
+        }
+
+        // Cable Type
+        if (p.cableInstallationType) {
+          cableTypeCounts[p.cableInstallationType] = (cableTypeCounts[p.cableInstallationType] || 0) + 1;
+        }
+
+        // Surveyor
         const sName = (p.surveyorName || 'Admin').trim();
         surveyorCounts[sName] = (surveyorCounts[sName] || 0) + 1;
 
+        // Date (YYYY-MM-DD)
+        const rawDate = (p.surveyDate || p.createdAt || '').slice(0, 10);
+        if (rawDate && rawDate.length === 10) {
+          dateCounts[rawDate] = (dateCounts[rawDate] || 0) + 1;
+
+          const monthKey = rawDate.slice(0, 7); // YYYY-MM
+          monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
+
+          if (!surveyorByDate[rawDate]) surveyorByDate[rawDate] = {};
+          surveyorByDate[rawDate][sName] = (surveyorByDate[rawDate][sName] || 0) + 1;
+        }
+
+        // Spatial (Road, Kelurahan, Kecamatan)
         if (p.road) {
           const rName = p.road.trim();
           roadCounts[rName] = (roadCounts[rName] || 0) + 1;
         }
-
         if (p.kelurahan) {
           const kName = p.kelurahan.trim();
           kelurahanCounts[kName] = (kelurahanCounts[kName] || 0) + 1;
         }
+        if (p.kecamatan) {
+          const kecName = p.kecamatan.trim();
+          kecamatanCounts[kecName] = (kecamatanCounts[kecName] || 0) + 1;
+        }
 
+        // Provider
         const prov = (p.providerName || p.providerId || 'Lainnya').trim();
         providerCounts[prov] = (providerCounts[prov] || 0) + 1;
       });
-
-      const damagedPoles = allPoles
-        .filter((p) => p.condition === 'DAMAGED' || p.condition === 'NEEDS_REPAIR' || p.isTilted || p.isLowCable)
-        .slice(0, 6);
-
-      sampleDamagedPoles = damagedPoles.map(
-        (p) =>
-          `- ${p.poleCode || p.id} (${p.road || 'Jalan Umum'}, ${p.kelurahan || 'Pelita Jaya'}, Surveyor: ${p.surveyorName || 'Admin'}): Kondisi ${
-            p.condition === 'DAMAGED' ? '🔴 Rusak/Bahaya' : '🟡 Perlu Cek'
-          }${p.isTilted ? ', Tiang Miring' : ''}${p.isMessyCable ? ', Kabel Semrawut' : ''}${
-            p.isLowCable ? ', Kabel Melorot' : ''
-          }`
-      );
     } catch (dbErr) {
       console.warn('Gagal memuat snapshot database untuk AI context:', dbErr);
     }
 
+    // Generate Human Summaries for System Prompt
     const surveyorSummary = Object.entries(surveyorCounts)
       .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => `* ${name}: ${count} titik tiang`)
+      .map(([name, count]) => `* ${name}: ${count} tiang (${((count / (totalPoles || 1)) * 100).toFixed(1)}%)`)
+      .join('\n');
+
+    const topDatesSummary = Object.entries(dateCounts)
+      .sort((a, b) => b[0].localeCompare(a[0])) // latest dates first
+      .slice(0, 10)
+      .map(([date, count]) => `* ${formatIndonesianDate(date)} (${date}): ${count} tiang`)
+      .join('\n');
+
+    const monthSummary = Object.entries(monthCounts)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([month, count]) => `* Bulan ${month}: ${count} tiang`)
       .join('\n');
 
     const topRoadsSummary = Object.entries(roadCounts)
@@ -117,41 +218,54 @@ export async function POST(request: NextRequest) {
 
     const kelurahanSummary = Object.entries(kelurahanCounts)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
+      .slice(0, 8)
       .map(([name, count]) => `${name} (${count} tiang)`)
       .join(', ');
 
-    // 2. Susun System Prompt Khusus Pendataan & Inventarisasi GIS
-    const systemPrompt = `Anda adalah "INFRA-AI", asisten cerdas bawaan resmi dari sistem INFRA-MAP GIS (Sistem Informasi Geografis Pemetaan Infrastruktur Utilitas Kota Lubuklinggau).
+    const providerSummary = Object.entries(providerCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => `${name}: ${count} tiang`)
+      .join(', ');
+
+    // 2. Susun System Prompt Khusus Analitika & Inventarisasi GIS
+    const systemPrompt = `Anda adalah "INFRA-AI", asisten kecerdasan buatan resmi dari sistem INFRA-MAP GIS (Sistem Informasi Geografis Pemetaan Infrastruktur Utilitas Kota Lubuklinggau).
 
 KEMAMPUAN UTAMA ANDA:
-1. MENGELOLA SEMUA DATA SECARA DINAMIS & MANDIRI: Anda menguasai seluruh database tiang secara real-time. Anda bisa menjawab query apa pun, termasuk jumlah data per orang/surveyor, sebaran jalan, kondisi kerusakan, hingga provider.
-2. FILTER PER ORANG / SURVEYOR: Anda tahu persis siapa saja yang menginput data dan berapa jumlah titik pin yang sudah mereka data.
-3. KONTROL PETA CERDAS: Anda dapat menyertakan perintah aksi untuk memfilter peta secara otomatis sesuai permintaan user.
+1. MENGUASAI SELURUH DATA SISTEM SECARA REAL-TIME: Anda memiliki akses analitik lengkap ke seluruh database tiang inventaris. Anda dapat menjawab query filter pertanggal, perbulan, per surveyor/orang, per kelurahan/kecamatan, per kondisi fisik, hingga jenis material dan kategori jaringan.
+2. ANALITIKA TANGGAL & WAKTU: Anda tahu persis riwayat input data harian, mingguan, dan bulanan beserta siapa petugas yang mendata pada tanggal tersebut.
+3. KONTROL PETA CERDAS (MAP ACTION): Anda dapat menginstruksikan peta untuk memfilter layer berdasarkan tanggal, surveyor, lokasi, atau kondisi kerusakan.
 
-DATA SNAPSHOT SISTEM SAAT INI (REAL-TIME KOTA LUBUKLINGGAU):
-- Total Tiang Terdata: ${totalPoles} titik tiang
-- Kondisi Baik: ${goodCount} tiang (🟢 Normal & Aman)
-- Kondisi Perlu Cek: ${needsRepairCount} tiang (🟡 Perlu Perhatian)
-- Kondisi Rusak/Bahaya: ${damagedCount} tiang (🔴 Kritis / Bahaya)
-- Tiang Miring: ${tiltedCount} tiang
-- Kabel Semrawut: ${messyCableCount} tiang
-- Kabel Melorot/Rendah: ${lowCableCount} tiang
+DATABASE REAL-TIME STATISTIK SISTEM (KOTA LUBUKLINGGAU):
+* Total Tiang Terdata: ${totalPoles} titik tiang
+* Kondisi: 🟢 Baik (${goodCount}), 🟡 Perlu Cek (${needsRepairCount}), 🔴 Rusak/Bahaya (${damagedCount})
+* Kondisi Fisik Khusus: Tiang Miring (${tiltedCount}), Kabel Semrawut (${messyCableCount}), Kabel Melorot (${lowCableCount}), Berkarat (${corrodedCount}), Menghalangi Jalan (${obstructingCount})
+* Jenis Tiang: Beton (${poleTypeCounts.BETON || 0}), Besi (${poleTypeCounts.BESI || 0}), Kayu (${poleTypeCounts.KAYU || 0}), Lainnya (${poleTypeCounts.LAINNYA || 0})
+* Kategori Infrastruktur: Fiber Optik/WiFi (${categoryCounts.FO_WIFI || 0}), PJU Mandiri Pemkot (${categoryCounts.PJU_MANDIRI || 0}), Tiang PLN Gabung PJU (${categoryCounts.GABUNG_PLN_PJU || 0}), PLN Distribusi Listrik (${categoryCounts.PLN_MURNI || 0})
+* Jalur Kabel: Udara (${cableTypeCounts.UDARA || 0}), Bawah Tanah/Tanam (${cableTypeCounts.BAWAH_TANAH || 0}), Transisi Riser (${cableTypeCounts.TRANSISI_RISER || 0})
 
-RINCIAN PENDATAAN PER SURVEYOR / PETUGAS (REAL-TIME):
+REKAPITULASI INPUT PER TANGGAL (TERBARU):
+${topDatesSummary || 'Data harian terhimpun'}
+
+REKAPITULASI PER BULAN:
+${monthSummary || 'Data bulanan terhimpun'}
+
+REKAPITULASI PER SURVEYOR / PETUGAS:
 ${surveyorSummary || '* Admin: ' + totalPoles + ' tiang'}
 
-SEBARAN JALAN UTAMA TERDATA:
-${topRoadsSummary || 'Jalan Garuda, Jalan Mayor Toha, Jalan Depati Said'}
+SEBARAN JALAN UTAMA:
+${topRoadsSummary || 'Jalan Garuda, Mayor Toha'}
 
 SEBARAN KELURAHAN AKTIF:
-${kelurahanSummary || 'Pelita Jaya, Lubuklinggau Barat I'}
+${kelurahanSummary || 'Pelita Jaya, Sukajadi, Watervang'}
+
+SEBARAN PROVIDER:
+${providerSummary || 'Telkom, MyRepublic, Biznet'}
 
 PANDUAN GAYA JAWABAN:
-- Gunakan bahasa Indonesia yang profesional, ramah, ringkas, jelas, dan percaya diri sebagai asisten bawaan GIS.
-- Format teks dengan rapi menggunakan markdown (tebal, poin-poin, emoji yang relevan).
-- Jika pengguna menanyakan data orang/surveyor tertentu (misal Admin, Bahrudin, dll), sebutkan jumlah titik tiang yang telah mereka input secara spesifik!
-- Jawab secara to-the-point dan hemat kata agar nyaman dibaca.`;
+- Gunakan bahasa Indonesia yang ramah, profesional, cerdas, akurat, dan berwawasan data.
+- Sajikan jawaban dengan format markdown yang terstruktur rapi (poin tebal, angka persentase, dan emoji yang relevan).
+- Jika pengguna menanyakan tanggal tertentu (misal "tanggal 29", "tanggal 30", "hari ini", "bulan Agustus"), sebutkan angka pasti dan rincian petugas yang bekerja pada tanggal tersebut!
+- Jawab secara to-the-point dan informatif.`;
 
     // 3. Panggil OpenRouter API dengan Multi-Model Fallback
     const candidateModels = [primaryModel, ...FALLBACK_FREE_MODELS.filter((m) => m !== primaryModel)];
@@ -164,10 +278,10 @@ PANDUAN GAYA JAWABAN:
           model: modelToTry,
           messages: [
             { role: 'system', content: systemPrompt },
-            ...messages.slice(-6), // Hanya kirim 6 pesan terakhir agar sangat hemat token
+            ...messages.slice(-6),
           ],
-          temperature: 0.4,
-          max_tokens: 650,
+          temperature: 0.3,
+          max_tokens: 750,
         };
 
         const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -187,34 +301,139 @@ PANDUAN GAYA JAWABAN:
           if (text) {
             finalReply = text;
             usedModel = modelToTry;
-            break; // Berhasil dapat jawaban!
+            break;
           }
         }
       } catch (tryErr) {
-        console.warn(`Model ${modelToTry} gagal, mencoba model cadangan:`, tryErr);
+        console.warn(`Model ${modelToTry} gagal, mencoba fallback:`, tryErr);
       }
     }
 
-    // 4. Jika semua model OpenRouter sibuk/gagal, fallback ke Internal Dynamic Engine
+    // 4. In-Memory Smart Dynamic Query Engine (Jika OpenRouter Offline / Fallback Cepat)
     const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || '';
 
     if (!finalReply) {
-      if (
+      // 4a. Query Filter Tanggal Spesifik (e.g. "tanggal 29", "tanggal 30", "2026-08-30", "kemarin", "hari ini")
+      const dateMatch = lastUserMsg.match(/tanggal\s*(\d{1,2})|\b(\d{4}-\d{2}-\d{2})\b|\b(\d{1,2})\s*(agustus|september|oktober|november|desember|januari|februari|maret|april|mei|juni|juli)/i);
+
+      let matchedDateKey = '';
+      if (dateMatch) {
+        if (dateMatch[2]) {
+          matchedDateKey = dateMatch[2];
+        } else if (dateMatch[1]) {
+          const dayNum = dateMatch[1].padStart(2, '0');
+          // Find matching key in dateCounts ending with -DD
+          matchedDateKey = Object.keys(dateCounts).find((k) => k.endsWith(`-${dayNum}`)) || '';
+        }
+      }
+
+      if (lastUserMsg.includes('tanggal') || lastUserMsg.includes('harian') || matchedDateKey) {
+        if (matchedDateKey && dateCounts[matchedDateKey] !== undefined) {
+          const count = dateCounts[matchedDateKey];
+          const surveyorOnDate = surveyorByDate[matchedDateKey] || {};
+          const sLines = Object.entries(surveyorOnDate)
+            .map(([sName, sCount]) => `* 👤 **${sName}**: **${sCount} titik tiang**`)
+            .join('\n');
+
+          const polesOnDate = allPoles.filter(p => (p.surveyDate || p.createdAt || '').startsWith(matchedDateKey));
+          const goodOnDate = polesOnDate.filter(p => p.condition === 'GOOD').length;
+          const badOnDate = polesOnDate.filter(p => p.condition === 'DAMAGED' || p.condition === 'NEEDS_REPAIR').length;
+
+          finalReply =
+            `📅 **Data Survei Tiang pada Tanggal ${formatIndonesianDate(matchedDateKey)}** (${matchedDateKey}):\n\n` +
+            `* 📍 **Total Titik Terdata**: **${count} tiang**\n` +
+            `* 🟢 **Kondisi Baik**: **${goodOnDate} tiang**\n` +
+            `* 🟡🔴 **Perlu Cek / Rusak**: **${badOnDate} tiang**\n\n` +
+            `👥 **Rincian Petugas / Surveyor pada Tanggal Ini**:\n` +
+            `${sLines || '* 👤 Admin: ' + count + ' tiang'}\n\n` +
+            `*Anda dapat melihat titik-titik tanggal ini langsung di peta GIS.*`;
+        } else {
+          const dateListLines = Object.entries(dateCounts)
+            .sort((a, b) => b[0].localeCompare(a[0]))
+            .slice(0, 8)
+            .map(([d, c]) => `* 📅 **${formatIndonesianDate(d)}**: **${c} tiang**`)
+            .join('\n');
+
+          finalReply =
+            `📅 **Rekapitulasi Data Survei Berdasarkan Tanggal**:\n\n` +
+            `${dateListLines || 'Data per tanggal terhimpun dalam sistem.'}\n\n` +
+            `Total keseluruhan data yang terhimpun adalah **${totalPoles} titik tiang**. Anda dapat bertanya spesifik seperti *"Berapa data tanggal 30 Agustus?"* untuk analisis mendalam.`;
+        }
+      } else if (
+        lastUserMsg.includes('bulan') ||
+        lastUserMsg.includes('agustus') ||
+        lastUserMsg.includes('september')
+      ) {
+        const monthLines = Object.entries(monthCounts)
+          .sort((a, b) => b[0].localeCompare(a[0]))
+          .map(([m, c]) => `* 🗓️ **Bulan ${m}**: **${c} titik tiang** (${((c / totalPoles) * 100).toFixed(1)}%)`)
+          .join('\n');
+
+        finalReply =
+          `🗓️ **Rekapitulasi Data Inventaris Tiang per Bulan**:\n\n` +
+          `${monthLines}\n\n` +
+          `Total inventaris Kota Lubuklinggau saat ini mencapai **${totalPoles} titik tiang**.`;
+      } else if (
         lastUserMsg.includes('surveyor') ||
         lastUserMsg.includes('admin') ||
         lastUserMsg.includes('bahrudin') ||
         lastUserMsg.includes('orang') ||
         lastUserMsg.includes('pendata') ||
-        lastUserMsg.includes('siapa')
+        lastUserMsg.includes('petugas')
       ) {
-        const lines = Object.entries(surveyorCounts)
+        const sLines = Object.entries(surveyorCounts)
+          .sort((a, b) => b[1] - a[1])
           .map(([name, count]) => `* 👤 **${name}**: **${count} titik tiang** (${((count / totalPoles) * 100).toFixed(1)}%)`)
           .join('\n');
 
         finalReply =
           `📊 **Rekapitulasi Data Tiang per Petugas / Surveyor**:\n\n` +
-          `${lines || `* 👤 **Admin**: **${totalPoles} titik tiang**`}\n\n` +
+          `${sLines || `* 👤 **Admin**: **${totalPoles} titik tiang**`}\n\n` +
           `Total keseluruhan data yang terhimpun saat ini adalah **${totalPoles} titik tiang**. Anda dapat memfilter peta untuk melihat titik yang disurvei oleh masing-masing petugas.`;
+      } else if (
+        lastUserMsg.includes('beton') ||
+        lastUserMsg.includes('besi') ||
+        lastUserMsg.includes('kayu') ||
+        lastUserMsg.includes('jenis tiang') ||
+        lastUserMsg.includes('material')
+      ) {
+        finalReply =
+          `🏗️ **Komposisi Material & Jenis Tiang Utilitas**:\n\n` +
+          `* 🏢 **Tiang Beton**: **${poleTypeCounts.BETON || 0} tiang** (${(((poleTypeCounts.BETON || 0) / totalPoles) * 100).toFixed(1)}%)\n` +
+          `* ⚙️ **Tiang Besi / Baja**: **${poleTypeCounts.BESI || 0} tiang** (${(((poleTypeCounts.BESI || 0) / totalPoles) * 100).toFixed(1)}%)\n` +
+          `* 🪵 **Tiang Kayu**: **${poleTypeCounts.KAYU || 0} tiang** (${(((poleTypeCounts.KAYU || 0) / totalPoles) * 100).toFixed(1)}%)\n` +
+          `* 🏷️ **Lainnya**: **${poleTypeCounts.LAINNYA || 0} tiang**\n\n` +
+          `Karakteristik tiang dicatat lengkap dengan jalur kabel udara (${cableTypeCounts.UDARA || 0}) maupun bawah tanah (${cableTypeCounts.BAWAH_TANAH || 0}).`;
+      } else if (
+        lastUserMsg.includes('pju') ||
+        lastUserMsg.includes('lampu') ||
+        lastUserMsg.includes('penerangan')
+      ) {
+        finalReply =
+          `💡 **Status Jaringan & Lampu PJU (Penerangan Jalan Umum)**:\n\n` +
+          `* 💡 **Tiang PJU Mandiri Pemkot**: **${categoryCounts.PJU_MANDIRI || 0} tiang**\n` +
+          `* ⚡ **Tiang PLN Gabung PJU**: **${categoryCounts.GABUNG_PLN_PJU || 0} tiang**\n` +
+          `* 🟢 **Lampu Menyala Normal**: **${pjuLampCounts.MENYALA_NORMAL || 0} unit**\n` +
+          `* 🟡 **Lampu Redup**: **${pjuLampCounts.REDUP || 0} unit**\n` +
+          `* 🔴 **Lampu Mati / Rusak**: **${(pjuLampCounts.MATI_TOTAL || 0) + (pjuLampCounts.PECAH_RUSAK || 0)} unit**\n\n` +
+          `PJU dikelola terintegrasi untuk efisiensi energi dan pemeliharaan lampu jalan Kota Lubuklinggau.`;
+      } else if (
+        lastUserMsg.includes('rusak') ||
+        lastUserMsg.includes('bahaya') ||
+        lastUserMsg.includes('kritis') ||
+        lastUserMsg.includes('miring') ||
+        lastUserMsg.includes('semrawut') ||
+        lastUserMsg.includes('kendur')
+      ) {
+        finalReply =
+          `⚠️ **Status Titik Kritis, Kerusakan & Bahaya**:\n\n` +
+          `Saat ini terdapat **${damagedCount} tiang Rusak/Bahaya** dan **${needsRepairCount} tiang Perlu Cek**:\n\n` +
+          `* 📐 Tiang Miring: **${tiltedCount} tiang**\n` +
+          `* 🧶 Kabel Semrawut: **${messyCableCount} tiang**\n` +
+          `* 📉 Kabel Melorot Rendah: **${lowCableCount} tiang**\n` +
+          `* 🔩 Berkarat / Retak: **${corrodedCount} tiang**\n` +
+          `* ⛔ Mengganggu Jalan / Trotoar: **${obstructingCount} tiang**\n\n` +
+          `*Gunakan tombol filter di bawah untuk langsung menyorot tiang bermasalah di peta.*`;
       } else if (
         lastUserMsg.includes('rekap') ||
         lastUserMsg.includes('total') ||
@@ -222,149 +441,166 @@ PANDUAN GAYA JAWABAN:
         lastUserMsg.includes('statistik')
       ) {
         finalReply =
-          `📊 **Rekapitulasi Data Inventaris Tiang (Kota Lubuklinggau)**:\n\n` +
-          `* **Total Tiang Terdata**: **${totalPoles} titik tiang**\n` +
-          `* **🟢 Kondisi Baik**: **${goodCount} tiang** (Operasional normal & kokoh)\n` +
-          `* **🟡 Perlu Cek**: **${needsRepairCount} tiang** (Kabel kendur / perlu perapian)\n` +
-          `* **🔴 Rusak / Bahaya**: **${damagedCount} tiang** (Miring / kabel melorot)\n\n` +
-          `📍 **Sebaran Jalan Terbanyak**: ${topRoadsSummary || 'Jalan Garuda & Mayor Toha'}.\n` +
-          `Data ini terhubung langsung ke database spasial dan peta GIS.`;
-      } else if (
-        lastUserMsg.includes('rusak') ||
-        lastUserMsg.includes('bahaya') ||
-        lastUserMsg.includes('kritis') ||
-        lastUserMsg.includes('miring')
-      ) {
-        finalReply =
-          `⚠️ **Status Titik Kritis & Bahaya**:\n\n` +
-          `Saat ini terdapat **${damagedCount} tiang berkondisi Rusak/Bahaya** dan **${needsRepairCount} tiang Perlu Cek** yang membutuhkan atensi lapangan.\n\n` +
-          `* Tiang Miring: **${tiltedCount} tiang**\n` +
-          `* Kabel Semrawut: **${messyCableCount} tiang**\n` +
-          `* Kabel Melorot Rendah: **${lowCableCount} tiang**\n\n` +
-          `*Klik tombol filter peta di bawah untuk langsung menyorot tiang-tiang tersebut.*`;
+          `📊 **Rekapitulasi Eksekutif Inventaris Tiang (Kota Lubuklinggau)**:\n\n` +
+          `* 📍 **Total Tiang Terdata**: **${totalPoles} titik tiang**\n` +
+          `* 🟢 **Kondisi Baik**: **${goodCount} tiang** (${((goodCount / totalPoles) * 100).toFixed(1)}%)\n` +
+          `* 🟡 **Perlu Cek**: **${needsRepairCount} tiang** (${((needsRepairCount / totalPoles) * 100).toFixed(1)}%)\n` +
+          `* 🔴 **Rusak / Bahaya**: **${damagedCount} tiang** (${((damagedCount / totalPoles) * 100).toFixed(1)}%)\n\n` +
+          `🏘️ **Kelurahan Teraktif**: ${kelurahanSummary}.\n` +
+          `🛣️ **Ruas Jalan Terbanyak**: ${topRoadsSummary}.\n` +
+          `Data tersinkronisasi langsung secara real-time dengan peta spasial GIS.`;
       } else {
         finalReply =
           `Halo! Saya **INFRA-AI**, asisten cerdas bawaan sistem **INFRA-MAP GIS**.\n\n` +
-          `Saya bisa membantu Anda mengelola data sistem secara fleksibel:\n` +
-          `* 👤 **Filter & Cek data per orang/surveyor** (siapa yang mendata & berapa titik)\n` +
-          `* 📊 **Mengecek statistik & total data tiang** (${totalPoles} titik)\n` +
-          `* ⚠️ **Melihat titik tiang kritis** (rusak, miring, kabel semrawut)\n` +
-          `* 🗺️ **Menampilkan filter khusus** di peta secara instan\n\n` +
-          `Silakan ketik perintah seperti *"Tampilkan tiang yang didata Admin"* atau *"Filter tiang rusak"*!`;
+          `Saya bisa menganalisis dan mengelola semua data inventaris sistem kami:\n` +
+          `* 📅 **Filter per tanggal & bulan** (contoh: *"Berapa data tanggal 30 Agustus?"*)\n` +
+          `* 👤 **Filter per orang / surveyor** (siapa yang mendata & berapa titik)\n` +
+          `* 🏗️ **Filter jenis material & kategori** (Beton, Besi, PJU, PLN, Fiber Optik)\n` +
+          `* ⚠️ **Mengecek titik kerusakan** (tiang miring, kabel semrawut, kabel melorot)\n` +
+          `* 🗺️ **Menggerakkan & memfilter peta GIS** secara otomatis\n\n` +
+          `Ada yang ingin Anda tanyakan seputar data infrastruktur kita?`;
       }
-      usedModel = 'INFRA-AI Smart Dynamic Engine';
+      usedModel = 'INFRA-AI Multi-Dimensional Query Engine';
     }
 
     // 5. Ekstrak aksi filter peta interaktif dari maksud pertanyaan user secara dinamis
     let mapAction: any = null;
 
-    // Check if user wants to filter by Surveyor
-    const surveyorNames = Object.keys(surveyorCounts);
-    let matchedSurveyor = surveyorNames.find((name) =>
-      lastUserMsg.includes(name.toLowerCase())
-    );
-
-    if (!matchedSurveyor) {
-      if (lastUserMsg.includes('admin')) matchedSurveyor = 'Admin';
-      else if (lastUserMsg.includes('bahrudin')) matchedSurveyor = 'Bahrudin';
-      else if (lastUserMsg.includes('rudin')) matchedSurveyor = 'Rudin';
+    // Check for date filter
+    const dateMatchForMap = lastUserMsg.match(/tanggal\s*(\d{1,2})|\b(\d{4}-\d{2}-\d{2})\b/i);
+    let matchedDateForMap = '';
+    if (dateMatchForMap) {
+      if (dateMatchForMap[2]) {
+        matchedDateForMap = dateMatchForMap[2];
+      } else if (dateMatchForMap[1]) {
+        const dayNum = dateMatchForMap[1].padStart(2, '0');
+        matchedDateForMap = Object.keys(dateCounts).find((k) => k.endsWith(`-${dayNum}`)) || '';
+      }
     }
 
-    if (matchedSurveyor && (lastUserMsg.includes('tampil') || lastUserMsg.includes('filter') || lastUserMsg.includes('titik') || lastUserMsg.includes('data') || lastUserMsg.includes('lihat'))) {
+    if (matchedDateForMap && (lastUserMsg.includes('tampil') || lastUserMsg.includes('filter') || lastUserMsg.includes('peta') || lastUserMsg.includes('titik') || lastUserMsg.includes('lihat'))) {
       mapAction = {
         type: 'FILTER_MAP',
-        surveyor: matchedSurveyor,
-        search: matchedSurveyor,
-        label: `🗺️ Filter Tiang oleh: ${matchedSurveyor}`,
+        date: matchedDateForMap,
+        label: `🗺️ Filter Tanggal: ${formatIndonesianDate(matchedDateForMap)}`,
       };
-    } else if (lastUserMsg.includes('telkom')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        providerId: 'PRV_TELKOM',
-        providerName: 'Telkom Indonesia',
-        label: '🗺️ Filter Tiang Telkom di Peta',
-      };
-    } else if (lastUserMsg.includes('myrep') || lastUserMsg.includes('myrepublic')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        providerId: 'PRV_MYREP_1',
-        providerName: 'MyRepublic',
-        label: '🗺️ Filter Tiang MyRepublic di Peta',
-      };
-    } else if (lastUserMsg.includes('biznet')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        providerId: 'PRV_BIZNET',
-        providerName: 'Biznet',
-        label: '🗺️ Filter Tiang Biznet di Peta',
-      };
-    } else if (
-      lastUserMsg.includes('rusak') ||
-      lastUserMsg.includes('bahaya') ||
-      lastUserMsg.includes('kritis')
-    ) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        condition: 'DAMAGED',
-        label: '🗺️ Tampilkan Tiang Rusak di Peta',
-      };
-    } else if (lastUserMsg.includes('miring')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        search: 'miring',
-        label: '🗺️ Tampilkan Tiang Miring di Peta',
-      };
-    } else if (
-      lastUserMsg.includes('perlu cek') ||
-      lastUserMsg.includes('perlu perbaikan') ||
-      lastUserMsg.includes('kendur')
-    ) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        condition: 'NEEDS_REPAIR',
-        label: '🗺️ Tampilkan Tiang Perlu Cek di Peta',
-      };
-    } else if (lastUserMsg.includes('pju')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        category: 'PJU_MANDIRI',
-        label: '🗺️ Tampilkan Tiang PJU Mandiri Pemkot',
-      };
-    } else if (lastUserMsg.includes('pln')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        category: 'PLN_MURNI',
-        label: '🗺️ Tampilkan Tiang Listrik PLN di Peta',
-      };
-    } else if (lastUserMsg.includes('garuda')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        search: 'Jalan Garuda',
-        label: '🗺️ Sorot Jalan Garuda di Peta',
-      };
-    } else if (lastUserMsg.includes('toha') || lastUserMsg.includes('mayor toha')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        search: 'Mayor Toha',
-        label: '🗺️ Sorot Jl. Mayor Toha di Peta',
-      };
-    } else if (lastUserMsg.includes('pelita jaya')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        kelurahan: 'Pelita Jaya',
-        search: 'Pelita Jaya',
-        label: '🗺️ Filter Kelurahan Pelita Jaya',
-      };
-    } else if (lastUserMsg.includes('semua') || lastUserMsg.includes('reset filter') || lastUserMsg.includes('hapus filter')) {
-      mapAction = {
-        type: 'FILTER_MAP',
-        providerId: 'ALL',
-        condition: 'ALL',
-        category: 'ALL',
-        surveyor: 'ALL',
-        search: '',
-        label: '🗺️ Tampilkan Semua Tiang',
-      };
+    } else {
+      // Check if user wants to filter by Surveyor
+      const surveyorNames = Object.keys(surveyorCounts);
+      let matchedSurveyor = surveyorNames.find((name) =>
+        lastUserMsg.includes(name.toLowerCase())
+      );
+
+      if (!matchedSurveyor) {
+        if (lastUserMsg.includes('admin')) matchedSurveyor = 'Admin';
+        else if (lastUserMsg.includes('bahrudin')) matchedSurveyor = 'Bahrudin';
+        else if (lastUserMsg.includes('rudin')) matchedSurveyor = 'Rudin';
+      }
+
+      if (matchedSurveyor && (lastUserMsg.includes('tampil') || lastUserMsg.includes('filter') || lastUserMsg.includes('titik') || lastUserMsg.includes('data') || lastUserMsg.includes('lihat'))) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          surveyor: matchedSurveyor,
+          search: matchedSurveyor,
+          label: `🗺️ Filter Tiang oleh: ${matchedSurveyor}`,
+        };
+      } else if (lastUserMsg.includes('telkom')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          providerId: 'PRV_TELKOM',
+          providerName: 'Telkom Indonesia',
+          label: '🗺️ Filter Tiang Telkom di Peta',
+        };
+      } else if (lastUserMsg.includes('myrep') || lastUserMsg.includes('myrepublic')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          providerId: 'PRV_MYREP_1',
+          providerName: 'MyRepublic',
+          label: '🗺️ Filter Tiang MyRepublic di Peta',
+        };
+      } else if (lastUserMsg.includes('biznet')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          providerId: 'PRV_BIZNET',
+          providerName: 'Biznet',
+          label: '🗺️ Filter Tiang Biznet di Peta',
+        };
+      } else if (
+        lastUserMsg.includes('rusak') ||
+        lastUserMsg.includes('bahaya') ||
+        lastUserMsg.includes('kritis')
+      ) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          condition: 'DAMAGED',
+          label: '🗺️ Tampilkan Tiang Rusak di Peta',
+        };
+      } else if (lastUserMsg.includes('miring')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          search: 'miring',
+          label: '🗺️ Tampilkan Tiang Miring di Peta',
+        };
+      } else if (
+        lastUserMsg.includes('perlu cek') ||
+        lastUserMsg.includes('perlu perbaikan') ||
+        lastUserMsg.includes('kendur')
+      ) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          condition: 'NEEDS_REPAIR',
+          label: '🗺️ Tampilkan Tiang Perlu Cek di Peta',
+        };
+      } else if (lastUserMsg.includes('pju')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          category: 'PJU_MANDIRI',
+          label: '🗺️ Tampilkan Tiang PJU Mandiri Pemkot',
+        };
+      } else if (lastUserMsg.includes('pln')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          category: 'PLN_MURNI',
+          label: '🗺️ Tampilkan Tiang Listrik PLN di Peta',
+        };
+      } else if (lastUserMsg.includes('beton')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          typeFilter: 'BETON',
+          label: '🗺️ Filter Tiang Beton di Peta',
+        };
+      } else if (lastUserMsg.includes('besi')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          typeFilter: 'BESI',
+          label: '🗺️ Filter Tiang Besi di Peta',
+        };
+      } else if (lastUserMsg.includes('garuda')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          search: 'Jalan Garuda',
+          label: '🗺️ Sorot Jalan Garuda di Peta',
+        };
+      } else if (lastUserMsg.includes('toha') || lastUserMsg.includes('mayor toha')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          search: 'Mayor Toha',
+          label: '🗺️ Sorot Jl. Mayor Toha di Peta',
+        };
+      } else if (lastUserMsg.includes('pelita jaya')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          kelurahan: 'Pelita Jaya',
+          search: 'Pelita Jaya',
+          label: '🗺️ Filter Kelurahan Pelita Jaya',
+        };
+      } else if (lastUserMsg.includes('semua') || lastUserMsg.includes('reset filter') || lastUserMsg.includes('hapus filter')) {
+        mapAction = {
+          type: 'FILTER_MAP',
+          reset: true,
+          label: '🗺️ Tampilkan Semua Tiang',
+        };
+      }
     }
 
     return NextResponse.json({

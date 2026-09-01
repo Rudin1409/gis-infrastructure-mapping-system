@@ -273,6 +273,7 @@ export default function GISOverviewMap({
   const [selectedPjuCableFilter, setSelectedPjuCableFilter] = useState<'ALL' | 'WITH_CABLE' | 'WITHOUT_CABLE'>('ALL');
   const [selectedKecamatan, setSelectedKecamatan] = useState(initialKecamatan || 'ALL');
   const [selectedKelurahan, setSelectedKelurahan] = useState(initialKelurahan || 'ALL');
+  const [selectedSurveyDate, setSelectedSurveyDate] = useState<string>('ALL');
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedHeight, setSelectedHeight] = useState('ALL'); // ALL, 5m, 6m, 7m, 9m, 12m
   const [selectedCableType, setSelectedCableType] = useState('ALL'); // UDARA, BAWAH_TANAH, TRANSISI_RISER
@@ -324,6 +325,19 @@ export default function GISOverviewMap({
   useEffect(() => {
     const handleAiAction = (e: any) => {
       const detail = e.detail || {};
+      if (detail.reset) {
+        setSelectedProvider('ALL');
+        setSelectedCondition('ALL');
+        setSelectedCategory('ALL');
+        setSelectedKecamatan('ALL');
+        setSelectedKelurahan('ALL');
+        setSelectedSurveyor('ALL');
+        setSelectedSurveyDate('ALL');
+        setSelectedType('ALL');
+        setSelectedHazard('ALL');
+        setSearchQuery('');
+        return;
+      }
       if (detail.providerId !== undefined) {
         setSelectedProvider(detail.providerId);
       }
@@ -344,6 +358,15 @@ export default function GISOverviewMap({
       }
       if (detail.surveyorName !== undefined) {
         setSelectedSurveyor(detail.surveyorName);
+      }
+      if (detail.date !== undefined) {
+        setSelectedSurveyDate(detail.date);
+      }
+      if (detail.surveyDate !== undefined) {
+        setSelectedSurveyDate(detail.surveyDate);
+      }
+      if (detail.typeFilter !== undefined) {
+        setSelectedType(detail.typeFilter);
       }
       if (detail.search !== undefined) {
         setSearchQuery(detail.search);
@@ -1069,6 +1092,14 @@ export default function GISOverviewMap({
         }
       }
 
+      // 0c. Survey Date filter, used by INFRA-AI and date filtering.
+      if (selectedSurveyDate !== 'ALL') {
+        const rawDate = (pole.surveyDate || pole.createdAt || '').slice(0, 10);
+        if (!rawDate.includes(selectedSurveyDate)) {
+          return false;
+        }
+      }
+
       // 1. Provider Filter
       if (selectedProvider !== 'ALL') {
         const matchId =
@@ -1233,6 +1264,7 @@ export default function GISOverviewMap({
     selectedCondition,
     selectedCategory,
     selectedSurveyor,
+    selectedSurveyDate,
     selectedPjuCableFilter,
     selectedKecamatan,
     selectedKelurahan,
@@ -1249,6 +1281,7 @@ export default function GISOverviewMap({
       selectedCondition !== 'ALL' ||
       selectedCategory !== 'ALL' ||
       selectedSurveyor !== 'ALL' ||
+      selectedSurveyDate !== 'ALL' ||
       selectedPjuCableFilter !== 'ALL' ||
       selectedKecamatan !== 'ALL' ||
       selectedKelurahan !== 'ALL' ||
@@ -1262,6 +1295,7 @@ export default function GISOverviewMap({
       selectedCondition,
       selectedCategory,
       selectedSurveyor,
+      selectedSurveyDate,
       selectedPjuCableFilter,
       selectedKecamatan,
       selectedKelurahan,
@@ -1738,6 +1772,19 @@ export default function GISOverviewMap({
               </span>
             )}
 
+            {selectedSurveyDate !== 'ALL' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-600 text-white font-bold text-[11px] rounded-xl shadow-md border border-purple-400/40 animate-in fade-in">
+                <span>📅 {selectedSurveyDate}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSurveyDate('ALL')}
+                  className="p-0.5 hover:bg-white/20 rounded-md ml-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
             {isBatchDeleteMode && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-600 text-white font-bold text-[11px] rounded-xl shadow-md border border-red-400/40 animate-in fade-in">
                 <Trash2 className="w-3.5 h-3.5" />
@@ -1770,6 +1817,7 @@ export default function GISOverviewMap({
               selectedCondition !== 'ALL' ||
               selectedCategory !== 'ALL' ||
               selectedSurveyor !== 'ALL' ||
+              selectedSurveyDate !== 'ALL' ||
               selectedKecamatan !== 'ALL' ||
               selectedType !== 'ALL') && (
               <button
