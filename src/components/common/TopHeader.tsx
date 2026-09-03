@@ -129,49 +129,59 @@ export default function TopHeader() {
   const Icon = meta.icon;
 
   return (
-    <header className="sticky top-0 w-full z-30 bg-gradient-to-r from-[#1e40af] via-[#2563eb] to-[#3b82f6] text-white shadow-[0_2px_12px_rgba(30,64,175,0.2)] border-b border-blue-400/20 select-none flex-shrink-0">
-      <div className={`px-3.5 py-2 flex items-center justify-between gap-2 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto' : 'max-w-md mx-auto lg:w-full lg:max-w-7xl'}`}>
+    <header className="sticky top-0 w-full z-30 bg-slate-950/95 backdrop-blur-xl text-white shadow-[0_4px_20px_rgba(0,0,0,0.35)] border-b border-slate-800/80 select-none flex-shrink-0">
+      <div className={`px-3 sm:px-4 py-2 flex items-center justify-between gap-2.5 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto' : 'max-w-md mx-auto lg:w-full lg:max-w-7xl'}`}>
         {/* Left Side: Back Button OR Brand Emblem + Title */}
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0">
           {meta.showBack ? (
             <button
               type="button"
               onClick={handleBack}
-              className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 flex items-center justify-center text-white border border-white/20 transition-all flex-shrink-0 cursor-pointer"
+              className="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-95 flex items-center justify-center text-slate-200 hover:text-white border border-slate-700/80 transition-all flex-shrink-0 cursor-pointer shadow-xs"
               aria-label="Kembali ke Beranda"
             >
               <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
             </button>
           ) : (
-            <div className="w-8 h-8 rounded-xl bg-white p-0.5 flex items-center justify-center shadow-md flex-shrink-0 border border-blue-200">
+            <Link
+              href="/"
+              className="w-8 h-8 rounded-xl bg-white p-1 flex items-center justify-center shadow-md flex-shrink-0 border border-slate-700/60 hover:scale-105 transition-transform"
+            >
               <img
                 src="/images/app-logo.png"
                 alt="Logo GIS Lubuklinggau"
-                className="w-full h-full object-contain rounded-lg"
+                className="w-full h-full object-contain rounded-md"
               />
-            </div>
+            </Link>
           )}
 
           <div className="min-w-0">
-            <h1 className="text-xs font-black tracking-tight text-white truncate font-mono uppercase leading-tight">
-              {meta.title}
-            </h1>
-            <p className="text-[10px] text-blue-100 font-medium truncate leading-none mt-0.5">
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-xs sm:text-[13px] font-black tracking-tight text-white truncate uppercase font-mono leading-tight">
+                {meta.title}
+              </h1>
+              {pathname === '/' && (
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded-md bg-blue-500/20 text-blue-300 text-[9px] font-bold font-mono border border-blue-500/30">
+                  PRO
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium truncate leading-none mt-0.5">
               {meta.subtitle}
             </p>
           </div>
         </div>
 
         {/* Right Side: Desktop Mode Toggle, Fullscreen, Reload/Refresh Button & Active User */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           {/* Desktop Widescreen / Mobile Mode Toggle Button */}
           <button
             type="button"
             onClick={toggleViewMode}
-            className={`px-2 py-1 rounded-xl border flex items-center gap-1 text-[10px] font-bold transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-xl border flex items-center gap-1.5 text-[10.5px] font-bold transition-all cursor-pointer ${
               viewMode === 'DESKTOP'
-                ? 'bg-white text-blue-700 border-white shadow-md'
-                : 'bg-white/15 hover:bg-white/25 text-white border-white/20'
+                ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/30 ring-1 ring-blue-400/40'
+                : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border-slate-700/80 hover:text-white'
             }`}
             title={
               viewMode === 'DESKTOP'
@@ -181,12 +191,12 @@ export default function TopHeader() {
           >
             {viewMode === 'DESKTOP' ? (
               <>
-                <Smartphone className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Mobile</span>
+                <Smartphone className="w-3.5 h-3.5 text-blue-200" />
+                <span className="hidden sm:inline">Mobile View</span>
               </>
             ) : (
               <>
-                <Monitor className="w-3.5 h-3.5" />
+                <Monitor className="w-3.5 h-3.5 text-slate-400" />
                 <span className="hidden sm:inline">Desktop</span>
               </>
             )}
@@ -196,7 +206,7 @@ export default function TopHeader() {
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 active:scale-90 flex items-center justify-center text-white border border-white/20 transition-all cursor-pointer"
+            className="w-7 h-7 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white border border-slate-700/80 transition-all cursor-pointer"
             title={isFullscreen ? 'Keluar dari Layar Penuh' : 'Layar Penuh (Fullscreen)'}
           >
             {isFullscreen ? (
@@ -211,12 +221,12 @@ export default function TopHeader() {
             type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 active:scale-90 flex items-center justify-center text-white border border-white/20 transition-all cursor-pointer disabled:opacity-50"
+            className="w-7 h-7 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white border border-slate-700/80 transition-all cursor-pointer disabled:opacity-50"
             title="Muat Ulang / Refresh Data"
             aria-label="Refresh Halaman"
           >
             <RotateCw
-              className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-cyan-200' : 'text-white'}`}
+              className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-blue-400' : ''}`}
             />
           </button>
 
@@ -224,13 +234,16 @@ export default function TopHeader() {
           {user && (
             <Link
               href="/profile"
-              className="flex items-center gap-1 px-2 py-0.5 bg-white/20 hover:bg-white/30 border border-white/30 rounded-full text-[10px] text-white font-bold backdrop-blur-md transition-all active:scale-95"
-              title={`Akun Aktif: ${user.name} (${user.roleLabel})`}
+              className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-full text-[10.5px] text-slate-200 font-bold backdrop-blur-md transition-all active:scale-95 group"
+              title={`Akun Aktif: ${user.name} (${user.roleLabel}) - Buka Halaman Profil`}
             >
-              <span>{user.avatar || '👤'}</span>
-              <span className="max-w-[70px] truncate text-[9px]">
-                {user.role?.includes('ADMIN') ? 'Kominfo' : 'Surveyor'}
+              <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center text-[10px] font-black shadow-xs">
+                {user.avatar || user.name.charAt(0).toUpperCase()}
               </span>
+              <span className="max-w-[80px] truncate text-[10px] text-slate-300 group-hover:text-white transition-colors">
+                {user.name.split(' ')[0]}
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </Link>
           )}
         </div>

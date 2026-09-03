@@ -106,9 +106,45 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
     }).length;
   }, [livePoles, todayStr]);
 
-  // Compute 5 Most Recent Surveys
+  // Helper to format human-readable relative time
+  const formatRelativeTime = (dateStr?: string, timeStr?: string): string => {
+    if (!dateStr) return 'Baru saja';
+    try {
+      let d: Date;
+      if (dateStr.includes('T')) {
+        d = new Date(dateStr);
+      } else if (timeStr) {
+        d = new Date(`${dateStr}T${timeStr}`);
+      } else {
+        d = new Date(dateStr);
+      }
+      if (isNaN(d.getTime())) return dateStr;
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      if (diffMs < 60000 && diffMs >= -300000) return 'Baru saja';
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 60 && diffMins > 0) return `${diffMins} mnt lalu`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24 && diffHours > 0) return `${diffHours} jam lalu`;
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays === 1) return 'Kemarin';
+      if (diffDays < 7 && diffDays > 0) return `${diffDays} hari lalu`;
+      return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Compute Most Recent Surveys (Strictly Newest Timestamp First)
   const recentPoles = useMemo(() => {
-    return [...livePoles].reverse().slice(0, 5);
+    return [...livePoles]
+      .sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.surveyDate ? new Date(a.surveyDate).getTime() : 0);
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.surveyDate ? new Date(b.surveyDate).getTime() : 0);
+        if (timeB !== timeA) return timeB - timeA;
+        return (b.id || '').localeCompare(a.id || '');
+      })
+      .slice(0, 6);
   }, [livePoles]);
 
   // Infrastructure Breakdown
@@ -212,92 +248,86 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
       {/* ============================================================ */}
       {/* 1. TOP COMMAND BAR & USER HERO                               */}
       {/* ============================================================ */}
-      <div className="relative overflow-hidden bg-slate-950 text-white pt-5 pb-8 px-4 sm:px-6 rounded-b-[40px] shadow-2xl shadow-slate-950/40 border-b border-slate-800/80">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:2.5rem_2.5rem] pointer-events-none opacity-40" />
+      <div className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#0b1329] to-[#0d1e3d] text-white pt-4 pb-9 px-4 sm:px-6 rounded-b-[36px] shadow-2xl shadow-black/40 border-b border-blue-900/30">
+        {/* Spatial background accents */}
+        <div className="absolute -top-12 right-0 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-8 -left-8 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#33415510_1px,transparent_1px),linear-gradient(to_bottom,#33415510_1px,transparent_1px)] bg-[size:2rem_2rem] pointer-events-none opacity-30" />
 
-        <div className="relative z-10 max-w-5xl mx-auto space-y-4">
-          {/* Top Status Strip */}
+        <div className="relative z-10 max-w-5xl mx-auto space-y-3.5">
+          {/* Top Telemetry & Status Strip */}
           <div className="flex items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-[10.5px] font-mono text-slate-300 backdrop-blur-md shadow-inner">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/70 text-[10.5px] font-mono text-slate-300 backdrop-blur-md shadow-inner">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="font-bold text-white tracking-wide">DISKOMINFOTIKSAN</span>
-              <span className="text-slate-500">•</span>
-              <span className="text-slate-400 truncate max-w-[140px] sm:max-w-none">Kota Lubuklinggau</span>
+              <span className="font-bold text-white tracking-wider">DISKOMINFOTIKSAN</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-slate-300 truncate max-w-[140px] sm:max-w-none">Kota Lubuklinggau</span>
             </div>
 
             <div className="flex items-center gap-2">
               {isSyncing ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.8 bg-blue-950/80 border border-blue-500/40 rounded-full text-[10px] text-blue-300 font-mono font-bold animate-pulse">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-950/90 border border-blue-500/50 rounded-full text-[10px] text-blue-300 font-mono font-bold animate-pulse shadow-xs">
                   <RefreshCw className="w-3 h-3 animate-spin" />
                   <span>Syncing...</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.8 bg-slate-900/80 border border-slate-700 rounded-full text-[10px] text-slate-400 font-mono">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900/90 border border-slate-700/80 rounded-full text-[10px] text-emerald-400 font-mono font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span>GPS Siap</span>
                 </div>
               )}
-
-              <Link
-                href="/profile"
-                className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-[10px] text-slate-200 transition-all active:scale-95"
-              >
-                <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[10px]">
-                  {currentUser.name.charAt(0)}
-                </span>
-                <span className="hidden sm:inline font-bold pr-1">
-                  {currentUser.name.split(' ')[0]}
-                </span>
-              </Link>
             </div>
           </div>
 
           {/* User Welcome & Mission Statement */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
-            <div>
-              <div className="flex items-center gap-2 text-xs text-blue-400 font-semibold mb-0.5 font-mono">
-                <span>{greeting}, {currentUser.name.split(' ')[0]}</span>
-                <span className="text-slate-600">/</span>
-                <span className="text-slate-400 font-sans text-[11px]">{timeStr}</span>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[11px] text-blue-400 font-semibold mb-1 font-mono">
+                <span className="bg-blue-950/80 border border-blue-800/50 px-2 py-0.5 rounded-md text-blue-300 font-bold">
+                  {greeting}, {currentUser.name.split(' ')[0]}
+                </span>
+                <span className="text-slate-600">•</span>
+                <span className="text-slate-400 font-sans">{timeStr}</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight mt-0.5">
                 Pusat Kendali Spasial Infrastruktur
               </h1>
-              <p className="text-xs text-slate-400 font-medium max-w-xl mt-0.5">
-                Pemetaan tiang fiber optik, penerangan jalan umum (PJU), dan jaringan kabel Kota Lubuklinggau.
+              <p className="text-xs text-slate-300/90 font-medium max-w-xl mt-1 leading-relaxed">
+                Pemetaan tiang fiber optik, penerangan jalan umum (PJU), dan utilitas kabel Kota Lubuklinggau.
               </p>
             </div>
 
-            {/* Quick Action Group */}
-            <div className="flex items-center gap-2.5">
+            {/* Quick Action Group (Never wrapping awkwardly) */}
+            <div className="flex items-center gap-2.5 flex-shrink-0 w-full sm:w-auto">
               <Link
                 href="/poles/new"
-                className="flex-1 sm:flex-none py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all border border-blue-400/30 cursor-pointer"
+                className="flex-1 sm:flex-initial py-2.5 px-4 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-blue-600/35 flex items-center justify-center gap-2 transition-all border border-blue-400/30 cursor-pointer whitespace-nowrap min-w-0"
               >
-                <Plus className="w-4 h-4 stroke-[3]" />
-                <span>Input Survei GPS</span>
+                <Plus className="w-4 h-4 stroke-[3] flex-shrink-0" />
+                <span className="truncate">Input Survei GPS</span>
               </Link>
 
               <Link
                 href="/map"
-                className="py-2.5 px-3.5 bg-slate-800/90 hover:bg-slate-700/90 active:scale-95 text-slate-200 font-bold text-xs rounded-2xl border border-slate-700 flex items-center justify-center gap-1.5 transition-all cursor-pointer backdrop-blur-md"
+                className="flex-1 sm:flex-initial py-2.5 px-4 bg-slate-900/90 hover:bg-slate-800 active:scale-95 text-slate-200 hover:text-white font-bold text-xs rounded-2xl border border-slate-700/80 hover:border-slate-600 flex items-center justify-center gap-2 transition-all cursor-pointer backdrop-blur-md whitespace-nowrap min-w-0 shadow-md"
               >
-                <Map className="w-4 h-4 text-blue-400" />
-                <span className="hidden sm:inline">Buka Peta</span>
+                <Map className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                <span className="truncate">Buka Peta GIS</span>
               </Link>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-5 -mt-8 relative z-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-5 -mt-7 relative z-20">
         {/* ============================================================ */}
         {/* 2. SPATIAL TELEMETRY BENTO GRID                             */}
         {/* ============================================================ */}
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
@@ -310,106 +340,105 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
             {/* Card 1: Total Tiang Terdata */}
             <Link
               href="/poles"
-              className="bg-white/95 backdrop-blur-md rounded-3xl p-4 border border-slate-200/80 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-blue-300 hover:shadow-md transition-all group relative overflow-hidden"
+              className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-blue-300 hover:shadow-md transition-all group relative overflow-hidden"
             >
               <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                <span className="text-[9.5px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 truncate">
                   TOTAL ASET TIANG
                 </span>
-                <div className="w-6 h-6 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-6 h-6 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                   <Database className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-black text-slate-900 font-mono tracking-tight group-hover:text-blue-600 transition-colors">
-                  {livePoles.length}
+              <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
+                <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono tracking-tight group-hover:text-blue-600 transition-colors truncate">
+                  {livePoles.length.toLocaleString('id-ID')}
                 </span>
-                <span className="text-[10.5px] font-bold text-slate-500">Titik</span>
+                <span className="text-[10.5px] font-bold text-slate-500 flex-shrink-0">Titik</span>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                <span className="text-slate-500">🌐 FO: {infrastructureCounts.fo}</span>
-                <span className="text-slate-500">💡 PJU: {infrastructureCounts.pju}</span>
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[9.5px] sm:text-[10px] text-slate-500">
+                <span className="truncate">🌐 FO: {infrastructureCounts.fo}</span>
+                <span className="truncate">💡 PJU: {infrastructureCounts.pju}</span>
               </div>
             </Link>
 
             {/* Card 2: Survei Hari Ini */}
-            <div className="bg-white/95 backdrop-blur-md rounded-3xl p-4 border border-slate-200/80 shadow-[0_4px_20px_rgba(15,23,42,0.06)] relative overflow-hidden">
+            <div className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] relative overflow-hidden">
               <div className="flex items-center justify-between text-emerald-600 mb-1">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700">
+                <span className="text-[9.5px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700 truncate">
                   SURVEI HARI INI
                 </span>
-                <div className="w-6 h-6 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
                   <Activity className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-black text-emerald-700 font-mono tracking-tight">
+              <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
+                <span className="text-xl sm:text-2xl font-black text-emerald-700 font-mono tracking-tight truncate">
                   +{todayCount}
                 </span>
-                <span className="text-[10.5px] font-bold text-slate-500">Titik baru</span>
+                <span className="text-[10.5px] font-bold text-slate-500 flex-shrink-0">Titik baru</span>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                <span className="text-emerald-700 font-bold flex items-center gap-1">
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[9.5px] sm:text-[10px]">
+                <span className="text-emerald-700 font-bold flex items-center gap-1 flex-shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live Sync
                 </span>
-                <span className="text-slate-400 font-mono">{todayStr}</span>
+                <span className="text-slate-400 font-mono text-[9px] sm:text-[10px] truncate">{todayStr}</span>
               </div>
             </div>
 
             {/* Card 3: Skor Kesehatan & Keamanan */}
             <Link
               href="/segments"
-              className="bg-white/95 backdrop-blur-md rounded-3xl p-4 border border-slate-200/80 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-amber-300 hover:shadow-md transition-all group relative overflow-hidden"
+              className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-amber-300 hover:shadow-md transition-all group relative overflow-hidden"
             >
               <div className="flex items-center justify-between text-amber-600 mb-1">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700">
+                <span className="text-[9.5px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700 truncate">
                   KONDISI FISIK
                 </span>
-                <div className="w-6 h-6 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-6 h-6 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                   <ShieldCheck className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-black text-slate-900 font-mono tracking-tight">
+              <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
+                <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono tracking-tight truncate">
                   {infrastructureCounts.healthScore}%
                 </span>
-                <span className="text-[10.5px] font-bold text-emerald-600">Kondisi Baik</span>
+                <span className="text-[10.5px] font-bold text-emerald-600 flex-shrink-0">Kondisi Baik</span>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                <span className="text-amber-700 font-bold">
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[9.5px] sm:text-[10px]">
+                <span className="text-amber-700 font-bold truncate">
                   ⚠️ {infrastructureCounts.hazard} Perlu Audit
                 </span>
-                <ChevronRight className="w-3 h-3 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
               </div>
             </Link>
 
             {/* Card 4: Cakupan 8 Kecamatan */}
             <Link
               href="/districts"
-              className="bg-white/95 backdrop-blur-md rounded-3xl p-4 border border-slate-200/80 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-purple-300 hover:shadow-md transition-all group relative overflow-hidden"
+              className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-purple-300 hover:shadow-md transition-all group relative overflow-hidden"
             >
               <div className="flex items-center justify-between text-purple-600 mb-1">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-700">
-                  CAKUPAN KOTA
+                <span className="text-[9.5px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-purple-700 truncate">
+                  CAKUPAN WILAYAH
                 </span>
-                <div className="w-6 h-6 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-6 h-6 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
                   <MapPin className="w-3.5 h-3.5" />
                 </div>
               </div>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
-                <span className="text-2xl font-black text-slate-900 font-mono tracking-tight group-hover:text-purple-600 transition-colors">
-                  8 / 8
+              <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
+                <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono tracking-tight group-hover:text-purple-600 transition-colors truncate">
+                  8 Kecamatan
                 </span>
-                <span className="text-[10.5px] font-bold text-slate-500">Kecamatan</span>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                <span className="text-purple-700 font-bold">72 Kelurahan</span>
-                <span className="text-slate-400 font-mono">100% Aktif</span>
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[9.5px] sm:text-[10px]">
+                <span className="text-purple-700 font-bold truncate">72 Kelurahan</span>
+                <span className="text-slate-400 font-mono text-[9px] sm:text-[10px] flex-shrink-0">100% Aktif</span>
               </div>
             </Link>
           </div>
@@ -843,25 +872,31 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
         {/* ============================================================ */}
         {/* 6. CHRONOLOGICAL RECENT SURVEY TELEMETRY STREAM             */}
         {/* ============================================================ */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-4">
+        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3.5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-xs">
                 <Clock className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                  Aktivitas Survei Terkini
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs sm:text-[13px] font-black text-slate-900 uppercase tracking-wider">
+                    Aktivitas Survei Terkini
+                  </h3>
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[9.5px] font-bold font-mono border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1" />
+                    Real-time
+                  </span>
+                </div>
                 <p className="text-[11px] text-slate-500">
-                  Data koordinat dan foto tiang yang baru diinput surveyor
+                  Data koordinat, foto fisik, dan kondisi tiang yang baru diinput
                 </p>
               </div>
             </div>
 
             <Link
               href="/poles"
-              className="py-1.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl flex items-center gap-1 transition-colors"
+              className="py-1.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl flex items-center gap-1 transition-colors flex-shrink-0"
             >
               <span>Lihat Semua ({livePoles.length})</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -874,56 +909,116 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {recentPoles.map((pole) => (
-                <Link
-                  key={pole.id}
-                  href={`/poles/${pole.id}`}
-                  className="py-3 flex items-center justify-between gap-3 hover:bg-slate-50/80 px-2 -mx-2 rounded-2xl transition-colors group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 flex flex-col items-center justify-center flex-shrink-0 group-hover:bg-blue-50 group-hover:border-blue-200 group-hover:text-blue-700 transition-colors">
-                      <span className="text-[11px] font-mono font-black">
-                        {pole.id.slice(-4)}
-                      </span>
-                    </div>
+              {recentPoles.map((pole) => {
+                const cleanProvider = (pole.providerName || pole.providerId || 'Provider').replace(/^\d+\.\s*/, '');
+                const isNewToday = pole.surveyDate === todayStr || (pole.createdAt && pole.createdAt.startsWith(todayStr));
+                const relativeTime = formatRelativeTime(pole.createdAt, pole.surveyTime);
 
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-xs font-black text-slate-900 group-hover:text-blue-600 transition-colors truncate">
-                          {pole.poleCode || pole.id}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">•</span>
-                        <span className="text-[10px] font-bold text-slate-600 truncate">
-                          {pole.providerName || pole.providerId}
-                        </span>
+                return (
+                  <Link
+                    key={pole.id}
+                    href={`/poles/${pole.id}`}
+                    className="py-3 px-2 sm:px-2.5 -mx-2 rounded-2xl hover:bg-slate-50/90 transition-all flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Photo Thumbnail or Themed Infrastructure Icon */}
+                      {pole.photoUrl ? (
+                        <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 shadow-2xs group-hover:border-blue-300 transition-colors">
+                          <img
+                            src={pole.photoUrl}
+                            alt={pole.poleCode || pole.id}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                            loading="lazy"
+                            onError={(e) => {
+                              // Hide broken image and fallback to container icon
+                              (e.currentTarget as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                          <div className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white text-[8px]">
+                            <Camera className="w-2.5 h-2.5" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 border transition-all ${
+                            pole.infrastructureCategory === 'PJU_MANDIRI' || pole.providerId === 'PRV_PJU_PEMKOT'
+                              ? 'bg-amber-50 text-amber-600 border-amber-200 group-hover:bg-amber-100/70'
+                              : pole.infrastructureCategory === 'PLN_MURNI' || pole.providerId === 'PRV_PLN_DISTRIBUSI'
+                              ? 'bg-sky-50 text-sky-600 border-sky-200 group-hover:bg-sky-100/70'
+                              : 'bg-blue-50 text-blue-600 border-blue-200 group-hover:bg-blue-100/70'
+                          }`}
+                        >
+                          {pole.infrastructureCategory === 'PJU_MANDIRI' || pole.providerId === 'PRV_PJU_PEMKOT' ? (
+                            <Lightbulb className="w-5 h-5" />
+                          ) : pole.infrastructureCategory === 'PLN_MURNI' || pole.providerId === 'PRV_PLN_DISTRIBUSI' ? (
+                            <Zap className="w-5 h-5" />
+                          ) : (
+                            <Radio className="w-5 h-5" />
+                          )}
+                          <span className="text-[8.5px] font-bold font-mono uppercase mt-0.5">
+                            {cleanProvider.slice(0, 3)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Main Pole Telemetry */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-black text-slate-900 group-hover:text-blue-600 transition-colors font-mono truncate">
+                            {pole.poleCode || pole.id}
+                          </span>
+
+                          {isNewToday && (
+                            <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/15 text-emerald-700 text-[9px] font-extrabold font-mono border border-emerald-500/30 animate-pulse">
+                              BARU
+                            </span>
+                          )}
+
+                          <span className="text-[10px] text-slate-300 font-mono">•</span>
+                          <span className="text-[10.5px] font-bold text-slate-600 truncate max-w-[130px] sm:max-w-[200px]">
+                            {cleanProvider}
+                          </span>
+                        </div>
+
+                        {/* Location Details */}
+                        <p className="text-[11px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                          <span className="truncate">
+                            {pole.road || 'Jalan Utama'}{pole.kelurahan ? `, ${pole.kelurahan}` : (pole.kecamatan ? `, ${pole.kecamatan}` : '')}
+                          </span>
+                        </p>
+
+                        {/* Relative Timestamp & Surveyor */}
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5 font-medium truncate">
+                          <span className="text-blue-600 font-bold">{relativeTime}</span>
+                          <span>•</span>
+                          <span className="truncate">Petugas: {pole.surveyorName || 'Surveyor Lapangan'}</span>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 truncate flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                        <span>{pole.road}, {pole.kelurahan || pole.kecamatan}</span>
-                      </p>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                        pole.condition === 'GOOD'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    {/* Right Side: Status Badge & Chevron */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border whitespace-nowrap ${
+                          pole.condition === 'GOOD'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : pole.condition === 'NEEDS_REPAIR'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                        }`}
+                      >
+                        {pole.condition === 'GOOD'
+                          ? '🟢 Baik'
                           : pole.condition === 'NEEDS_REPAIR'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                      }`}
-                    >
-                      {pole.condition === 'GOOD'
-                        ? '🟢 Baik'
-                        : pole.condition === 'NEEDS_REPAIR'
-                        ? '🟡 Miring'
-                        : '🔴 Rusak'}
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </Link>
-              ))}
+                          ? '🟡 Miring'
+                          : '🔴 Rusak'}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
