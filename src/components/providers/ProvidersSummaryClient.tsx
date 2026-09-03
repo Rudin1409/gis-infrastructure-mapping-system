@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Pole } from '@/types/pole';
 import { Provider } from '@/types/provider';
@@ -144,6 +144,8 @@ export default function ProvidersSummaryClient({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'ACTIVE_ONLY' | 'GOV_PLN' | 'ISP_FO'>('ALL');
   const [activeTab, setActiveTab] = useState<'SUMMARY' | 'INPUT_USERS' | 'VISUAL_GUIDE'>('SUMMARY');
+  const [selectedInputDate, setSelectedInputDate] = useState('');
+  const [dailyPage, setDailyPage] = useState(1);
 
   // 1. Merge default providers with any custom provider records
   const allProvidersList = useMemo(() => {
@@ -461,92 +463,186 @@ export default function ProvidersSummaryClient({
     };
   }, [livePoles, todayJakarta]);
 
+  useEffect(() => {
+    if (inputStats.daily.length === 0) {
+      setSelectedInputDate('');
+      return;
+    }
+
+    const selectedStillExists = inputStats.daily.some((day) => day.date === selectedInputDate);
+    if (selectedStillExists) return;
+
+    const todayRecord = inputStats.daily.find((day) => day.date === todayJakarta);
+    setSelectedInputDate(todayRecord?.date || inputStats.daily[0].date);
+  }, [inputStats.daily, selectedInputDate, todayJakarta]);
+
+  const selectedDayStats = useMemo(() => {
+    return (
+      inputStats.daily.find((day) => day.date === selectedInputDate) || {
+        date: selectedInputDate || todayJakarta,
+        total: 0,
+        kominfo: 0,
+        bapenda: 0,
+        lainnya: 0,
+      }
+    );
+  }, [inputStats.daily, selectedInputDate, todayJakarta]);
+
+  const selectedUserStats = useMemo(() => {
+    const userMap = new Map<
+      string,
+      SurveyorMeta & {
+        selectedTotal: number;
+        allTotal: number;
+        goodCount: number;
+        repairCount: number;
+        damagedCount: number;
+      }
+    >();
+
+    inputStats.users.forEach((user) => {
+      userMap.set(user.id, {
+        id: user.id,
+        displayName: user.displayName,
+        team: user.team,
+        teamLabel: user.teamLabel,
+        roleLabel: user.roleLabel,
+        selectedTotal: 0,
+        allTotal: user.total,
+        goodCount: 0,
+        repairCount: 0,
+        damagedCount: 0,
+      });
+    });
+
+    livePoles.forEach((pole) => {
+      if (getPoleInputDate(pole) !== selectedDayStats.date) return;
+
+      const meta = resolveSurveyorMeta(pole);
+      if (!userMap.has(meta.id)) {
+        userMap.set(meta.id, {
+          ...meta,
+          selectedTotal: 0,
+          allTotal: 0,
+          goodCount: 0,
+          repairCount: 0,
+          damagedCount: 0,
+        });
+      }
+
+      const user = userMap.get(meta.id)!;
+      user.selectedTotal += 1;
+      if (pole.condition === 'GOOD') user.goodCount += 1;
+      else if (pole.condition === 'NEEDS_REPAIR') user.repairCount += 1;
+      else if (pole.condition === 'DAMAGED') user.damagedCount += 1;
+    });
+
+    return Array.from(userMap.values()).sort((a, b) => {
+      const teamOrder = { KOMINFO: 0, BAPENDA: 1, LAINNYA: 2 };
+      if (teamOrder[a.team] !== teamOrder[b.team]) return teamOrder[a.team] - teamOrder[b.team];
+      if (b.selectedTotal !== a.selectedTotal) return b.selectedTotal - a.selectedTotal;
+      return a.displayName.localeCompare(b.displayName);
+    });
+  }, [inputStats.users, livePoles, selectedDayStats.date]);
+
+  const dailyPageSize = 5;
+  const dailyTotalPages = Math.max(1, Math.ceil(inputStats.daily.length / dailyPageSize));
+  const paginatedDaily = inputStats.daily.slice((dailyPage - 1) * dailyPageSize, dailyPage * dailyPageSize);
+
+  useEffect(() => {
+    if (dailyPage > dailyTotalPages) {
+      setDailyPage(dailyTotalPages);
+    }
+  }, [dailyPage, dailyTotalPages]);
+
   return (
-    <div className="space-y-4 font-sans text-slate-800 pb-16 animate-in fade-in">
-      {/* 1. Header Bar */}
-      <div className="flex items-center justify-between gap-2 pt-1">
-        <div>
-          <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
-            <BarChart3 className="w-5 h-5 text-blue-600" />
-            <span>Ringkasan Data per Provider</span>
-          </h1>
-          <p className="text-xs text-slate-500">
-            Rekapitulasi total tiang, kondisi fisik &amp; pangsa aset di Kota Lubuklinggau
-          </p>
-        </div>
+    <div className="font-sans text-slate-800 pb-24 animate-in fade-in">
+      <div className="relative overflow-hidden bg-slate-950 text-white pt-5 pb-7 px-4 sm:px-6 rounded-b-[34px] shadow-2xl shadow-slate-950/35 border-b border-slate-800/80">
+        <div className="relative z-10 space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-[10px] font-mono text-slate-300">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>DISKOMINFOTIKSAN</span>
+                <span className="text-slate-500">•</span>
+                <span>Provider &amp; User Input</span>
+              </div>
+              <h1 className="mt-4 text-2xl sm:text-3xl font-black tracking-tight leading-tight">
+                Ringkasan Infrastruktur Kota
+              </h1>
+              <p className="mt-1.5 text-xs text-slate-300 leading-relaxed max-w-md">
+                Rekap provider, kondisi aset, dan produktivitas input tim lapangan berdasarkan data live.
+              </p>
+            </div>
 
-        <Link
-          href="/poles/new"
-          className="py-2 px-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs rounded-2xl shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all flex-shrink-0"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span>Survei Baru</span>
-        </Link>
+            <Link
+              href="/poles/new"
+              className="w-12 h-12 sm:w-auto sm:h-auto sm:py-2.5 sm:px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all border border-blue-400/30 flex-shrink-0"
+              aria-label="Survei Baru"
+            >
+              <PlusCircle className="w-5 h-5" />
+              <span className="hidden sm:inline">Survei Baru</span>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white/95 text-slate-900 rounded-3xl p-4 border border-white/70 shadow-[0_4px_20px_rgba(15,23,42,0.08)] min-h-[120px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 leading-snug">Total Aset Tiang</span>
+                <Database className="w-4 h-4 text-blue-600 flex-shrink-0" />
+              </div>
+              <p className="mt-3 text-3xl font-black font-mono tracking-tight leading-none">{totalPolesCount}</p>
+              <span className="mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500 block">
+                {activeProvidersCount} instansi aktif
+              </span>
+            </div>
+
+            <div className="bg-white/95 text-slate-900 rounded-3xl p-4 border border-white/70 shadow-[0_4px_20px_rgba(15,23,42,0.08)] min-h-[120px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-sky-700 leading-snug">Jaringan PLN</span>
+                <Layers className="w-4 h-4 text-sky-600 flex-shrink-0" />
+              </div>
+              <p className="mt-3 text-3xl font-black font-mono tracking-tight leading-none">{plnCount}</p>
+              <span className="mt-3 pt-3 border-t border-slate-100 text-[10px] text-sky-700 font-bold block">
+                {formatPercent(plnCount, totalPolesCount)}% dari total
+              </span>
+            </div>
+
+            <div className="bg-white/95 text-slate-900 rounded-3xl p-4 border border-white/70 shadow-[0_4px_20px_rgba(15,23,42,0.08)] min-h-[120px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 leading-snug">PJU Pemkot</span>
+                <ShieldCheck className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              </div>
+              <p className="mt-3 text-3xl font-black font-mono tracking-tight leading-none">{pjuCount}</p>
+              <span className="mt-3 pt-3 border-t border-slate-100 text-[10px] text-amber-700 font-bold block">
+                {formatPercent(pjuCount, totalPolesCount)}% lampu jalan
+              </span>
+            </div>
+
+            <div className="bg-white/95 text-slate-900 rounded-3xl p-4 border border-white/70 shadow-[0_4px_20px_rgba(15,23,42,0.08)] min-h-[120px]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 leading-snug">Provider ISP / FO</span>
+                <Sparkles className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+              </div>
+              <p className="mt-3 text-3xl font-black font-mono tracking-tight leading-none">{ispCount}</p>
+              <span className="mt-3 pt-3 border-t border-slate-100 text-[10px] text-indigo-700 font-bold block">
+                {formatPercent(ispCount, totalPolesCount)}% operator
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 2. Top Summary KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Total Tiang</span>
-            <Database className="w-4 h-4 text-blue-600" />
-          </div>
-          <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">
-            {totalPolesCount}
-          </p>
-          <span className="text-[10px] text-slate-500 block">
-            {activeProvidersCount} Instansi Terdata
-          </span>
-        </div>
-
-        <div className="bg-sky-50/70 rounded-3xl p-3.5 border border-sky-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-1">
-          <div className="flex items-center justify-between text-sky-700">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Jaringan PLN</span>
-            <span className="text-xs">⚡</span>
-          </div>
-          <p className="text-2xl font-black text-sky-950 font-mono tracking-tight">
-            {plnCount}
-          </p>
-          <span className="text-[10px] text-sky-700 block font-medium">
-            {totalPolesCount > 0 ? ((plnCount / totalPolesCount) * 100).toFixed(0) : 0}% Pangsa Total
-          </span>
-        </div>
-
-        <div className="bg-amber-50/70 rounded-3xl p-3.5 border border-amber-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-1">
-          <div className="flex items-center justify-between text-amber-800">
-            <span className="text-[10px] font-bold uppercase tracking-wider">PJU Pemkot</span>
-            <span className="text-xs">💡</span>
-          </div>
-          <p className="text-2xl font-black text-amber-950 font-mono tracking-tight">
-            {pjuCount}
-          </p>
-          <span className="text-[10px] text-amber-800 block font-medium">
-            {totalPolesCount > 0 ? ((pjuCount / totalPolesCount) * 100).toFixed(0) : 0}% Lampu Jalan
-          </span>
-        </div>
-
-        <div className="bg-indigo-50/70 rounded-3xl p-3.5 border border-indigo-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-1">
-          <div className="flex items-center justify-between text-indigo-700">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Provider ISP / FO</span>
-            <span className="text-xs">🌐</span>
-          </div>
-          <p className="text-2xl font-black text-indigo-950 font-mono tracking-tight">
-            {ispCount}
-          </p>
-          <span className="text-[10px] text-indigo-700 block font-medium">
-            {totalPolesCount > 0 ? ((ispCount / totalPolesCount) * 100).toFixed(0) : 0}% Operator Internet
-          </span>
-        </div>
-      </div>
+      <div className="space-y-4 px-4 sm:px-6 -mt-2 relative z-20">
 
       {/* 3. Navigation View Switcher */}
-      <div className="bg-slate-100 p-1 rounded-2xl grid grid-cols-3 gap-1 text-[11px] font-bold">
+      <div className="bg-white/95 border border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.05)] p-1 rounded-2xl flex items-center gap-1 overflow-x-auto no-scrollbar text-[11px] font-bold">
         <button
           type="button"
           onClick={() => setActiveTab('SUMMARY')}
-          className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`min-w-[112px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'SUMMARY'
-              ? 'bg-white text-blue-700 shadow-md font-black'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-black'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -556,9 +652,9 @@ export default function ProvidersSummaryClient({
         <button
           type="button"
           onClick={() => setActiveTab('INPUT_USERS')}
-          className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`min-w-[112px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'INPUT_USERS'
-              ? 'bg-white text-blue-700 shadow-md font-black'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-black'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -568,9 +664,9 @@ export default function ProvidersSummaryClient({
         <button
           type="button"
           onClick={() => setActiveTab('VISUAL_GUIDE')}
-          className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`min-w-[112px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'VISUAL_GUIDE'
-              ? 'bg-white text-blue-700 shadow-md font-black'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-black'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -672,8 +768,8 @@ export default function ProvidersSummaryClient({
                     }`}
                   >
                     {/* Top Row: Provider Identity & Total Count Badge */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         {/* Mini Pole Preview Graphic */}
                         <div className="w-10 h-14 p-1 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-center flex-shrink-0">
                           <PoleMiniGraphic provider={prov} height={46} />
@@ -712,7 +808,7 @@ export default function ProvidersSummaryClient({
                       </div>
 
                       {/* Count Display */}
-                      <div className="text-right flex-shrink-0">
+                      <div className="text-right flex-shrink-0 min-w-[72px]">
                         <div className="flex items-baseline justify-end gap-1">
                           <span className="text-xl font-black text-slate-900 font-mono">
                             {st.count}
@@ -738,7 +834,7 @@ export default function ProvidersSummaryClient({
 
                     {/* Quality & Spatial Metrics Grid */}
                     {st.count > 0 && (
-                      <div className="grid grid-cols-3 gap-2 text-[10px] pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px] pt-1">
                         {/* Kondisi Fisik */}
                         <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 space-y-0.5">
                           <span className="text-slate-400 block text-[9px] uppercase font-bold">
@@ -816,7 +912,7 @@ export default function ProvidersSummaryClient({
                   <span>Data Input per User &amp; Tim</span>
                 </h2>
                 <p className="text-[11px] text-slate-500 leading-snug">
-                  Kominfo: Admin DISKOMINFOTIKSAN dan M. Tri Saputra. Bapenda: Yodi, Andika, dan Pradigga.
+                  Tanggal aktif: <strong className="text-slate-800">{selectedDayStats.date}</strong>. Kominfo: Admin &amp; M. Tri. Bapenda: Yodi, Andika, Pradigga.
                 </p>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-black whitespace-nowrap">
@@ -824,20 +920,22 @@ export default function ProvidersSummaryClient({
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-2xl p-3 bg-slate-950 text-white">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="col-span-2 rounded-2xl p-3.5 bg-slate-950 text-white">
                 <span className="text-[9px] uppercase font-black text-slate-300">Total Semua</span>
-                <p className="text-2xl font-black font-mono leading-tight">{totalPolesCount}</p>
+                <p className="text-3xl font-black font-mono leading-tight">{totalPolesCount}</p>
                 <span className="text-[10px] text-slate-300">input tiang</span>
               </div>
-              <div className="rounded-2xl p-3 bg-blue-50 border border-blue-100">
-                <span className="text-[9px] uppercase font-black text-blue-700">Input Hari Ini</span>
+              <div className="rounded-2xl p-3 bg-blue-50 border border-blue-100 min-h-[96px]">
+                <span className="text-[9px] uppercase font-black text-blue-700">Input Tanggal Ini</span>
                 <p className="text-2xl font-black font-mono text-blue-950 leading-tight">
-                  {inputStats.todayTotal}
+                  {selectedDayStats.total}
                 </p>
-                <span className="text-[10px] text-blue-700">{todayJakarta}</span>
+                <span className="text-[10px] text-blue-700 break-words">
+                  {selectedDayStats.date === todayJakarta ? 'Hari ini' : selectedDayStats.date}
+                </span>
               </div>
-              <div className="rounded-2xl p-3 bg-amber-50 border border-amber-100">
+              <div className="rounded-2xl p-3 bg-amber-50 border border-amber-100 min-h-[96px]">
                 <span className="text-[9px] uppercase font-black text-amber-800">Hari Terdata</span>
                 <p className="text-2xl font-black font-mono text-amber-950 leading-tight">
                   {inputStats.daily.length}
@@ -850,6 +948,12 @@ export default function ProvidersSummaryClient({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {inputStats.teams.map((team) => {
               const isKominfo = team.team === 'KOMINFO';
+              const selectedTeamTotal =
+                team.team === 'KOMINFO'
+                  ? selectedDayStats.kominfo
+                  : team.team === 'BAPENDA'
+                  ? selectedDayStats.bapenda
+                  : selectedDayStats.lainnya;
               return (
                 <div
                   key={team.team}
@@ -865,21 +969,21 @@ export default function ProvidersSummaryClient({
                         {team.label}
                       </p>
                       <h3 className="text-lg font-black text-slate-900">
-                        {team.total} Input
+                        {selectedTeamTotal} Input
                       </h3>
                     </div>
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${isKominfo ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}>
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${isKominfo ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}>
                       <Users className="w-5 h-5" />
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
                     <div className="bg-white/75 rounded-2xl p-2 border border-white">
-                      <span className="text-slate-500 font-bold">Hari ini</span>
-                      <p className="font-black text-slate-900">{team.today} input</p>
+                      <span className="text-slate-500 font-bold">Semua data</span>
+                      <p className="font-black text-slate-900">{team.total} input</p>
                     </div>
                     <div className="bg-white/75 rounded-2xl p-2 border border-white">
-                      <span className="text-slate-500 font-bold">Pangsa</span>
-                      <p className="font-black text-slate-900">{formatPercent(team.total, totalPolesCount)}%</p>
+                      <span className="text-slate-500 font-bold">Pangsa tanggal</span>
+                      <p className="font-black text-slate-900">{formatPercent(selectedTeamTotal, selectedDayStats.total)}%</p>
                     </div>
                   </div>
                 </div>
@@ -894,12 +998,12 @@ export default function ProvidersSummaryClient({
                 <span>Detail Tiap User</span>
               </h3>
               <span className="text-[10px] font-bold text-slate-500">
-                {inputStats.users.length} user
+                {selectedDayStats.date}
               </span>
             </div>
 
             <div className="space-y-2">
-              {inputStats.users.map((user) => {
+              {selectedUserStats.map((user) => {
                 const isKominfo = user.team === 'KOMINFO';
                 return (
                   <Link
@@ -926,16 +1030,16 @@ export default function ProvidersSummaryClient({
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-xl font-black text-slate-900 font-mono leading-tight">
-                          {user.total}
+                          {user.selectedTotal}
                         </p>
                         <span className="text-[10px] font-bold text-slate-500">input</span>
                       </div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-4 gap-1.5 text-[10px]">
+                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
                       <div className="rounded-xl bg-white border border-slate-100 p-2">
-                        <span className="block text-slate-400 font-bold">Hari Ini</span>
-                        <strong className="text-blue-700">{user.today}</strong>
+                        <span className="block text-slate-400 font-bold">Semua</span>
+                        <strong className="text-blue-700">{user.allTotal}</strong>
                       </div>
                       <div className="rounded-xl bg-white border border-slate-100 p-2">
                         <span className="block text-slate-400 font-bold">Baik</span>
@@ -952,7 +1056,7 @@ export default function ProvidersSummaryClient({
                     </div>
 
                     <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-                      <span>Terakhir input: <strong className="text-slate-700">{user.latestDate}</strong></span>
+                      <span>Tanggal aktif: <strong className="text-slate-700">{selectedDayStats.date}</strong></span>
                       <span className="font-bold text-blue-600 flex items-center gap-0.5">
                         Lihat titik <ChevronRight className="w-3 h-3" />
                       </span>
@@ -970,28 +1074,43 @@ export default function ProvidersSummaryClient({
                 <span>Rekap Input per Hari</span>
               </h3>
               <span className="text-[10px] font-bold text-slate-500">
-                terbaru di atas
+                5 data / halaman
               </span>
             </div>
 
             <div className="space-y-2">
-              {inputStats.daily.slice(0, 14).map((day) => (
-                <div
+              {paginatedDaily.map((day) => {
+                const isSelectedDay = day.date === selectedDayStats.date;
+                return (
+                <button
+                  type="button"
                   key={day.date}
-                  className="rounded-2xl bg-slate-50 border border-slate-100 p-3"
+                  onClick={() => setSelectedInputDate(day.date)}
+                  className={`w-full text-left rounded-2xl border p-3 transition-all ${
+                    isSelectedDay
+                      ? 'bg-blue-50 border-blue-200 shadow-[0_8px_22px_rgba(37,99,235,0.12)]'
+                      : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-blue-100'
+                  }`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <Clock3 className="w-4 h-4 text-slate-400" />
+                      <Clock3 className={`w-4 h-4 ${isSelectedDay ? 'text-blue-600' : 'text-slate-400'}`} />
                       <span className="text-xs font-black text-slate-900">
                         {day.date === todayJakarta ? `Hari Ini (${day.date})` : day.date}
                       </span>
                     </div>
-                    <span className="text-sm font-black font-mono text-slate-900">
-                      {day.total}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {isSelectedDay && (
+                        <span className="hidden sm:inline px-2 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-black">
+                          Dipilih
+                        </span>
+                      )}
+                      <span className="text-sm font-black font-mono text-slate-900">
+                        {day.total}
+                      </span>
+                    </div>
                   </div>
-                  <div className="mt-2 grid grid-cols-3 gap-1.5 text-[10px]">
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-[10px]">
                     <span className="rounded-xl bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 font-bold">
                       Kominfo {day.kominfo}
                     </span>
@@ -1002,8 +1121,9 @@ export default function ProvidersSummaryClient({
                       Lainnya {day.lainnya}
                     </span>
                   </div>
-                </div>
-              ))}
+                </button>
+                );
+              })}
 
               {inputStats.daily.length === 0 && (
                 <div className="rounded-2xl bg-slate-50 border border-slate-100 p-6 text-center">
@@ -1011,6 +1131,30 @@ export default function ProvidersSummaryClient({
                 </div>
               )}
             </div>
+
+            {inputStats.daily.length > dailyPageSize && (
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDailyPage((page) => Math.max(1, page - 1))}
+                  disabled={dailyPage === 1}
+                  className="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-[11px] font-black disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all"
+                >
+                  Sebelumnya
+                </button>
+                <span className="text-[11px] font-bold text-slate-500">
+                  Halaman {dailyPage} / {dailyTotalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDailyPage((page) => Math.min(dailyTotalPages, page + 1))}
+                  disabled={dailyPage === dailyTotalPages}
+                  className="px-3 py-2 rounded-xl bg-blue-600 text-white text-[11px] font-black disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1094,6 +1238,7 @@ export default function ProvidersSummaryClient({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

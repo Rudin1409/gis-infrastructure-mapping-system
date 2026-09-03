@@ -15,7 +15,7 @@ export default async function ProvidersPage() {
   ]);
 
   return (
-    <div className="p-4">
+    <div className="min-h-screen bg-slate-100">
       <ProvidersSummaryClient initialPoles={allPoles} providers={providers} />
     </div>
   );
