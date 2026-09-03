@@ -44,14 +44,14 @@ const AVATAR_OPTIONS = ['🏢', '👨‍💼', '👩‍💼', '🧑‍💻', '�
 export default function ProfilePage() {
   const { user, loginAs, logout } = useAuth();
   const { viewMode, toggleViewMode } = useViewMode();
-  const currentUser = user || DEFAULT_ACCOUNTS[0];
+  const currentUser = user || DEFAULT_ACCOUNTS[0] || { name: 'Admin', role: 'ADMIN', roleLabel: 'Administrator', id: 'SRV-001', email: 'admin@lubuklinggaukota.go.id', phone: '0812-7890-1234', avatar: '🏢' };
 
   // Edit Profile States
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(currentUser.name);
-  const [phone, setPhone] = useState(currentUser.phone || '0812-7890-1234');
-  const [roleLabel, setRoleLabel] = useState(currentUser.roleLabel);
-  const [avatar, setAvatar] = useState(currentUser.avatar || '🏢');
+  const [name, setName] = useState(currentUser?.name || 'Admin');
+  const [phone, setPhone] = useState(currentUser?.phone || '0812-7890-1234');
+  const [roleLabel, setRoleLabel] = useState(currentUser?.roleLabel || 'Petugas Lapangan');
+  const [avatar, setAvatar] = useState(currentUser?.avatar || '🏢');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // GPS Calibration State
@@ -114,10 +114,10 @@ export default function ProfilePage() {
   };
 
   const handleCancelEdit = () => {
-    setName(currentUser.name);
-    setPhone(currentUser.phone || '0812-7890-1234');
-    setRoleLabel(currentUser.roleLabel);
-    setAvatar(currentUser.avatar || '🏢');
+    setName(currentUser?.name || 'Admin');
+    setPhone(currentUser?.phone || '0812-7890-1234');
+    setRoleLabel(currentUser?.roleLabel || 'Petugas Lapangan');
+    setAvatar(currentUser?.avatar || '🏢');
     setIsEditing(false);
   };
 

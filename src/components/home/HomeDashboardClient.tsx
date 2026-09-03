@@ -100,25 +100,31 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
 
   // Compute Today's Survey Count
   const todayCount = useMemo(() => {
+    if (!Array.isArray(livePoles)) return 0;
     return livePoles.filter((pole) => {
-      const sDate = pole.surveyDate || (pole.createdAt ? pole.createdAt.split('T')[0] : '');
+      const sDate = pole.surveyDate ? String(pole.surveyDate) : (pole.createdAt ? String(pole.createdAt).split('T')[0] : '');
       return sDate === todayStr;
     }).length;
   }, [livePoles, todayStr]);
 
   // Helper to format human-readable relative time
-  const formatRelativeTime = (dateStr?: string, timeStr?: string): string => {
-    if (!dateStr) return 'Baru saja';
+  const formatRelativeTime = (dateInput?: any, timeInput?: any): string => {
+    if (!dateInput) return 'Baru saja';
     try {
       let d: Date;
-      if (dateStr.includes('T')) {
-        d = new Date(dateStr);
-      } else if (timeStr) {
-        d = new Date(`${dateStr}T${timeStr}`);
+      if (dateInput instanceof Date) {
+        d = dateInput;
       } else {
-        d = new Date(dateStr);
+        const str = String(dateInput);
+        if (str.includes('T')) {
+          d = new Date(str);
+        } else if (timeInput) {
+          d = new Date(`${str}T${String(timeInput)}`);
+        } else {
+          d = new Date(str);
+        }
       }
-      if (isNaN(d.getTime())) return dateStr;
+      if (isNaN(d.getTime())) return String(dateInput);
       const now = new Date();
       const diffMs = now.getTime() - d.getTime();
       if (diffMs < 60000 && diffMs >= -300000) return 'Baru saja';
@@ -131,18 +137,19 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
       if (diffDays < 7 && diffDays > 0) return `${diffDays} hari lalu`;
       return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
     } catch {
-      return dateStr;
+      return String(dateInput || 'Baru saja');
     }
   };
 
   // Compute Most Recent Surveys (Strictly Newest Timestamp First)
   const recentPoles = useMemo(() => {
+    if (!Array.isArray(livePoles)) return [];
     return [...livePoles]
       .sort((a, b) => {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : (a.surveyDate ? new Date(a.surveyDate).getTime() : 0);
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : (b.surveyDate ? new Date(b.surveyDate).getTime() : 0);
+        const timeA = a?.createdAt ? new Date(a.createdAt).getTime() : (a?.surveyDate ? new Date(a.surveyDate).getTime() : 0);
+        const timeB = b?.createdAt ? new Date(b.createdAt).getTime() : (b?.surveyDate ? new Date(b.surveyDate).getTime() : 0);
         if (timeB !== timeA) return timeB - timeA;
-        return (b.id || '').localeCompare(a.id || '');
+        return String(b?.id || '').localeCompare(String(a?.id || ''));
       })
       .slice(0, 6);
   }, [livePoles]);
@@ -287,7 +294,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-[11px] text-blue-400 font-semibold mb-1 font-mono">
                 <span className="bg-blue-950/80 border border-blue-800/50 px-2 py-0.5 rounded-md text-blue-300 font-bold">
-                  {greeting}, {currentUser.name.split(' ')[0]}
+                  {greeting}, {currentUser?.name ? currentUser.name.split(' ')[0] : 'Admin'}
                 </span>
                 <span className="text-slate-600">•</span>
                 <span className="text-slate-400 font-sans">{timeStr}</span>
@@ -910,8 +917,13 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
           ) : (
             <div className="divide-y divide-slate-100">
               {recentPoles.map((pole) => {
-                const cleanProvider = (pole.providerName || pole.providerId || 'Provider').replace(/^\d+\.\s*/, '');
-                const isNewToday = pole.surveyDate === todayStr || (pole.createdAt && pole.createdAt.startsWith(todayStr));
+                const cleanProvider = String(pole.providerName || pole.providerId || 'Provider').replace(/^\d+\.\s*/, '');
+                const createdAtStr = pole.createdAt ? String(pole.createdAt) : '';
+                const surveyDateStr = pole.surveyDate ? String(pole.surveyDate) : '';
+                const isNewToday = Boolean(
+                  (surveyDateStr && surveyDateStr === todayStr) ||
+                  (createdAtStr && createdAtStr.startsWith(todayStr))
+                );
                 const relativeTime = formatRelativeTime(pole.createdAt, pole.surveyTime);
 
                 return (

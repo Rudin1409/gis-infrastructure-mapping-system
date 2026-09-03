@@ -235,13 +235,13 @@ export default function TopHeader() {
             <Link
               href="/profile"
               className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-full text-[10.5px] text-slate-200 font-bold backdrop-blur-md transition-all active:scale-95 group"
-              title={`Akun Aktif: ${user.name} (${user.roleLabel}) - Buka Halaman Profil`}
+              title={`Akun Aktif: ${user.name || 'Petugas'} (${user.roleLabel || 'Surveyor'}) - Buka Halaman Profil`}
             >
               <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center text-[10px] font-black shadow-xs">
-                {user.avatar || user.name.charAt(0).toUpperCase()}
+                {user.avatar || (user.name ? user.name.charAt(0).toUpperCase() : 'A')}
               </span>
               <span className="max-w-[80px] truncate text-[10px] text-slate-300 group-hover:text-white transition-colors">
-                {user.name.split(' ')[0]}
+                {user.name ? user.name.split(' ')[0] : 'Admin'}
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </Link>
