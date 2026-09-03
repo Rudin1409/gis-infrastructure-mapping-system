@@ -3,6 +3,7 @@ import { poleService } from '@/services/PoleService';
 import { createPoleSchema } from '@/lib/validation/poleSchema';
 import { sheetsBackupService } from '@/services/sheetsBackupService';
 import { isDataMutationAllowed } from '@/lib/ai/aiConfig';
+import { calculateHaversineDistance } from '@/lib/gis/haversine';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -16,6 +17,10 @@ export async function GET(request: NextRequest) {
     const kelurahan = searchParams.get('kelurahan') || undefined;
     const poleType = searchParams.get('poleType') || undefined;
     const search = searchParams.get('search') || undefined;
+    const lat = Number(searchParams.get('lat'));
+    const lng = Number(searchParams.get('lng'));
+    const radius = Math.min(Math.max(Number(searchParams.get('radius')) || 75, 10), 500);
+    const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 20, 1), 100);
 
     const poles = await poleService.getPoles({
       providerId,
@@ -26,10 +31,35 @@ export async function GET(request: NextRequest) {
       search,
     });
 
+    const hasNearbyFilter = Number.isFinite(lat) && Number.isFinite(lng);
+    const data = hasNearbyFilter
+      ? poles
+          .map((pole) => ({
+            ...pole,
+            distanceMeters: Math.round(
+              calculateHaversineDistance(
+                { lat, lng },
+                { lat: pole.poleLatitude, lng: pole.poleLongitude }
+              )
+            ),
+          }))
+          .filter((pole) => pole.distanceMeters <= radius)
+          .sort((a, b) => a.distanceMeters - b.distanceMeters)
+          .slice(0, limit)
+      : poles;
+
     return NextResponse.json({
       success: true,
-      data: poles,
-      count: poles.length,
+      data,
+      count: data.length,
+      nearby: hasNearbyFilter
+        ? {
+            lat,
+            lng,
+            radius,
+            limit,
+          }
+        : undefined,
     });
   } catch (error: any) {
     console.error('API GET /api/poles error:', error);

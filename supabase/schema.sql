@@ -93,7 +93,19 @@ CREATE TABLE IF NOT EXISTS public.users (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. INDEX SPASIAL & PENCARIAN CEPAT
+-- 5. TABEL LOKASI AKTIF SURVEYOR DI LAPANGAN
+CREATE TABLE IF NOT EXISTS public.surveyor_locations (
+    user_id TEXT PRIMARY KEY,
+    user_name TEXT NOT NULL,
+    role_label TEXT,
+    team TEXT DEFAULT 'LAINNYA',
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    accuracy DOUBLE PRECISION,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. INDEX SPASIAL & PENCARIAN CEPAT
 CREATE INDEX IF NOT EXISTS idx_poles_lat_lng ON public.poles (pole_latitude, pole_longitude);
 CREATE INDEX IF NOT EXISTS idx_poles_kecamatan ON public.poles (kecamatan);
 CREATE INDEX IF NOT EXISTS idx_poles_provider ON public.poles (provider_id);
@@ -102,12 +114,15 @@ CREATE INDEX IF NOT EXISTS idx_poles_category ON public.poles (infrastructure_ca
 CREATE INDEX IF NOT EXISTS idx_poles_cable_type ON public.poles (cable_installation_type);
 CREATE INDEX IF NOT EXISTS idx_segments_nodes ON public.segments (from_node_id, to_node_id);
 CREATE INDEX IF NOT EXISTS idx_segments_provider ON public.segments (provider_id);
+CREATE INDEX IF NOT EXISTS idx_surveyor_locations_updated_at ON public.surveyor_locations (updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_surveyor_locations_lat_lng ON public.surveyor_locations (latitude, longitude);
 
--- 6. AKTIFKAN ROW LEVEL SECURITY (RLS) DENGAN AKSES ANOM/PUBLIC READ & WRITE
+-- 7. AKTIFKAN ROW LEVEL SECURITY (RLS) DENGAN AKSES ANOM/PUBLIC READ & WRITE
 ALTER TABLE public.poles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.providers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.segments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.surveyor_locations ENABLE ROW LEVEL SECURITY;
 
 -- Izinkan akses penuh publik untuk aplikasi Web GIS & Surveyor
 CREATE POLICY "Allow public read on poles" ON public.poles FOR SELECT USING (true);
@@ -130,7 +145,11 @@ CREATE POLICY "Allow public insert on users" ON public.users FOR INSERT WITH CHE
 CREATE POLICY "Allow public update on users" ON public.users FOR UPDATE USING (true);
 CREATE POLICY "Allow public delete on users" ON public.users FOR DELETE USING (true);
 
--- 7. SEED DATA AKUN RESMI DISKOMINFOTIKSAN
+CREATE POLICY "Allow public read on surveyor_locations" ON public.surveyor_locations FOR SELECT USING (true);
+CREATE POLICY "Allow public insert on surveyor_locations" ON public.surveyor_locations FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update on surveyor_locations" ON public.surveyor_locations FOR UPDATE USING (true);
+
+-- 8. SEED DATA AKUN RESMI DISKOMINFOTIKSAN
 INSERT INTO public.users (id, name, email, password, role, agency, phone, status)
 VALUES
   ('USR-KOMINFO-ADMIN', 'Admin DISKOMINFOTIKSAN', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF'),

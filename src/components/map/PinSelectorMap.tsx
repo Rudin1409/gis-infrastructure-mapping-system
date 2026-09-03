@@ -41,9 +41,14 @@ import {
   X,
   RefreshCw,
   Lock,
+  Users,
+  Radio,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
 import { getStreetViewEmbedUrl, getStreetViewDirectUrl } from '@/lib/gis/streetview';
+import { useAuth } from '@/context/AuthContext';
 
 interface PinSelectorMapProps {
   initialPinCoord?: Coordinates;
@@ -60,6 +65,87 @@ interface PinSelectorMapProps {
   onCancel?: () => void;
 }
 
+interface NearbyPole {
+  id: string;
+  poleCode?: string;
+  poleLatitude: number;
+  poleLongitude: number;
+  providerName?: string;
+  road?: string;
+  kelurahan?: string;
+  kecamatan?: string;
+  surveyorName?: string;
+  distanceMeters?: number;
+}
+
+interface ActiveSurveyorLocation {
+  userId: string;
+  userName: string;
+  roleLabel?: string;
+  team?: string;
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  updatedAt?: string;
+  distanceMeters?: number;
+}
+
+function escapeHtml(value?: string | number | null) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (parts[0]?.[0] || 'U') + (parts[1]?.[0] || '');
+}
+
+function createNearbyPoleIcon(LInstance: typeof L, distanceMeters?: number) {
+  const isVeryClose = typeof distanceMeters === 'number' && distanceMeters <= 25;
+  const color = isVeryClose ? '#dc2626' : '#f59e0b';
+  const html = `
+    <div class="relative flex flex-col items-center select-none pointer-events-none">
+      <div class="w-6 h-6 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-[10px] font-black" style="background:${color}">
+        !
+      </div>
+      <div class="w-1.5 h-1.5 rotate-45 -mt-1 shadow-sm" style="background:${color}"></div>
+    </div>
+  `;
+
+  return LInstance.divIcon({
+    html,
+    className: 'nearby-existing-pole-icon',
+    iconSize: [28, 34],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28],
+  });
+}
+
+function createActiveSurveyorIcon(LInstance: typeof L, location: ActiveSurveyorLocation) {
+  const initials = escapeHtml(getInitials(location.userName).toUpperCase());
+  const color = location.team === 'BAPENDA' ? '#059669' : '#2563eb';
+  const html = `
+    <div class="relative flex items-center justify-center select-none pointer-events-none" style="width:42px;height:42px;">
+      <div class="absolute w-10 h-10 rounded-full opacity-25 animate-ping" style="background:${color}"></div>
+      <div class="relative w-8 h-8 rounded-full border-2 border-white shadow-xl flex items-center justify-center text-white text-[10px] font-black ring-2 ring-white/30" style="background:${color}">
+        ${initials}
+      </div>
+    </div>
+  `;
+
+  return LInstance.divIcon({
+    html,
+    className: 'active-surveyor-location-icon',
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+    popupAnchor: [0, -18],
+  });
+}
+
 export default function PinSelectorMap({
   initialPinCoord,
   originalCoord,
@@ -67,6 +153,7 @@ export default function PinSelectorMap({
   onConfirmLocation,
   onCancel,
 }: PinSelectorMapProps) {
+  const { user } = useAuth();
   const isEditingSavedLocation = Boolean(originalCoord);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -77,7 +164,10 @@ export default function PinSelectorMap({
   const distanceLineRef = useRef<L.Polyline | null>(null);
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
   const boundaryLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const nearbyPoleLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const activeSurveyorLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const isMountedRef = useRef<boolean>(true);
+  const gpsReadingRef = useRef<GpsReading | null>(null);
 
   const [isLoadingLicense, setIsLoadingLicense] = useState(true);
   const [isLicenseLocked, setIsLicenseLocked] = useState(false);
@@ -106,6 +196,12 @@ export default function PinSelectorMap({
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [nearbyPoles, setNearbyPoles] = useState<NearbyPole[]>([]);
+  const [activeSurveyors, setActiveSurveyors] = useState<ActiveSurveyorLocation[]>([]);
+  const [isCheckingNearby, setIsCheckingNearby] = useState(false);
+  const [nearbyError, setNearbyError] = useState<string | null>(null);
+  const [showNearbyLayer, setShowNearbyLayer] = useState(true);
+  const [showSurveyorLayer, setShowSurveyorLayer] = useState(true);
 
   const [pinCoord, setPinCoord] = useState<Coordinates>(
     initialPinCoord || {
@@ -225,6 +321,9 @@ export default function PinSelectorMap({
     }
     boundaryLayerGroupRef.current = boundaryGroup;
 
+    nearbyPoleLayerGroupRef.current = L.layerGroup().addTo(map);
+    activeSurveyorLayerGroupRef.current = L.layerGroup().addTo(map);
+
     // Previous Saved Location Marker (if originalCoord provided)
     if (originalCoord) {
       const origIcon = createPreviousPolePinIcon(L, poleCode);
@@ -337,9 +436,148 @@ export default function PinSelectorMap({
       pinMarkerRef.current = null;
       surveyorMarkerRef.current = null;
       boundaryLayerGroupRef.current = null;
+      nearbyPoleLayerGroupRef.current = null;
+      activeSurveyorLayerGroupRef.current = null;
       currentTileLayerRef.current = null;
     };
   }, [leafletLib]);
+
+  useEffect(() => {
+    gpsReadingRef.current = gpsReading;
+  }, [gpsReading]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setIsCheckingNearby(true);
+      setNearbyError(null);
+      try {
+        const res = await fetch(
+          `/api/poles?lat=${pinCoord.lat}&lng=${pinCoord.lng}&radius=75&limit=20`,
+          { cache: 'no-store', signal: controller.signal }
+        );
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          throw new Error(json.error || 'Gagal cek titik sekitar');
+        }
+        setNearbyPoles(json.data || []);
+      } catch (error: any) {
+        if (error?.name !== 'AbortError') {
+          setNearbyError(error.message || 'Cek titik sekitar belum tersedia');
+          setNearbyPoles([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsCheckingNearby(false);
+      }
+    }, 450);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [pinCoord.lat, pinCoord.lng]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const publishLocation = async () => {
+      const reading = gpsReadingRef.current;
+      if (!reading) return;
+      try {
+        await fetch('/api/surveyors/active', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            userName: user.name,
+            roleLabel: user.roleLabel,
+            latitude: reading.latitude,
+            longitude: reading.longitude,
+            accuracy: reading.accuracy,
+          }),
+        });
+      } catch (_) {}
+    };
+
+    publishLocation();
+    const intervalId = window.setInterval(publishLocation, 15000);
+    return () => window.clearInterval(intervalId);
+  }, [user?.id, user?.name, user?.roleLabel]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let cancelled = false;
+    const fetchActiveSurveyors = async () => {
+      try {
+        const res = await fetch(
+          `/api/surveyors/active?lat=${pinCoord.lat}&lng=${pinCoord.lng}&excludeUserId=${encodeURIComponent(user.id)}`,
+          { cache: 'no-store' }
+        );
+        const json = await res.json();
+        if (!cancelled && json.success) {
+          setActiveSurveyors(json.data || []);
+        }
+      } catch (_) {
+        if (!cancelled) setActiveSurveyors([]);
+      }
+    };
+
+    fetchActiveSurveyors();
+    const intervalId = window.setInterval(fetchActiveSurveyors, 20000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [pinCoord.lat, pinCoord.lng, user?.id]);
+
+  useEffect(() => {
+    if (!leafletLib || !mapInstanceRef.current || !nearbyPoleLayerGroupRef.current) return;
+    const L = leafletLib;
+    const group = nearbyPoleLayerGroupRef.current;
+    group.clearLayers();
+
+    if (!showNearbyLayer) return;
+
+    nearbyPoles.forEach((pole) => {
+      const marker = L.marker([pole.poleLatitude, pole.poleLongitude], {
+        icon: createNearbyPoleIcon(L, pole.distanceMeters),
+        zIndexOffset: 650,
+      }).bindPopup(`
+        <div style="min-width:170px">
+          <strong>${escapeHtml(pole.poleCode || pole.id)}</strong><br/>
+          <span>${escapeHtml(pole.providerName || 'Data tiang')}</span><br/>
+          <small>${escapeHtml(pole.road || '-')}, ${escapeHtml(pole.kelurahan || '-')}</small><br/>
+          <b>Jarak: ${escapeHtml(formatDistance(pole.distanceMeters || 0))}</b>
+        </div>
+      `);
+      group.addLayer(marker);
+    });
+  }, [nearbyPoles, showNearbyLayer, leafletLib]);
+
+  useEffect(() => {
+    if (!leafletLib || !mapInstanceRef.current || !activeSurveyorLayerGroupRef.current) return;
+    const L = leafletLib;
+    const group = activeSurveyorLayerGroupRef.current;
+    group.clearLayers();
+
+    if (!showSurveyorLayer) return;
+
+    activeSurveyors.forEach((location) => {
+      const marker = L.marker([location.latitude, location.longitude], {
+        icon: createActiveSurveyorIcon(L, location),
+        zIndexOffset: 720,
+      }).bindPopup(`
+        <div style="min-width:170px">
+          <strong>${escapeHtml(location.userName)}</strong><br/>
+          <span>${escapeHtml(location.team || 'TIM')}</span><br/>
+          <small>Akurasi GPS: ${escapeHtml(location.accuracy ? `±${Math.round(location.accuracy)}m` : '-')}</small><br/>
+          <b>Jarak dari pin: ${escapeHtml(formatDistance(location.distanceMeters || 0))}</b>
+        </div>
+      `);
+      group.addLayer(marker);
+    });
+  }, [activeSurveyors, showSurveyorLayer, leafletLib]);
 
   // Handle Tile Mode Switch
   const toggleTileMode = () => {
@@ -563,6 +801,14 @@ export default function PinSelectorMap({
 
   const locationQC = evaluateLocationQC(pinCoord, deviceCoord);
   const gpsQuality = getGpsQuality(gpsReading?.accuracy);
+  const nearestPole = nearbyPoles[0];
+  const nearestDistance = nearestPole?.distanceMeters;
+  const duplicateLevel =
+    typeof nearestDistance === 'number' && nearestDistance <= 25
+      ? 'danger'
+      : typeof nearestDistance === 'number' && nearestDistance <= 75
+      ? 'warning'
+      : 'clear';
 
   // Handle confirmation
   const handleConfirm = () => {
@@ -733,6 +979,93 @@ export default function PinSelectorMap({
               </button>
             </div>
           )}
+        </div>
+
+        {/* Nearby existing poles and active surveyor radar */}
+        <div className="absolute bottom-24 right-3 z-[410] w-[min(245px,calc(100%-148px))] rounded-2xl border border-white/80 bg-white/95 p-2.5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-slate-900">
+                <Radio className="h-3.5 w-3.5 text-blue-600" />
+                <span>Cek Sekitar</span>
+              </p>
+              <p
+                className={`mt-0.5 text-[9px] font-bold ${
+                  duplicateLevel === 'danger'
+                    ? 'text-red-600'
+                    : duplicateLevel === 'warning'
+                    ? 'text-amber-600'
+                    : 'text-emerald-600'
+                }`}
+              >
+                {isCheckingNearby
+                  ? 'Memindai lokasi...'
+                  : duplicateLevel === 'danger'
+                  ? 'Ada titik sangat dekat'
+                  : duplicateLevel === 'warning'
+                  ? 'Ada titik di sekitar'
+                  : 'Belum ada titik dekat'}
+              </p>
+            </div>
+            {isCheckingNearby ? (
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            ) : duplicateLevel === 'danger' ? (
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            )}
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowNearbyLayer((value) => !value)}
+              className={`flex h-9 items-center justify-between gap-1 rounded-xl border px-2 text-left transition-all active:scale-95 ${
+                showNearbyLayer
+                  ? 'border-amber-200 bg-amber-50 text-amber-800'
+                  : 'border-slate-200 bg-slate-50 text-slate-500'
+              }`}
+              title="Tampilkan atau sembunyikan titik tiang yang sudah terdata di sekitar pin"
+            >
+              <span className="text-[9px] font-black leading-tight">
+                Titik
+                <br />
+                {nearbyPoles.length}
+              </span>
+              {showNearbyLayer ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowSurveyorLayer((value) => !value)}
+              className={`flex h-9 items-center justify-between gap-1 rounded-xl border px-2 text-left transition-all active:scale-95 ${
+                showSurveyorLayer
+                  ? 'border-blue-200 bg-blue-50 text-blue-800'
+                  : 'border-slate-200 bg-slate-50 text-slate-500'
+              }`}
+              title="Tampilkan atau sembunyikan posisi user aktif"
+            >
+              <span className="text-[9px] font-black leading-tight">
+                User
+                <br />
+                {activeSurveyors.length}
+              </span>
+              <Users className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="mt-2 rounded-xl bg-slate-50 px-2 py-1.5 text-[9px] font-bold leading-snug text-slate-600">
+            {nearbyError ? (
+              <span className="text-amber-700">{nearbyError}</span>
+            ) : nearestPole ? (
+              <span>
+                Terdekat <strong className="text-slate-950">{formatDistance(nearestDistance || 0)}</strong>
+                {' '}dari <strong className="text-slate-950">{nearestPole.poleCode || nearestPole.id}</strong>
+              </span>
+            ) : (
+              <span>Geser pin untuk cek titik yang sudah ditandai.</span>
+            )}
+          </div>
         </div>
 
         {/* ======================================================= */}

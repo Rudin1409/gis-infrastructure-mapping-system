@@ -108,23 +108,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
 function AppLayoutContainer({ children }: { children: React.ReactNode }) {
   const { viewMode } = useViewMode();
-  const [isWideScreen, setIsWideScreen] = useState(false);
-
-  useEffect(() => {
-    const updateScreenMode = () => {
-      setIsWideScreen(window.innerWidth >= 1024);
-    };
-
-    updateScreenMode();
-    window.addEventListener('resize', updateScreenMode);
-    return () => window.removeEventListener('resize', updateScreenMode);
-  }, []);
-
-  const isDesktop = viewMode === 'DESKTOP' || isWideScreen;
+  const isDesktop = viewMode === 'DESKTOP';
 
   return (
     <div className="min-h-screen w-full bg-[#0b1120] flex justify-center items-start text-slate-800 font-sans selection:bg-blue-600 selection:text-white transition-all duration-300">
-      {/* Laptop/desktop browsers use the full dashboard canvas; narrow viewports keep the mobile app frame. */}
+      {/* Desktop uses the full dashboard canvas; mobile mode stays available for phone-preview work on laptops. */}
       <div
         className={`w-full h-screen max-h-screen bg-[#f4f7fb] relative flex flex-col overflow-hidden transition-all duration-300 ease-out ${
           isDesktop

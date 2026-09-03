@@ -28,11 +28,16 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('gis_screen_view_mode') as ViewMode | null;
-      if (saved === 'DESKTOP' || saved === 'MOBILE') {
-        setViewModeState(saved);
-      } else if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-        // Auto default to desktop on large screens if user hasn't set preference
+      const isLargeScreen = typeof window !== 'undefined' && window.innerWidth >= 1024;
+      if (saved === 'DESKTOP') {
         setViewModeState('DESKTOP');
+      } else if (saved === 'MOBILE' && !isLargeScreen) {
+        setViewModeState('MOBILE');
+      } else if (isLargeScreen) {
+        // Large screens open in desktop by default, while the header toggle can still preview mobile.
+        setViewModeState('DESKTOP');
+      } else if (saved === 'MOBILE') {
+        setViewModeState('MOBILE');
       }
     } catch (_) {}
 
