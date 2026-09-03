@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useViewMode } from '@/context/ViewModeContext';
 import { DEFAULT_ACCOUNTS } from '@/types/auth';
 import { Pole } from '@/types/pole';
 import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
@@ -55,6 +56,8 @@ interface HomeDashboardClientProps {
 
 export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardClientProps) {
   const { user } = useAuth();
+  const { viewMode } = useViewMode();
+  const isDesktop = viewMode === 'DESKTOP';
   const currentUser = user || DEFAULT_ACCOUNTS[0];
 
   const {
@@ -255,7 +258,10 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
       {/* ============================================================ */}
       {/* 1. TOP COMMAND BAR & USER HERO                               */}
       {/* ============================================================ */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#0b1329] to-[#0d1e3d] text-white pt-4 pb-9 px-4 sm:px-6 rounded-b-[36px] shadow-2xl shadow-black/40 border-b border-blue-900/30">
+      {/* ============================================================ */}
+      {/* 1. TOP COMMAND BAR & USER HERO                               */}
+      {/* ============================================================ */}
+      <div className={`relative overflow-hidden bg-gradient-to-b from-slate-950 via-[#0b1329] to-[#0d1e3d] text-white pt-4 pb-9 rounded-b-[36px] shadow-2xl shadow-black/40 border-b border-blue-900/30 ${isDesktop ? 'px-6' : 'px-4'}`}>
         {/* Spatial background accents */}
         <div className="absolute -top-12 right-0 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-8 -left-8 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -271,7 +277,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
               </span>
               <span className="font-bold text-white tracking-wider">DISKOMINFOTIKSAN</span>
               <span className="text-slate-600">•</span>
-              <span className="text-slate-300 truncate max-w-[140px] sm:max-w-none">Kota Lubuklinggau</span>
+              <span className={`text-slate-300 truncate ${isDesktop ? 'max-w-none' : 'max-w-[130px]'}`}>Kota Lubuklinggau</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -290,7 +296,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
           </div>
 
           {/* User Welcome & Mission Statement */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-1">
+          <div className={`flex justify-between gap-4 pt-1 ${isDesktop ? 'flex-row items-end' : 'flex-col'}`}>
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-[11px] text-blue-400 font-semibold mb-1 font-mono">
                 <span className="bg-blue-950/80 border border-blue-800/50 px-2 py-0.5 rounded-md text-blue-300 font-bold">
@@ -299,7 +305,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <span className="text-slate-600">•</span>
                 <span className="text-slate-400 font-sans">{timeStr}</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight mt-0.5">
+              <h1 className={`font-black text-white tracking-tight leading-tight mt-0.5 ${isDesktop ? 'text-2xl' : 'text-xl'}`}>
                 Pusat Kendali Spasial Infrastruktur
               </h1>
               <p className="text-xs text-slate-300/90 font-medium max-w-xl mt-1 leading-relaxed">
@@ -308,10 +314,10 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             </div>
 
             {/* Quick Action Group (Never wrapping awkwardly) */}
-            <div className="flex items-center gap-2.5 flex-shrink-0 w-full sm:w-auto">
+            <div className={`flex items-center gap-2.5 flex-shrink-0 ${isDesktop ? 'w-auto' : 'w-full'}`}>
               <Link
                 href="/poles/new"
-                className="flex-1 sm:flex-initial py-2.5 px-4 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-blue-600/35 flex items-center justify-center gap-2 transition-all border border-blue-400/30 cursor-pointer whitespace-nowrap min-w-0"
+                className={`py-2.5 px-4 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-blue-600/35 flex items-center justify-center gap-2 transition-all border border-blue-400/30 cursor-pointer whitespace-nowrap min-w-0 ${isDesktop ? 'flex-initial' : 'flex-1'}`}
               >
                 <Plus className="w-4 h-4 stroke-[3] flex-shrink-0" />
                 <span className="truncate">Input Survei GPS</span>
@@ -319,7 +325,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
 
               <Link
                 href="/map"
-                className="flex-1 sm:flex-initial py-2.5 px-4 bg-slate-900/90 hover:bg-slate-800 active:scale-95 text-slate-200 hover:text-white font-bold text-xs rounded-2xl border border-slate-700/80 hover:border-slate-600 flex items-center justify-center gap-2 transition-all cursor-pointer backdrop-blur-md whitespace-nowrap min-w-0 shadow-md"
+                className={`py-2.5 px-4 bg-slate-900/90 hover:bg-slate-800 active:scale-95 text-slate-200 hover:text-white font-bold text-xs rounded-2xl border border-slate-700/80 hover:border-slate-600 flex items-center justify-center gap-2 transition-all cursor-pointer backdrop-blur-md whitespace-nowrap min-w-0 shadow-md ${isDesktop ? 'flex-initial' : 'flex-1'}`}
               >
                 <Map className="w-4 h-4 text-blue-400 flex-shrink-0" />
                 <span className="truncate">Buka Peta GIS</span>
@@ -329,12 +335,12 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-5 -mt-7 relative z-20">
+      <div className={`max-w-5xl mx-auto space-y-5 -mt-7 relative z-20 ${isDesktop ? 'px-6' : 'px-4'}`}>
         {/* ============================================================ */}
         {/* 2. SPATIAL TELEMETRY BENTO GRID                             */}
         {/* ============================================================ */}
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          <div className={`grid gap-2.5 ${isDesktop ? 'grid-cols-4 gap-3' : 'grid-cols-2'}`}>
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
@@ -347,14 +353,14 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          <div className={`grid gap-2.5 ${isDesktop ? 'grid-cols-4 gap-3' : 'grid-cols-2'}`}>
             {/* Card 1: Total Tiang Terdata */}
             <Link
               href="/poles"
-              className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-blue-300 hover:shadow-md transition-all group relative overflow-hidden"
+              className={`bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-blue-300 hover:shadow-md transition-all group relative overflow-hidden ${isDesktop ? 'p-4' : 'p-3.5'}`}
             >
               <div className="flex items-center justify-between text-slate-400 mb-1">
-                <span className="text-[9.5px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 truncate">
+                <span className={`font-mono font-bold uppercase tracking-wider text-slate-500 truncate ${isDesktop ? 'text-[10px]' : 'text-[9.5px]'}`}>
                   TOTAL ASET TIANG
                 </span>
                 <div className="w-6 h-6 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -362,21 +368,21 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 </div>
               </div>
               <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
-                <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono tracking-tight group-hover:text-blue-600 transition-colors truncate">
+                <span className={`font-black text-slate-900 font-mono tracking-tight group-hover:text-blue-600 transition-colors truncate ${isDesktop ? 'text-2xl' : 'text-xl'}`}>
                   {livePoles.length.toLocaleString('id-ID')}
                 </span>
                 <span className="text-[10.5px] font-bold text-slate-500 flex-shrink-0">Titik</span>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[9.5px] sm:text-[10px] text-slate-500">
+              <div className={`mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-slate-500 ${isDesktop ? 'text-[10px]' : 'text-[9.5px]'}`}>
                 <span className="truncate">🌐 FO: {infrastructureCounts.fo}</span>
                 <span className="truncate">💡 PJU: {infrastructureCounts.pju}</span>
               </div>
             </Link>
 
             {/* Card 2: Survei Hari Ini */}
-            <div className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] relative overflow-hidden">
+            <div className={`bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] relative overflow-hidden ${isDesktop ? 'p-4' : 'p-3.5'}`}>
               <div className="flex items-center justify-between text-emerald-600 mb-1">
-                <span className="text-[9.5px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700 truncate">
+                <span className={`font-mono font-bold uppercase tracking-wider text-emerald-700 truncate ${isDesktop ? 'text-[10px]' : 'text-[9.5px]'}`}>
                   SURVEI HARI INI
                 </span>
                 <div className="w-6 h-6 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
@@ -384,27 +390,27 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 </div>
               </div>
               <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
-                <span className="text-xl sm:text-2xl font-black text-emerald-700 font-mono tracking-tight truncate">
+                <span className={`font-black text-emerald-700 font-mono tracking-tight truncate ${isDesktop ? 'text-2xl' : 'text-xl'}`}>
                   +{todayCount}
                 </span>
                 <span className="text-[10.5px] font-bold text-slate-500 flex-shrink-0">Titik baru</span>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[9.5px] sm:text-[10px]">
+              <div className={`mt-2 pt-2 border-t border-slate-100 flex items-center justify-between ${isDesktop ? 'text-[10px]' : 'text-[9.5px]'}`}>
                 <span className="text-emerald-700 font-bold flex items-center gap-1 flex-shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Live Sync
                 </span>
-                <span className="text-slate-400 font-mono text-[9px] sm:text-[10px] truncate">{todayStr}</span>
+                <span className={`text-slate-400 font-mono truncate ${isDesktop ? 'text-[10px]' : 'text-[9px]'}`}>{todayStr}</span>
               </div>
             </div>
 
             {/* Card 3: Skor Kesehatan & Keamanan */}
             <Link
               href="/segments"
-              className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-amber-300 hover:shadow-md transition-all group relative overflow-hidden"
+              className={`bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-amber-300 hover:shadow-md transition-all group relative overflow-hidden ${isDesktop ? 'p-4' : 'p-3.5'}`}
             >
               <div className="flex items-center justify-between text-amber-600 mb-1">
-                <span className="text-[9.5px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700 truncate">
+                <span className={`font-mono font-bold uppercase tracking-wider text-amber-700 truncate ${isDesktop ? 'text-[10px]' : 'text-[9.5px]'}`}>
                   KONDISI FISIK
                 </span>
                 <div className="w-6 h-6 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -412,12 +418,12 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 </div>
               </div>
               <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
-                <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono tracking-tight truncate">
+                <span className={`font-black text-slate-900 font-mono tracking-tight truncate ${isDesktop ? 'text-2xl' : 'text-xl'}`}>
                   {infrastructureCounts.healthScore}%
                 </span>
                 <span className="text-[10.5px] font-bold text-emerald-600 flex-shrink-0">Kondisi Baik</span>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[9.5px] sm:text-[10px]">
+              <div className={`mt-2 pt-2 border-t border-slate-100 flex items-center justify-between ${isDesktop ? 'text-[10px]' : 'text-[9.5px]'}`}>
                 <span className="text-amber-700 font-bold truncate">
                   ⚠️ {infrastructureCounts.hazard} Perlu Audit
                 </span>
@@ -428,10 +434,10 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             {/* Card 4: Cakupan 8 Kecamatan */}
             <Link
               href="/districts"
-              className="bg-white/95 backdrop-blur-md rounded-3xl p-3.5 sm:p-4 border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-purple-300 hover:shadow-md transition-all group relative overflow-hidden"
+              className={`bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-[0_4px_20px_rgba(15,23,42,0.06)] hover:border-purple-300 hover:shadow-md transition-all group relative overflow-hidden ${isDesktop ? 'p-4' : 'p-3.5'}`}
             >
               <div className="flex items-center justify-between text-purple-600 mb-1">
-                <span className="text-[9.5px] sm:text-[10px] font-mono font-bold uppercase tracking-wider text-purple-700 truncate">
+                <span className={`font-mono font-bold uppercase tracking-wider text-purple-700 truncate ${isDesktop ? 'text-[10px]' : 'text-[9.5px]'}`}>
                   CAKUPAN WILAYAH
                 </span>
                 <div className="w-6 h-6 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
@@ -439,13 +445,13 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 </div>
               </div>
               <div className="flex items-baseline gap-1 mt-0.5 min-w-0">
-                <span className="text-xl sm:text-2xl font-black text-slate-900 font-mono tracking-tight group-hover:text-purple-600 transition-colors truncate">
+                <span className={`font-black text-slate-900 font-mono tracking-tight group-hover:text-purple-600 transition-colors truncate ${isDesktop ? 'text-2xl' : 'text-xl'}`}>
                   8 Kecamatan
                 </span>
               </div>
-              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[9.5px] sm:text-[10px]">
+              <div className={`mt-2 pt-2 border-t border-slate-100 flex items-center justify-between ${isDesktop ? 'text-[10px]' : 'text-[9.5px]'}`}>
                 <span className="text-purple-700 font-bold truncate">72 Kelurahan</span>
-                <span className="text-slate-400 font-mono text-[9px] sm:text-[10px] flex-shrink-0">100% Aktif</span>
+                <span className={`text-slate-400 font-mono flex-shrink-0 ${isDesktop ? 'text-[10px]' : 'text-[9px]'}`}>100% Aktif</span>
               </div>
             </Link>
           </div>
@@ -476,7 +482,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             <span className="text-[10.5px] text-slate-400 font-medium">Terintegrasi DISKOMINFOTIKSAN</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className={`grid gap-2.5 ${isDesktop ? 'grid-cols-4' : 'grid-cols-2'}`}>
             {/* 1. Input Survei GPS */}
             <Link
               href="/poles/new"
@@ -669,7 +675,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
         {/* 5. LIVE SPATIAL RADAR & CITY ANALYTICS                       */}
         {/* ============================================================ */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-100">
+          <div className={`flex justify-between gap-2.5 pb-3 border-b border-slate-100 ${isDesktop ? 'flex-row items-center' : 'flex-col'}`}>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                 <BarChart3 className="w-4 h-4" />
@@ -724,7 +730,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
 
           {/* VIEW A: Kategori Aset */}
           {activeTab === 'OVERVIEW' && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 animate-in fade-in">
+            <div className={`grid gap-3 pt-1 animate-in fade-in ${isDesktop ? 'grid-cols-3' : 'grid-cols-1'}`}>
               {/* FO / Internet */}
               <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-2">
                 <div className="flex items-center justify-between text-indigo-900">
@@ -846,7 +852,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
 
           {/* VIEW C: Per Kecamatan */}
           {activeTab === 'DISTRICTS' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 animate-in fade-in">
+            <div className={`grid gap-2.5 pt-1 animate-in fade-in ${isDesktop ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {kecamatanDistribution.map(([kecName, count]) => {
                 const pct = Math.round((count / (livePoles.length || 1)) * 100);
                 return (

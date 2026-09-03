@@ -130,9 +130,9 @@ export default function TopHeader() {
 
   return (
     <header className="sticky top-0 w-full z-30 bg-slate-950/95 backdrop-blur-xl text-white shadow-[0_4px_20px_rgba(0,0,0,0.35)] border-b border-slate-800/80 select-none flex-shrink-0">
-      <div className={`px-3 sm:px-4 py-2 flex items-center justify-between gap-2.5 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto' : 'max-w-md mx-auto lg:w-full lg:max-w-7xl'}`}>
+      <div className={`py-2 flex items-center justify-between gap-2 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto px-4' : 'w-full max-w-[430px] mx-auto px-3'}`}>
         {/* Left Side: Back Button OR Brand Emblem + Title */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           {meta.showBack ? (
             <button
               type="button"
@@ -160,8 +160,8 @@ export default function TopHeader() {
               <h1 className="text-xs sm:text-[13px] font-black tracking-tight text-white truncate uppercase font-mono leading-tight">
                 {meta.title}
               </h1>
-              {pathname === '/' && (
-                <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded-md bg-blue-500/20 text-blue-300 text-[9px] font-bold font-mono border border-blue-500/30">
+              {pathname === '/' && viewMode === 'DESKTOP' && (
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded-md bg-blue-500/20 text-blue-300 text-[9px] font-bold font-mono border border-blue-500/30">
                   PRO
                 </span>
               )}
@@ -173,31 +173,31 @@ export default function TopHeader() {
         </div>
 
         {/* Right Side: Desktop Mode Toggle, Fullscreen, Reload/Refresh Button & Active User */}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Desktop Widescreen / Mobile Mode Toggle Button */}
           <button
             type="button"
             onClick={toggleViewMode}
-            className={`px-2.5 py-1 rounded-xl border flex items-center gap-1.5 text-[10.5px] font-bold transition-all cursor-pointer ${
+            className={`px-2 py-1 rounded-xl border flex items-center gap-1 text-[10px] font-bold transition-all cursor-pointer ${
               viewMode === 'DESKTOP'
-                ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/30 ring-1 ring-blue-400/40'
+                ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/30 ring-1 ring-blue-400/40 sm:px-2.5'
                 : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border-slate-700/80 hover:text-white'
             }`}
             title={
               viewMode === 'DESKTOP'
-                ? 'Mode Desktop Aktif (Layar Lebar) - Klik untuk Mode Mobile'
-                : 'Buka Ukuran Desktop Penuh (Layar Lebar & Pas)'
+                ? 'Mode Desktop Aktif (Layar Lebar) - Klik untuk beralih ke Mode HP / Mobile'
+                : 'Mode Mobile Aktif - Klik untuk beralih ke Mode Desktop Layar Lebar'
             }
           >
             {viewMode === 'DESKTOP' ? (
               <>
                 <Smartphone className="w-3.5 h-3.5 text-blue-200" />
-                <span className="hidden sm:inline">Mobile View</span>
+                <span className="hidden sm:inline text-[10.5px]">Mobile</span>
               </>
             ) : (
               <>
-                <Monitor className="w-3.5 h-3.5 text-slate-400" />
-                <span className="hidden sm:inline">Desktop</span>
+                <Monitor className="w-3.5 h-3.5 text-slate-300" />
+                <span className="text-[10px]">Desktop</span>
               </>
             )}
           </button>
