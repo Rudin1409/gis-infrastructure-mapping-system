@@ -55,6 +55,11 @@ export function useSupabaseRealtimePoles(
 
       if (json?.success && Array.isArray(json.data)) {
         const nextPoles = json.data as Pole[];
+        if (nextPoles.length === 0 && polesSignatureRef.current) {
+          console.warn('Realtime fetch returned 0 poles; keeping last valid snapshot.');
+          return;
+        }
+
         const nextSignature = buildPoleSnapshotSignature(nextPoles);
 
         if (nextSignature !== polesSignatureRef.current) {
@@ -64,6 +69,8 @@ export function useSupabaseRealtimePoles(
             onPolesChangeRef.current(nextPoles);
           }
         }
+      } else if (json?.success === false) {
+        console.warn('Realtime fetch poles failed:', json.error || 'Unknown API error');
       }
     } catch (err) {
       console.warn('Realtime fetch poles notice:', err);

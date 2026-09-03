@@ -186,7 +186,7 @@ export class SupabasePoleRepository implements IPoleRepository {
     const { data, error } = await query;
     if (error) {
       console.error('Server DB findAll error:', error);
-      return [];
+      throw new Error(`Gagal membaca data tiang dari database: ${error.message}`);
     }
     return (data || []).map(mapDbToPole);
   }
@@ -267,7 +267,7 @@ export class SupabasePoleRepository implements IPoleRepository {
     const { error } = await supabase.from('poles').delete().eq('id', id);
     if (error) {
       console.error('Server DB delete error:', error);
-      return false;
+      throw new Error(`Gagal menghapus data tiang dari database: ${error.message}`);
     }
     return true;
   }
@@ -279,7 +279,10 @@ export class SupabasePoleRepository implements IPoleRepository {
     }
 
     const { data, error } = await supabase.from('poles').select('id');
-    if (error || !data) return [];
+    if (error) {
+      throw new Error(`Gagal membaca ID tiang dari database: ${error.message}`);
+    }
+    if (!data) return [];
     return data.map((d: any) => d.id);
   }
 }
