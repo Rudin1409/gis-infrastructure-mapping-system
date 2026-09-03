@@ -5,7 +5,8 @@ import { dbQuery, isPostgresConfigured } from '@/lib/postgres';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const ACTIVE_WINDOW_MINUTES = 45;
+// Active window: 2 minutes of inactivity automatically clears user from map
+const ACTIVE_WINDOW_MINUTES = 2;
 
 async function ensureSurveyorLocationsTable() {
   if (!isPostgresConfigured()) return;
@@ -30,9 +31,12 @@ async function ensureSurveyorLocationsTable() {
 }
 
 function resolveTeam(userId?: string, userName?: string): 'KOMINFO' | 'BAPENDA' | 'LAINNYA' {
+  if (userId === 'USR-KOMINFO-ADMIN' || userId === 'USR-SURVEYOR-01') return 'KOMINFO';
+  if (userId === 'USR-SURVEYOR-02' || userId === 'USR-SURVEYOR-03' || userId === 'USR-SURVEYOR-04') return 'BAPENDA';
+
   const key = `${userId || ''} ${userName || ''}`.toLowerCase();
   if (key.includes('kominfo') || key.includes('tri') || key.includes('admin')) return 'KOMINFO';
-  if (key.includes('yodi') || key.includes('andika') || key.includes('pradigga')) return 'BAPENDA';
+  if (key.includes('yodi') || key.includes('andika') || key.includes('pradigga') || key.includes('bapenda')) return 'BAPENDA';
   return 'LAINNYA';
 }
 
@@ -55,6 +59,18 @@ export async function GET(request: NextRequest) {
     const lat = Number(searchParams.get('lat'));
     const lng = Number(searchParams.get('lng'));
     const excludeUserId = searchParams.get('excludeUserId') || '';
+    const requesterTeam = (searchParams.get('requesterTeam') || '').toUpperCase();
+    const requesterAgency = (searchParams.get('requesterAgency') || '').toUpperCase();
+
+    // 🔒 HAK AKSES KHUSUS: Tim BAPENDA tidak diperkenankan melihat lokasi user/petugas di peta
+    if (requesterTeam === 'BAPENDA' || requesterAgency.includes('BAPENDA')) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        count: 0,
+        notice: 'Akses pemantauan lokasi petugas hanya diperuntukkan bagi Tim KOMINFO.',
+      });
+    }
 
     let rows: any[] = [];
 
@@ -67,7 +83,7 @@ export async function GET(request: NextRequest) {
           WHERE updated_at >= NOW() - ($1::int * INTERVAL '1 minute')
             AND ($2 = '' OR user_id <> $2)
           ORDER BY updated_at DESC
-          LIMIT 25
+          LIMIT 30
         `,
         [ACTIVE_WINDOW_MINUTES, excludeUserId]
       );
@@ -80,7 +96,7 @@ export async function GET(request: NextRequest) {
         .select('user_id,user_name,role_label,team,latitude,longitude,accuracy,updated_at')
         .gte('updated_at', threshold)
         .order('updated_at', { ascending: false })
-        .limit(25);
+        .limit(30);
 
       if (excludeUserId) {
         query = query.neq('user_id', excludeUserId);
@@ -122,8 +138,32 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const userId = String(body.userId || '').trim();
+    const { searchParams } = new URL(request.url);
+    const queryAction = searchParams.get('action');
+    const queryUserId = searchParams.get('userId');
+
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch (_) {
+      // Beacon or empty body
+    }
+
+    const action = queryAction || body?.action;
+    const userId = String(queryUserId || body?.userId || '').trim();
+
+    // 🛑 HANDLER OFFLINE: Hapus seketika saat user keluar aplikasi / logout / close tab
+    if (action === 'offline' && userId) {
+      if (isPostgresConfigured()) {
+        await ensureSurveyorLocationsTable();
+        await dbQuery('DELETE FROM surveyor_locations WHERE user_id = $1', [userId]);
+      } else {
+        const { supabase } = await import('@/lib/supabase');
+        await supabase.from('surveyor_locations').delete().eq('user_id', userId);
+      }
+      return NextResponse.json({ success: true, action: 'offline', userId });
+    }
+
     const userName = String(body.userName || '').trim();
     const roleLabel = String(body.roleLabel || '').trim();
     const latitude = Number(body.latitude ?? body.lat);
@@ -176,7 +216,7 @@ export async function POST(request: NextRequest) {
       if (error) throw error;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, team });
   } catch (error: any) {
     console.error('API POST /api/surveyors/active error:', error);
     return NextResponse.json(

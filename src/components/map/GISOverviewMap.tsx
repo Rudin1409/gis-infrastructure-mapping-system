@@ -221,6 +221,7 @@ export default function GISOverviewMap({
   const measureLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const corridorLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const activeSurveyorLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const activeSurveyorMarkersRef = useRef<Map<string, any>>(new Map());
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
   const markerIconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
 
@@ -354,6 +355,15 @@ export default function GISOverviewMap({
   const [showGpsHud, setShowGpsHud] = useState<boolean>(false);
   const [activeSurveyors, setActiveSurveyors] = useState<ActiveSurveyorLocation[]>([]);
   const [showActiveSurveyors, setShowActiveSurveyors] = useState<boolean>(true);
+
+  // 🔒 HAK AKSES KHUSUS: Hanya user dari Tim KOMINFO yang boleh melihat posisi seluruh petugas
+  const isKominfoUser = useMemo(() => {
+    if (!user) return false;
+    if (user.role === 'ADMIN_KOMINFO') return true;
+    if (user.team === 'KOMINFO') return true;
+    const agencyLower = (user.agency || '').toLowerCase();
+    return agencyLower.includes('kominfo') || agencyLower.includes('komunikasi');
+  }, [user]);
 
   // Load Leaflet dynamically
   useEffect(() => {
@@ -543,13 +553,24 @@ export default function GISOverviewMap({
   }, [leafletLib]);
 
   useEffect(() => {
+    // 🔒 Jika bukan tim KOMINFO (misal BAPENDA), jangan fetch maupun tampilkan lokasi petugas lain
+    if (!isKominfoUser) {
+      setActiveSurveyors([]);
+      if (activeSurveyorLayerGroupRef.current) {
+        activeSurveyorLayerGroupRef.current.clearLayers();
+        activeSurveyorMarkersRef.current.clear();
+      }
+      return;
+    }
+
     let cancelled = false;
     const fetchActiveSurveyors = async () => {
       try {
         const lat = userLocation?.latitude ?? LUBUKLINGGAU_CENTER.lat;
         const lng = userLocation?.longitude ?? LUBUKLINGGAU_CENTER.lng;
         const exclude = user?.id ? `&excludeUserId=${encodeURIComponent(user.id)}` : '';
-        const res = await fetch(`/api/surveyors/active?lat=${lat}&lng=${lng}${exclude}`, {
+        const requesterInfo = `&requesterTeam=KOMINFO&requesterRole=${encodeURIComponent(user?.role || '')}`;
+        const res = await fetch(`/api/surveyors/active?lat=${lat}&lng=${lng}${exclude}${requesterInfo}`, {
           cache: 'no-store',
         });
         const json = await res.json();
@@ -562,26 +583,33 @@ export default function GISOverviewMap({
     };
 
     fetchActiveSurveyors();
-    const intervalId = window.setInterval(fetchActiveSurveyors, 20000);
+    // ⚡ Polling cepat setiap 4 detik untuk memantau pergerakan realtime
+    const intervalId = window.setInterval(fetchActiveSurveyors, 4000);
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [user?.id, userLocation?.latitude, userLocation?.longitude]);
+  }, [isKominfoUser, user?.id, user?.role, userLocation?.latitude, userLocation?.longitude]);
 
   useEffect(() => {
     if (!leafletLib || !mapInstanceRef.current || !activeSurveyorLayerGroupRef.current) return;
     const L = leafletLib;
     const group = activeSurveyorLayerGroupRef.current;
-    group.clearLayers();
 
-    if (!showActiveSurveyors) return;
+    if (!isKominfoUser || !showActiveSurveyors) {
+      group.clearLayers();
+      activeSurveyorMarkersRef.current.clear();
+      return;
+    }
+
+    const currentMarkerMap = activeSurveyorMarkersRef.current;
+    const incomingUserIds = new Set<string>();
 
     activeSurveyors.forEach((location) => {
-      const marker = L.marker([location.latitude, location.longitude], {
-        icon: createTeamLocationIcon(L, location),
-        zIndexOffset: 1300,
-      }).bindPopup(`
+      incomingUserIds.add(location.userId);
+      const existingMarker = currentMarkerMap.get(location.userId);
+
+      const popupHtml = `
         <div style="min-width:175px">
           <strong>${escapeMapHtml(location.userName)}</strong><br/>
           <span>${escapeMapHtml(location.team || 'TIM')}</span><br/>
@@ -592,10 +620,32 @@ export default function GISOverviewMap({
               : ''
           }
         </div>
-      `);
-      group.addLayer(marker);
+      `;
+
+      if (existingMarker) {
+        // ✨ Pergerakan halus: geser marker ke koordinat baru tanpa render ulang
+        existingMarker.setLatLng([location.latitude, location.longitude]);
+        existingMarker.setIcon(createTeamLocationIcon(L, location));
+        existingMarker.setPopupContent(popupHtml);
+      } else {
+        const marker = L.marker([location.latitude, location.longitude], {
+          icon: createTeamLocationIcon(L, location),
+          zIndexOffset: 1300,
+        }).bindPopup(popupHtml);
+
+        group.addLayer(marker);
+        currentMarkerMap.set(location.userId, marker);
+      }
     });
-  }, [activeSurveyors, showActiveSurveyors, leafletLib]);
+
+    // 🛑 Bersihkan marker user yang sudah offline / keluar aplikasi
+    currentMarkerMap.forEach((marker, uid) => {
+      if (!incomingUserIds.has(uid)) {
+        group.removeLayer(marker);
+        currentMarkerMap.delete(uid);
+      }
+    });
+  }, [activeSurveyors, showActiveSurveyors, isKominfoUser, leafletLib]);
 
   // 📍 GPS Location Trigger & Realtime Tracking
   const startLocating = (centerMap: boolean = true) => {
@@ -2480,21 +2530,24 @@ export default function GISOverviewMap({
       {/* FLOATING MAP CONTROLS (LOCATE ME)                            */}
       {/* ============================================================ */}
       <div className="absolute right-3.5 bottom-44 sm:bottom-28 z-[400] flex flex-col items-center gap-2 pointer-events-auto select-none">
-        <button
-          type="button"
-          onClick={() => setShowActiveSurveyors((prev) => !prev)}
-          className={`relative flex h-11 w-11 items-center justify-center rounded-full border shadow-xl transition-all hover:scale-105 active:scale-95 ${
-            showActiveSurveyors
-              ? 'border-emerald-300 bg-emerald-600 text-white ring-4 ring-emerald-500/20'
-              : 'border-slate-200 bg-white/95 text-slate-500 backdrop-blur-md'
-          }`}
-          title="Tampilkan posisi user aktif di lapangan"
-        >
-          <Users className="h-5 w-5" />
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-white bg-slate-950 px-1 text-[9px] font-black text-white">
-            {activeSurveyors.length}
-          </span>
-        </button>
+        {/* Floating Active Surveyors Toggle (Khusus Tim KOMINFO) */}
+        {isKominfoUser && (
+          <button
+            type="button"
+            onClick={() => setShowActiveSurveyors((prev) => !prev)}
+            className={`relative flex h-11 w-11 items-center justify-center rounded-full border shadow-xl transition-all hover:scale-105 active:scale-95 ${
+              showActiveSurveyors
+                ? 'border-emerald-300 bg-emerald-600 text-white ring-4 ring-emerald-500/20'
+                : 'border-slate-200 bg-white/95 text-slate-500 backdrop-blur-md'
+            }`}
+            title="Pantau posisi surveyor aktif (Khusus Tim KOMINFO)"
+          >
+            <Users className="h-5 w-5" />
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-white bg-slate-950 px-1 text-[9px] font-black text-white">
+              {activeSurveyors.length}
+            </span>
+          </button>
+        )}
 
         {/* Locate Me Floating GPS Button */}
         <button

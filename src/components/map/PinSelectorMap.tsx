@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type L from 'leaflet';
 import { Coordinates, GpsReading } from '@/types/gis';
 import { MAP_TILE_LAYERS } from '@/lib/gis/tiles';
@@ -162,6 +162,7 @@ export default function PinSelectorMap({
   const shiftLineRef = useRef<L.Polyline | null>(null);
   const surveyorMarkerRef = useRef<L.Marker | null>(null);
   const distanceLineRef = useRef<L.Polyline | null>(null);
+  const radiusCircleRef = useRef<L.Circle | null>(null);
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
   const boundaryLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const nearbyPoleLayerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -202,6 +203,15 @@ export default function PinSelectorMap({
   const [nearbyError, setNearbyError] = useState<string | null>(null);
   const [showNearbyLayer, setShowNearbyLayer] = useState(true);
   const [showSurveyorLayer, setShowSurveyorLayer] = useState(true);
+
+  // 🔒 HAK AKSES KHUSUS: Hanya tim KOMINFO yang boleh melihat surveyor lain
+  const isKominfoUser = useMemo(() => {
+    if (!user) return false;
+    if (user.role === 'ADMIN_KOMINFO') return true;
+    if (user.team === 'KOMINFO') return true;
+    const agencyLower = (user.agency || '').toLowerCase();
+    return agencyLower.includes('kominfo') || agencyLower.includes('komunikasi');
+  }, [user]);
 
   const [pinCoord, setPinCoord] = useState<Coordinates>(
     initialPinCoord || {
@@ -357,9 +367,23 @@ export default function PinSelectorMap({
       zIndexOffset: 1000,
     }).addTo(map);
 
+    // 🌐 Lingkaran Visual Radius Radar (75m dinamis)
+    const radiusCircle = L.circle([initialCenter.lat, initialCenter.lng], {
+      radius: 75,
+      color: '#0284c7',
+      weight: 1.8,
+      dashArray: '5, 5',
+      fillColor: '#38bdf8',
+      fillOpacity: 0.12,
+    }).addTo(map);
+    radiusCircleRef.current = radiusCircle;
+
     pinMarker.on('drag', (e: any) => {
       const pos = e.target.getLatLng();
       setPinCoord({ lat: pos.lat, lng: pos.lng });
+      if (radiusCircleRef.current) {
+        radiusCircleRef.current.setLatLng(pos);
+      }
       if (originalCoord && shiftLineRef.current) {
         shiftLineRef.current.setLatLngs([
           [originalCoord.lat, originalCoord.lng],
@@ -372,6 +396,9 @@ export default function PinSelectorMap({
     map.on('click', (e: L.LeafletMouseEvent) => {
       pinMarker.setLatLng(e.latlng);
       setPinCoord({ lat: e.latlng.lat, lng: e.latlng.lng });
+      if (radiusCircleRef.current) {
+        radiusCircleRef.current.setLatLng(e.latlng);
+      }
       if (originalCoord && shiftLineRef.current) {
         shiftLineRef.current.setLatLngs([
           [originalCoord.lat, originalCoord.lng],
@@ -397,7 +424,7 @@ export default function PinSelectorMap({
       requestGpsLocation(map, L, pinMarker);
     }
 
-    // Watch position continuously for live satellite refinement
+    // Watch position continuously for live satellite refinement and dynamic surveyor movement
     let watchId: number | null = null;
     if (!isEditingSavedLocation && typeof navigator !== 'undefined' && navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
@@ -414,9 +441,18 @@ export default function PinSelectorMap({
           if (surveyorMarkerRef.current) {
             surveyorMarkerRef.current.setLatLng([latitude, longitude]);
           }
+
+          // 📍 Lingkaran radius dinamis selalu bergerak presisi mengikuti langkah surveyor
+          if (radiusCircleRef.current) {
+            radiusCircleRef.current.setLatLng([latitude, longitude]);
+          }
+          if (pinMarkerRef.current) {
+            pinMarkerRef.current.setLatLng([latitude, longitude]);
+            setPinCoord({ lat: latitude, lng: longitude });
+          }
         },
         () => {},
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
       );
     }
 
@@ -433,6 +469,12 @@ export default function PinSelectorMap({
         }
         mapInstanceRef.current = null;
       }
+      if (radiusCircleRef.current) {
+        try {
+          radiusCircleRef.current.remove();
+        } catch (_) {}
+      }
+      radiusCircleRef.current = null;
       pinMarkerRef.current = null;
       surveyorMarkerRef.current = null;
       boundaryLayerGroupRef.current = null;
@@ -491,6 +533,7 @@ export default function PinSelectorMap({
             userId: user.id,
             userName: user.name,
             roleLabel: user.roleLabel,
+            team: user.team,
             latitude: reading.latitude,
             longitude: reading.longitude,
             accuracy: reading.accuracy,
@@ -500,18 +543,22 @@ export default function PinSelectorMap({
     };
 
     publishLocation();
-    const intervalId = window.setInterval(publishLocation, 15000);
+    const intervalId = window.setInterval(publishLocation, 10000);
     return () => window.clearInterval(intervalId);
-  }, [user?.id, user?.name, user?.roleLabel]);
+  }, [user?.id, user?.name, user?.roleLabel, user?.team]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    // 🔒 Hanya tim KOMINFO yang boleh melihat surveyor aktif lain
+    if (!isKominfoUser || !user?.id) {
+      setActiveSurveyors([]);
+      return;
+    }
 
     let cancelled = false;
     const fetchActiveSurveyors = async () => {
       try {
         const res = await fetch(
-          `/api/surveyors/active?lat=${pinCoord.lat}&lng=${pinCoord.lng}&excludeUserId=${encodeURIComponent(user.id)}`,
+          `/api/surveyors/active?lat=${pinCoord.lat}&lng=${pinCoord.lng}&excludeUserId=${encodeURIComponent(user.id)}&requesterTeam=KOMINFO`,
           { cache: 'no-store' }
         );
         const json = await res.json();
@@ -524,12 +571,12 @@ export default function PinSelectorMap({
     };
 
     fetchActiveSurveyors();
-    const intervalId = window.setInterval(fetchActiveSurveyors, 20000);
+    const intervalId = window.setInterval(fetchActiveSurveyors, 4000);
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [pinCoord.lat, pinCoord.lng, user?.id]);
+  }, [pinCoord.lat, pinCoord.lng, user?.id, isKominfoUser]);
 
   useEffect(() => {
     if (!leafletLib || !mapInstanceRef.current || !nearbyPoleLayerGroupRef.current) return;
@@ -561,7 +608,7 @@ export default function PinSelectorMap({
     const group = activeSurveyorLayerGroupRef.current;
     group.clearLayers();
 
-    if (!showSurveyorLayer) return;
+    if (!isKominfoUser || !showSurveyorLayer) return;
 
     activeSurveyors.forEach((location) => {
       const marker = L.marker([location.latitude, location.longitude], {
@@ -577,7 +624,7 @@ export default function PinSelectorMap({
       `);
       group.addLayer(marker);
     });
-  }, [activeSurveyors, showSurveyorLayer, leafletLib]);
+  }, [activeSurveyors, showSurveyorLayer, isKominfoUser, leafletLib]);
 
   // Handle Tile Mode Switch
   const toggleTileMode = () => {
@@ -1016,7 +1063,7 @@ export default function PinSelectorMap({
             )}
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-1.5">
+          <div className={`mt-2 grid gap-1.5 ${isKominfoUser ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <button
               type="button"
               onClick={() => setShowNearbyLayer((value) => !value)}
@@ -1028,30 +1075,32 @@ export default function PinSelectorMap({
               title="Tampilkan atau sembunyikan titik tiang yang sudah terdata di sekitar pin"
             >
               <span className="text-[9px] font-black leading-tight">
-                Titik
+                Titik Sekitar
                 <br />
-                {nearbyPoles.length}
+                {nearbyPoles.length} tiang
               </span>
               {showNearbyLayer ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
             </button>
 
-            <button
-              type="button"
-              onClick={() => setShowSurveyorLayer((value) => !value)}
-              className={`flex h-9 items-center justify-between gap-1 rounded-xl border px-2 text-left transition-all active:scale-95 ${
-                showSurveyorLayer
-                  ? 'border-blue-200 bg-blue-50 text-blue-800'
-                  : 'border-slate-200 bg-slate-50 text-slate-500'
-              }`}
-              title="Tampilkan atau sembunyikan posisi user aktif"
-            >
-              <span className="text-[9px] font-black leading-tight">
-                User
-                <br />
-                {activeSurveyors.length}
-              </span>
-              <Users className="h-3.5 w-3.5" />
-            </button>
+            {isKominfoUser && (
+              <button
+                type="button"
+                onClick={() => setShowSurveyorLayer((value) => !value)}
+                className={`flex h-9 items-center justify-between gap-1 rounded-xl border px-2 text-left transition-all active:scale-95 ${
+                  showSurveyorLayer
+                    ? 'border-blue-200 bg-blue-50 text-blue-800'
+                    : 'border-slate-200 bg-slate-50 text-slate-500'
+                }`}
+                title="Tampilkan atau sembunyikan posisi user aktif (Khusus Tim KOMINFO)"
+              >
+                <span className="text-[9px] font-black leading-tight">
+                  User Aktif
+                  <br />
+                  {activeSurveyors.length}
+                </span>
+                <Users className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
           <div className="mt-2 rounded-xl bg-slate-50 px-2 py-1.5 text-[9px] font-bold leading-snug text-slate-600">
