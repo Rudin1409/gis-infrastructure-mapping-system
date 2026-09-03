@@ -20,6 +20,9 @@ export default async function MapPage({
     surveyor?: string;
     kecamatan?: string;
     kelurahan?: string;
+    date?: string;
+    surveyDate?: string;
+    type?: string;
   };
 }) {
   const poleRepo = getPoleRepository();
@@ -46,6 +49,8 @@ export default async function MapPage({
         initialSurveyor={searchParams?.surveyor}
         initialKecamatan={searchParams?.kecamatan}
         initialKelurahan={searchParams?.kelurahan}
+        initialSurveyDate={searchParams?.date || searchParams?.surveyDate}
+        initialType={searchParams?.type}
         isLicenseLocked={licenseConfig.isLocked}
         licenseReason={licenseConfig.reason}
       />

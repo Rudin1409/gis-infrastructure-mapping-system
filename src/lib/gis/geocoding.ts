@@ -1,20 +1,121 @@
 import { Coordinates } from '@/types/gis';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
-import { LUBUKLINGGAU_KELURAHAN_BOUNDARIES } from './boundaries';
+import { LUBUKLINGGAU_KECAMATAN_BOUNDARIES } from './boundaries';
 import { calculateHaversineDistance } from './haversine';
 
 export interface GeocodedAddress {
   road: string;
   kelurahan: string;
   kecamatan: string;
+  patokanLokasi?: string;
   smartPoleCode: string;
   smartSegmentCode: string;
   rawDisplayName?: string;
   confidence: 'HIGH_SPATIAL' | 'GEOMETRIC_NEAREST' | 'FALLBACK';
 }
 
+export interface KelurahanCentroid {
+  name: string;
+  kecamatan: string;
+  center: Coordinates;
+}
+
+/**
+ * 72 Titik Pusat Spasial (Centroids) Kelurahan Resmi Kota Lubuklinggau
+ * Digunakan untuk klasifikasi titik spasial presisi tinggi saat penempatan tiang GIS.
+ */
+export const LUBUKLINGGAU_KELURAHAN_CENTROIDS: KelurahanCentroid[] = [
+  // 1. Lubuklinggau Timur I (8 Kelurahan)
+  { name: 'Air Kuti', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2755, lng: 102.8790 } },
+  { name: 'Batu Urip Taba', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2820, lng: 102.8710 } },
+  { name: 'Majapahit', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2920, lng: 102.8680 } },
+  { name: 'Nikan Jaya', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2790, lng: 102.8850 } },
+  { name: 'Taba Jemekeh', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2964, lng: 102.8617 } },
+  { name: 'Taba Koji', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2990, lng: 102.8590 } },
+  { name: 'Taba Lestari', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2860, lng: 102.8640 } },
+  { name: 'Watervang', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2847, lng: 102.8805 } },
+
+  // 2. Lubuklinggau Timur II (9 Kelurahan)
+  { name: 'Cereme Taba', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.2980, lng: 102.8640 } },
+  { name: 'Dempo', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3020, lng: 102.8630 } },
+  { name: 'Jawa Kanan', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.2985, lng: 102.8570 } },
+  { name: 'Jawa Kiri', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.2995, lng: 102.8560 } },
+  { name: 'Karya Bakti', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3040, lng: 102.8600 } },
+  { name: 'Mesat Jaya', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3080, lng: 102.8640 } },
+  { name: 'Mesat Seni', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3110, lng: 102.8660 } },
+  { name: 'Wira Karya', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3010, lng: 102.8590 } },
+  { name: 'Zellaz', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3060, lng: 102.8580 } },
+
+  // 3. Lubuklinggau Barat I (11 Kelurahan)
+  { name: 'Bandung Kiri', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2960, lng: 102.8460 } },
+  { name: 'Bandung Ujung', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2930, lng: 102.8420 } },
+  { name: 'Kayu Ara', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3020, lng: 102.8360 } },
+  { name: 'Lubuk Aman', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2990, lng: 102.8410 } },
+  { name: 'Lubuk Tanjung', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3050, lng: 102.8320 } },
+  { name: 'Pelita Jaya', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2890, lng: 102.8490 } },
+  { name: 'Pematang Wangi', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3090, lng: 102.8250 } },
+  { name: 'Sukajadi', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3080, lng: 102.8420 } },
+  { name: 'Tanjung Aman', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3020, lng: 102.8480 } },
+  { name: 'Tanjung Indah', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2970, lng: 102.8500 } },
+  { name: 'Watas Lubuk Durian', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3150, lng: 102.7850 } },
+
+  // 4. Lubuklinggau Barat II (8 Kelurahan)
+  { name: 'Keputraan', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2930, lng: 102.8560 } },
+  { name: 'Lubuklinggau Ilir', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2910, lng: 102.8540 } },
+  { name: 'Lubuklinggau Ulu', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2880, lng: 102.8520 } },
+  { name: 'Pasar Permiri', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2955, lng: 102.8545 } },
+  { name: 'Sidorejo', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2970, lng: 102.8510 } },
+  { name: 'Tapak Lebar', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2940, lng: 102.8490 } },
+  { name: 'Ulak Lebar', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2860, lng: 102.8460 } },
+  { name: 'Wisma Karya', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2985, lng: 102.8525 } },
+
+  // 5. Lubuklinggau Selatan I (9 Kelurahan)
+  { name: 'Air Kati', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3680, lng: 102.8300 } },
+  { name: 'Air Temam', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3480, lng: 102.8380 } },
+  { name: 'Bakti Karya', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3520, lng: 102.8450 } },
+  { name: 'Jukung', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3600, lng: 102.8520 } },
+  { name: 'Kelingi', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3420, lng: 102.8310 } },
+  { name: 'Lubuk Binjai', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3750, lng: 102.8220 } },
+  { name: 'Lubuk Kupang', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3380, lng: 102.8480 } },
+  { name: 'Perumnas Rahmah', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3590, lng: 102.8390 } },
+  { name: 'Rahmah', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3650, lng: 102.8350 } },
+
+  // 6. Lubuklinggau Selatan II (9 Kelurahan)
+  { name: 'Batu Urip', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3180, lng: 102.8720 } },
+  { name: 'Karang Ketuan', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3350, lng: 102.8650 } },
+  { name: 'Marga Mulya', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3190, lng: 102.8620 } },
+  { name: 'Marga Rahayu', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3240, lng: 102.8640 } },
+  { name: 'Moneng Sepati', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3150, lng: 102.8600 } },
+  { name: 'Simpang Periuk', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3282, lng: 102.8710 } },
+  { name: 'Siring Agung', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3380, lng: 102.8780 } },
+  { name: 'Tabarenah', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3220, lng: 102.8850 } },
+  { name: 'Tanah Periuk', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3320, lng: 102.8820 } },
+
+  // 7. Lubuklinggau Utara I (9 Kelurahan)
+  { name: 'Belalau I', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2350, lng: 102.8720 } },
+  { name: 'Belalau II', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2280, lng: 102.8680 } },
+  { name: 'Durian Rampak', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2510, lng: 102.8790 } },
+  { name: 'Margasari', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2100, lng: 102.8850 } },
+  { name: 'Petanang Ilir', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2400, lng: 102.8950 } },
+  { name: 'Petanang Ulu', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2450, lng: 102.8900 } },
+  { name: 'Sumber Agung', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2180, lng: 102.8920 } },
+  { name: 'Tanjung Raya', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2550, lng: 102.8820 } },
+  { name: 'Taba Baru', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2480, lng: 102.8740 } },
+
+  // 8. Lubuklinggau Utara II (9 Kelurahan)
+  { name: 'Batu Febri', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2800, lng: 102.8520 } },
+  { name: 'Kenanga', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2750, lng: 102.8550 } },
+  { name: 'Megang', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2820, lng: 102.8610 } },
+  { name: 'Pasar Satelit', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2780, lng: 102.8650 } },
+  { name: 'Ponorogo', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2710, lng: 102.8580 } },
+  { name: 'Puncak Kemuning', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2680, lng: 102.8630 } },
+  { name: 'Senalang', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2730, lng: 102.8680 } },
+  { name: 'Sumberejo', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2640, lng: 102.8550 } },
+  { name: 'Ulaksurung', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2840, lng: 102.8530 } },
+];
+
 // Ray-Casting algorithm for Spatial Point-in-Polygon (PIP)
-function isPointInPolygon(point: Coordinates, polygon: [number, number][]): boolean {
+export function isPointInPolygon(point: Coordinates, polygon: [number, number][]): boolean {
   const x = point.lat;
   const y = point.lng;
   let inside = false;
@@ -105,130 +206,184 @@ export function getNextSequentialPoleCode(
 }
 
 /**
- * Universal & Dynamic Reverse Geocoding Engine for Kota Lubuklinggau.
- * Combines high-resolution OSM Reverse Geocoding (Zoom 19) with Spatial Point-in-Polygon (PIP)
- * and the complete master database of all 72 Kelurahan across 8 Kecamatan.
+ * Clean & format Indonesian road names (e.g. 'Jalan Yos Sudarso' -> 'Jl. Yos Sudarso')
+ */
+export function formatRoadName(rawName: string): string {
+  if (!rawName) return '';
+  let cleaned = rawName.trim();
+  cleaned = cleaned.replace(/^jalan\s+/i, 'Jl. ');
+  cleaned = cleaned.replace(/^gang\s+/i, 'Gg. ');
+  cleaned = cleaned.replace(/^lorong\s+/i, 'Lr. ');
+  if (!cleaned.startsWith('Jl.') && !cleaned.startsWith('Gg.') && !cleaned.startsWith('Lr.') && !cleaned.startsWith('Komp.')) {
+    cleaned = `Jl. ${cleaned}`;
+  }
+  return cleaned;
+}
+
+/**
+ * Universal High-Precision Reverse Geocoding Engine for Kota Lubuklinggau.
+ * 1. Ray-Casting Point-in-Polygon (PIP) on Official 8 Kecamatan Polygons (2,127+ points).
+ * 2. High-Precision Spatial Centroid Resolution across all 72 Official Kelurahan.
+ * 3. Street name, POI, landmark, and building extraction via OpenStreetMap.
  */
 export async function reverseGeocodeLocation(
   coord: Coordinates,
   existingCodes: string[] = []
 ): Promise<GeocodedAddress> {
-  // 1. Precise Spatial Detection: Check if point falls inside an official Kelurahan Boundary Polygon
-  let spatialKelurahan = '';
-  let spatialKecamatan = '';
+  // 1. Tentukan Kecamatan Resmi via Point-in-Polygon
+  let detectedKecamatan = '';
   let confidence: 'HIGH_SPATIAL' | 'GEOMETRIC_NEAREST' | 'FALLBACK' = 'FALLBACK';
 
-  for (const boundary of LUBUKLINGGAU_KELURAHAN_BOUNDARIES) {
+  for (const boundary of LUBUKLINGGAU_KECAMATAN_BOUNDARIES) {
     if (isPointInPolygon(coord, boundary.polygon)) {
-      spatialKelurahan = boundary.name.replace(/^Kel\.\s*/i, '').trim();
-      spatialKecamatan = boundary.kecamatanName;
+      detectedKecamatan = boundary.kecamatanName;
       confidence = 'HIGH_SPATIAL';
       break;
     }
   }
 
-  // If outside exact boundary polygons, calculate nearest geometric centroid
-  if (!spatialKelurahan) {
+  // Jika di luar polygon kecamatan persis, cari kecamatan terdekat
+  if (!detectedKecamatan) {
     let closestDist = Infinity;
-    let closestBoundary = LUBUKLINGGAU_KELURAHAN_BOUNDARIES[0];
+    let closestKec = LUBUKLINGGAU_KECAMATAN_BOUNDARIES[0].kecamatanName;
 
-    for (const boundary of LUBUKLINGGAU_KELURAHAN_BOUNDARIES) {
+    for (const boundary of LUBUKLINGGAU_KECAMATAN_BOUNDARIES) {
       const dist = calculateHaversineDistance(coord, boundary.center);
       if (dist < closestDist) {
         closestDist = dist;
-        closestBoundary = boundary;
+        closestKec = boundary.kecamatanName;
       }
     }
-
-    spatialKelurahan = closestBoundary.name.replace(/^Kel\.\s*/i, '').trim();
-    spatialKecamatan = closestBoundary.kecamatanName;
+    detectedKecamatan = closestKec;
     confidence = 'GEOMETRIC_NEAREST';
   }
 
-  // 2. Fetch Street / Alley / Building / Housing Complex name via Live OSM Reverse Geocoding
+  // 2. Tentukan Kelurahan Terdekat Spasial (dibatasi strictly dalam kecamatan yang terdeteksi)
+  const candidateKelurahans = LUBUKLINGGAU_KELURAHAN_CENTROIDS.filter(
+    (k) => k.kecamatan.toLowerCase() === detectedKecamatan.toLowerCase()
+  );
+
+  let detectedKelurahan = candidateKelurahans[0]?.name || 'Air Kuti';
+  let minKelDist = Infinity;
+
+  for (const kel of candidateKelurahans) {
+    const dist = calculateHaversineDistance(coord, kel.center);
+    if (dist < minKelDist) {
+      minKelDist = dist;
+      detectedKelurahan = kel.name;
+    }
+  }
+
+  // 3. Ambil data jalan & POI/patokan dari OpenStreetMap
   let detectedRoad = '';
+  let patokanLokasi = '';
   let rawDisplayName = '';
 
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coord.lat}&lon=${coord.lng}&zoom=19&addressdetails=1`;
-    const response = await fetch(url, {
-      headers: {
-        'Accept-Language': 'id,en',
-      },
-    });
+    let osmData: any = null;
 
-    if (response.ok) {
-      const data = await response.json();
-      rawDisplayName = data.display_name || '';
-      const addr = data.address || {};
+    // A. Coba panggil server proxy API internal terlebih dahulu (cepat & ada cache)
+    if (typeof window !== 'undefined') {
+      try {
+        const proxyRes = await fetch(`/api/gis/reverse-geocode?lat=${coord.lat}&lng=${coord.lng}`);
+        if (proxyRes.ok) {
+          const json = await proxyRes.json();
+          if (json.success && json.data) {
+            osmData = json.data;
+          }
+        }
+      } catch {}
+    }
 
-      // Match exact road / street / alley / residential / hamlet name
-      const roadName =
+    // B. Fallback langsung ke Nominatim jika server proxy tidak tersedia
+    if (!osmData) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coord.lat}&lon=${coord.lng}&zoom=19&addressdetails=1&extratags=1&namedetails=1`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'InfraMap-Lubuklinggau-GIS/2.0 (admin@lubuklinggaukota.go.id)',
+          'Accept-Language': 'id,en',
+        },
+      });
+      if (response.ok) {
+        osmData = await response.json();
+      }
+    }
+
+    if (osmData) {
+      rawDisplayName = osmData.display_name || '';
+      const addr = osmData.address || {};
+      const extra = osmData.extratags || {};
+
+      // Ekstrak nama jalan mikro
+      const roadCandidate =
         addr.road ||
         addr.pedestrian ||
         addr.residential ||
-        addr.neighbourhood ||
-        addr.suburb ||
-        addr.hamlet ||
-        addr.quarter;
+        addr.footway ||
+        addr.path ||
+        addr.highway ||
+        addr.service ||
+        addr.living_street ||
+        addr.neighbourhood;
 
-      if (roadName) {
-        detectedRoad = roadName;
+      if (roadCandidate) {
+        detectedRoad = formatRoadName(roadCandidate);
       }
 
-      // Check all 72 Kelurahan in the complete Lubuklinggau Master Database
-      const fullText = (rawDisplayName + ' ' + (addr.village || '') + ' ' + (addr.suburb || '') + ' ' + (addr.city_district || '') + ' ' + (addr.quarter || '')).toLowerCase();
+      // Ekstrak patokan lokasi / landmark POI
+      const poiCandidate =
+        addr.amenity ||
+        addr.building ||
+        addr.shop ||
+        addr.tourism ||
+        addr.office ||
+        addr.place ||
+        extra.brand ||
+        extra.operator;
 
-      let matchedFromMaster = false;
-      for (const kec of KECAMATAN_LUBUKLINGGAU) {
-        for (const kel of kec.kelurahan) {
-          const kelLower = kel.toLowerCase();
-          if (
-            fullText.includes(kelLower) ||
-            (addr.village && addr.village.toLowerCase() === kelLower) ||
-            (addr.suburb && addr.suburb.toLowerCase() === kelLower)
-          ) {
-            spatialKelurahan = kel;
-            spatialKecamatan = kec.name;
-            confidence = 'HIGH_SPATIAL';
-            matchedFromMaster = true;
-            break;
-          }
-        }
-        if (matchedFromMaster) break;
+      if (poiCandidate) {
+        patokanLokasi = `Dekat ${poiCandidate}`;
+      } else if (addr.house_number) {
+        patokanLokasi = `No. ${addr.house_number}`;
       }
 
-      // If Kelurahan was not matched but Kecamatan was matched from city_district
-      if (!matchedFromMaster && addr.city_district) {
-        const foundKec = KECAMATAN_LUBUKLINGGAU.find((k) =>
-          k.name.toLowerCase().includes(addr.city_district.toLowerCase())
-        );
-        if (foundKec && !foundKec.kelurahan.includes(spatialKelurahan)) {
-          spatialKecamatan = foundKec.name;
-          spatialKelurahan = foundKec.kelurahan[0];
+      // Cek apakah OSM mengandung nama kelurahan resmi Lubuklinggau
+      const fullText = (rawDisplayName + ' ' + (addr.village || '') + ' ' + (addr.suburb || '') + ' ' + (addr.quarter || '')).toLowerCase();
+
+      for (const kel of candidateKelurahans) {
+        const kelLower = kel.name.toLowerCase();
+        if (
+          fullText.includes(kelLower) ||
+          (addr.village && addr.village.toLowerCase() === kelLower) ||
+          (addr.suburb && addr.suburb.toLowerCase() === kelLower)
+        ) {
+          detectedKelurahan = kel.name;
+          confidence = 'HIGH_SPATIAL';
+          break;
         }
       }
     }
   } catch (err) {
-    console.warn('Live reverse-geocoding network notice:', err);
+    console.warn('OSM Geocode network notice:', err);
   }
 
-  // Fallback road name if no specific street name found
+  // Fallback nama jalan jika tidak ada jalan terdaftar di OpenStreetMap
   if (!detectedRoad) {
-    detectedRoad = `Jl. Area Kel. ${spatialKelurahan}`;
+    detectedRoad = `Jl. Area Kel. ${detectedKelurahan}`;
   }
 
-  // Generate standardized sequential municipal GIS codes (e.g. LLG-T1-TJ-001)
+  // Generate kode aset penomoran otomatis (e.g. LLG-T1-TJ-001)
   const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(
-    spatialKecamatan,
-    spatialKelurahan,
+    detectedKecamatan,
+    detectedKelurahan,
     existingCodes
   );
 
   return {
     road: detectedRoad,
-    kelurahan: spatialKelurahan,
-    kecamatan: spatialKecamatan,
+    kelurahan: detectedKelurahan,
+    kecamatan: detectedKecamatan,
+    patokanLokasi: patokanLokasi || undefined,
     smartPoleCode,
     smartSegmentCode,
     rawDisplayName,

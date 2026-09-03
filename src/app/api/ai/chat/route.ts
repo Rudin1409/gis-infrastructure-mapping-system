@@ -36,6 +36,125 @@ function formatIndonesianDate(dateStr: string): string {
   }
 }
 
+function getJakartaDateString(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const year = parts.find((p) => p.type === 'year')?.value;
+  const month = parts.find((p) => p.type === 'month')?.value;
+  const day = parts.find((p) => p.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(dateKey: string, days: number): string {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+const INDONESIAN_MONTHS: Record<string, string> = {
+  januari: '01',
+  februari: '02',
+  maret: '03',
+  april: '04',
+  mei: '05',
+  juni: '06',
+  juli: '07',
+  agustus: '08',
+  september: '09',
+  oktober: '10',
+  november: '11',
+  desember: '12',
+};
+
+function resolveDateFromMessage(message: string, dateCounts: Record<string, number>): string {
+  const todayJakarta = getJakartaDateString();
+
+  if (/\bhari\s*ini\b|\btoday\b/.test(message)) return todayJakarta;
+  if (/\bkemarin\b|\byesterday\b/.test(message)) return addDays(todayJakarta, -1);
+
+  const isoMatch = message.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+  if (isoMatch) return isoMatch[1];
+
+  const monthMatch = message.match(/\b(\d{1,2})\s*(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)(?:\s*(\d{4}))?/i);
+  if (monthMatch) {
+    const day = monthMatch[1].padStart(2, '0');
+    const month = INDONESIAN_MONTHS[monthMatch[2].toLowerCase()];
+    const year = monthMatch[3] || todayJakarta.slice(0, 4);
+    return `${year}-${month}-${day}`;
+  }
+
+  const dayOnlyMatch = message.match(/tanggal\s*(\d{1,2})/i);
+  if (dayOnlyMatch) {
+    const day = dayOnlyMatch[1].padStart(2, '0');
+    const latestMatchingDate = Object.keys(dateCounts)
+      .filter((dateKey) => dateKey.endsWith(`-${day}`))
+      .sort((a, b) => b.localeCompare(a))[0];
+
+    return latestMatchingDate || `${todayJakarta.slice(0, 8)}${day}`;
+  }
+
+  return '';
+}
+
+function isDataQuestion(message: string): boolean {
+  return [
+    'tanggal',
+    'harian',
+    'hari ini',
+    'kemarin',
+    'input',
+    'inputan',
+    'rekap',
+    'total',
+    'jumlah',
+    'statistik',
+    'surveyor',
+    'admin',
+    'orang',
+    'pendata',
+    'petugas',
+    'kinerja',
+    'kabel',
+    'panjang',
+    'segmen',
+    'jalur',
+    'span',
+    'provider',
+    'telkom',
+    'biznet',
+    'myrepublic',
+    'pju',
+    'lampu',
+    'pln',
+    'rusak',
+    'bahaya',
+    'kritis',
+    'miring',
+    'semrawut',
+    'kendur',
+    'beton',
+    'besi',
+    'kayu',
+    'material',
+    'kelurahan',
+    'kecamatan',
+    'jalan',
+    'filter',
+    'tampil',
+    'lihat',
+  ].some((keyword) => message.includes(keyword));
+}
+
+function percent(count: number, total: number): string {
+  if (!total) return '0.0';
+  return ((count / total) * 100).toFixed(1);
+}
+
 // 26 Master Provider Knowledge Base for Instant Physical Pole Identification
 const PROVIDER_PHYSICAL_MARKINGS: Record<string, string> = {
   telkom: 'Telkom Indonesia (TLKM): Tiang hitam dengan sabuk warna Merah dan Abu-abu di bagian tengah.',
@@ -77,6 +196,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || '';
+    const shouldAnswerFromDatabase = isDataQuestion(lastUserMsg);
     const apiKey =
       process.env.OPENROUTER_API_KEY ||
       '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';
@@ -151,6 +272,7 @@ export async function POST(request: NextRequest) {
     let totalCableLengthMeters = 0;
     const segmentTypeCounts: Record<string, number> = {};
     const segmentProviderCounts: Record<string, number> = {};
+    let dbLoadError: unknown = null;
 
     try {
       const poleRepo = getPoleRepository();
@@ -256,7 +378,18 @@ export async function POST(request: NextRequest) {
         console.warn('Gagal memuat snapshot segmen kabel:', segErr);
       }
     } catch (dbErr) {
+      dbLoadError = dbErr;
       console.warn('Gagal memuat snapshot database untuk AI context:', dbErr);
+    }
+
+    if (dbLoadError && shouldAnswerFromDatabase) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database VPS belum bisa dibaca, jadi INFRA-AI tidak membuat jawaban angka agar tidak salah. Coba lagi setelah koneksi database normal.',
+        },
+        { status: 503 }
+      );
     }
 
     // Format Summaries for LLM Context
@@ -363,80 +496,73 @@ PANDUAN JAWABAN:
     let finalReply = '';
     let usedModel = '';
 
-    for (const modelToTry of candidateModels) {
-      try {
-        const openRouterPayload = {
-          model: modelToTry,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages.slice(-6),
-          ],
-          temperature: 0.3,
-          max_tokens: 850,
-        };
+    if (!shouldAnswerFromDatabase) {
+      for (const modelToTry of candidateModels) {
+        try {
+          const openRouterPayload = {
+            model: modelToTry,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...messages.slice(-6),
+            ],
+            temperature: 0.1,
+            max_tokens: 850,
+          };
 
-        const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://inframap.my.id',
-            'X-Title': 'INFRA-MAP GIS Assistant',
-          },
-          body: JSON.stringify(openRouterPayload),
-        });
+          const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': 'https://inframap.my.id',
+              'X-Title': 'INFRA-MAP GIS Assistant',
+            },
+            body: JSON.stringify(openRouterPayload),
+          });
 
-        if (aiRes.ok) {
-          const aiJson = await aiRes.json();
-          const text = aiJson.choices?.[0]?.message?.content?.trim();
-          if (text) {
-            finalReply = text;
-            usedModel = modelToTry;
-            break;
+          if (aiRes.ok) {
+            const aiJson = await aiRes.json();
+            const text = aiJson.choices?.[0]?.message?.content?.trim();
+            if (text) {
+              finalReply = text;
+              usedModel = modelToTry;
+              break;
+            }
           }
+        } catch (tryErr) {
+          console.warn(`Model ${modelToTry} gagal, mencoba fallback:`, tryErr);
         }
-      } catch (tryErr) {
-        console.warn(`Model ${modelToTry} gagal, mencoba fallback:`, tryErr);
       }
     }
 
     // 4. In-Memory Smart Dynamic Analytical Engine (Jika OpenRouter Offline / Fallback Cepat)
-    const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || '';
-
     if (!finalReply) {
       // 4a. Query Filter Tanggal Spesifik (e.g. "tanggal 29", "tanggal 30", "2026-08-30", "kemarin", "hari ini")
-      const dateMatch = lastUserMsg.match(/tanggal\s*(\d{1,2})|\b(\d{4}-\d{2}-\d{2})\b|\b(\d{1,2})\s*(agustus|september|oktober|november|desember|januari|februari|maret|april|mei|juni|juli)/i);
+      const matchedDateKey = resolveDateFromMessage(lastUserMsg, dateCounts);
 
-      let matchedDateKey = '';
-      if (dateMatch) {
-        if (dateMatch[2]) {
-          matchedDateKey = dateMatch[2];
-        } else if (dateMatch[1]) {
-          const dayNum = dateMatch[1].padStart(2, '0');
-          matchedDateKey = Object.keys(dateCounts).find((k) => k.endsWith(`-${dayNum}`)) || '';
-        }
-      }
-
-      if (lastUserMsg.includes('tanggal') || lastUserMsg.includes('harian') || matchedDateKey) {
-        if (matchedDateKey && dateCounts[matchedDateKey] !== undefined) {
-          const count = dateCounts[matchedDateKey];
+      if (lastUserMsg.includes('tanggal') || lastUserMsg.includes('harian') || lastUserMsg.includes('hari ini') || lastUserMsg.includes('kemarin') || lastUserMsg.includes('input') || matchedDateKey) {
+        if (matchedDateKey) {
+          const polesOnDate = allPoles.filter(p => (p.surveyDate || p.createdAt || '').startsWith(matchedDateKey));
+          const count = polesOnDate.length;
           const surveyorOnDate = surveyorByDate[matchedDateKey] || {};
           const sLines = Object.entries(surveyorOnDate)
+            .sort((a, b) => b[1] - a[1])
             .map(([sName, sCount]) => `* 👤 **${sName}**: **${sCount} titik tiang**`)
             .join('\n');
 
-          const polesOnDate = allPoles.filter(p => (p.surveyDate || p.createdAt || '').startsWith(matchedDateKey));
           const goodOnDate = polesOnDate.filter(p => p.condition === 'GOOD').length;
-          const badOnDate = polesOnDate.filter(p => p.condition === 'DAMAGED' || p.condition === 'NEEDS_REPAIR').length;
+          const needsRepairOnDate = polesOnDate.filter(p => p.condition === 'NEEDS_REPAIR').length;
+          const damagedOnDate = polesOnDate.filter(p => p.condition === 'DAMAGED').length;
 
           finalReply =
             `📅 **Data Survei Tiang pada Tanggal ${formatIndonesianDate(matchedDateKey)}** (${matchedDateKey}):\n\n` +
             `* 📍 **Total Titik Terdata**: **${count} tiang**\n` +
             `* 🟢 **Kondisi Baik**: **${goodOnDate} tiang**\n` +
-            `* 🟡🔴 **Perlu Cek / Rusak**: **${badOnDate} tiang**\n\n` +
+            `* 🟡 **Perlu Cek**: **${needsRepairOnDate} tiang**\n` +
+            `* 🔴 **Rusak / Bahaya**: **${damagedOnDate} tiang**\n\n` +
             `👥 **Rincian Petugas / Surveyor pada Tanggal Ini**:\n` +
-            `${sLines || '* 👤 Admin: ' + count + ' tiang'}\n\n` +
-            `*Anda dapat melihat titik-titik tanggal ini langsung di peta GIS.*`;
+            `${sLines || '* Belum ada data input pada tanggal ini.'}\n\n` +
+            `Sumber angka: snapshot database VPS saat request diproses.`;
         } else {
           const dateListLines = Object.entries(dateCounts)
             .sort((a, b) => b[0].localeCompare(a[0]))
@@ -464,6 +590,77 @@ PANDUAN JAWABAN:
           `* 🚇 **Jalur Bawah Tanah (Ducting)**: **${cableTypeCounts.BAWAH_TANAH || 0} tiang**\n` +
           `* 📐 **Rata-rata Jarak Antar Tiang (Span)**: **~40 - 50 meter** (Sesuai standar teknis keselamatan PU/Dishub)\n\n` +
           `Sistem memetakan jalur kabel optik dan distribusi listrik secara spasial pada layer peta GIS.`;
+      } else if (
+        lastUserMsg.includes('provider') ||
+        lastUserMsg.includes('telkom') ||
+        lastUserMsg.includes('biznet') ||
+        lastUserMsg.includes('myrep') ||
+        lastUserMsg.includes('myrepublic') ||
+        lastUserMsg.includes('first media') ||
+        lastUserMsg.includes('mnc') ||
+        lastUserMsg.includes('icon') ||
+        lastUserMsg.includes('iforte')
+      ) {
+        const providerAliases = [
+          { key: 'telkomsel', label: 'TELKOMSEL / MITRATEL', ids: ['PRV_TELKOMSEL'] },
+          { key: 'telkom', label: 'TELKOM INDONESIA', ids: ['PRV_TELKOM'] },
+          { key: 'biznet', label: 'BIZNET NETWORKS', ids: ['PRV_BIZNET'] },
+          { key: 'myrep', label: 'MYREPUBLIC', ids: ['PRV_MYREP_1', 'PRV_MYREP_2'] },
+          { key: 'myrepublic', label: 'MYREPUBLIC', ids: ['PRV_MYREP_1', 'PRV_MYREP_2'] },
+          { key: 'first media', label: 'FIRST MEDIA', ids: ['PRV_FIRSTMEDIA'] },
+          { key: 'mnc', label: 'MNC PLAY', ids: ['PRV_MNC_1', 'PRV_MNC_2'] },
+          { key: 'icon', label: 'ICONNET / PLN Icon+', ids: ['PRV_ICONNET'] },
+          { key: 'iforte', label: 'IFORTE', ids: ['PRV_IFORTE'] },
+        ];
+        const requestedProvider = providerAliases.find((item) => lastUserMsg.includes(item.key));
+
+        if (requestedProvider) {
+          const polesByProvider = allPoles.filter((p) => requestedProvider.ids.includes(p.providerId));
+          const conditionLines = [
+            `* 🟢 **Baik**: **${polesByProvider.filter((p) => p.condition === 'GOOD').length} tiang**`,
+            `* 🟡 **Perlu Cek**: **${polesByProvider.filter((p) => p.condition === 'NEEDS_REPAIR').length} tiang**`,
+            `* 🔴 **Rusak / Bahaya**: **${polesByProvider.filter((p) => p.condition === 'DAMAGED').length} tiang**`,
+          ].join('\n');
+          const providerRoads = polesByProvider.reduce<Record<string, number>>((acc, p) => {
+            const road = p.road?.trim();
+            if (road) acc[road] = (acc[road] || 0) + 1;
+            return acc;
+          }, {});
+          const roadLines = Object.entries(providerRoads)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name, count]) => `* ${name}: **${count} tiang**`)
+            .join('\n');
+
+          finalReply =
+            `🌐 **Data Tiang Provider ${requestedProvider.label}**\n\n` +
+            `* 📍 **Total Terdata**: **${polesByProvider.length} tiang** (${percent(polesByProvider.length, totalPoles)}% dari total)\n` +
+            `${conditionLines}\n\n` +
+            `🛣️ **Ruas Jalan Terbanyak**:\n${roadLines || '* Belum ada ruas jalan tercatat untuk provider ini.'}\n\n` +
+            `Sumber angka: snapshot database VPS saat request diproses.`;
+        } else {
+          const providerLines = Object.entries(providerCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, count]) => `* **${name}**: **${count} tiang** (${percent(count, totalPoles)}%)`)
+            .join('\n');
+
+          finalReply =
+            `🌐 **Rekapitulasi Tiang per Provider**\n\n` +
+            `${providerLines || '* Belum ada provider yang tercatat.'}\n\n` +
+            `Total keseluruhan data adalah **${totalPoles} titik tiang**.`;
+        }
+      } else if (
+        lastUserMsg.includes('kelurahan') ||
+        lastUserMsg.includes('kecamatan') ||
+        lastUserMsg.includes('jalan') ||
+        lastUserMsg.includes('ruas')
+      ) {
+        finalReply =
+          `🗺️ **Sebaran Data Berdasarkan Wilayah & Ruas**\n\n` +
+          `* **Kecamatan**: ${kecamatanSummary || 'Belum ada kecamatan tercatat'}\n` +
+          `* **Kelurahan Teraktif**: ${kelurahanSummary || 'Belum ada kelurahan tercatat'}\n` +
+          `* **Ruas Jalan Terbanyak**: ${topRoadsSummary || 'Belum ada ruas jalan tercatat'}\n\n` +
+          `Total data yang dibaca dari database VPS: **${totalPoles} titik tiang**.`;
       } else if (
         lastUserMsg.includes('warna') ||
         lastUserMsg.includes('ciri') ||
@@ -506,7 +703,7 @@ PANDUAN JAWABAN:
       ) {
         const monthLines = Object.entries(monthCounts)
           .sort((a, b) => b[0].localeCompare(a[0]))
-          .map(([m, c]) => `* 🗓️ **Bulan ${m}**: **${c} titik tiang** (${((c / totalPoles) * 100).toFixed(1)}%)`)
+          .map(([m, c]) => `* 🗓️ **Bulan ${m}**: **${c} titik tiang** (${percent(c, totalPoles)}%)`)
           .join('\n');
 
         finalReply =
@@ -524,7 +721,7 @@ PANDUAN JAWABAN:
       ) {
         const sLines = Object.entries(surveyorCounts)
           .sort((a, b) => b[1] - a[1])
-          .map(([name, count]) => `* 👤 **${name}**: **${count} titik tiang** (${((count / totalPoles) * 100).toFixed(1)}%)`)
+          .map(([name, count]) => `* 👤 **${name}**: **${count} titik tiang** (${percent(count, totalPoles)}%)`)
           .join('\n');
 
         finalReply =
@@ -540,9 +737,9 @@ PANDUAN JAWABAN:
       ) {
         finalReply =
           `🏗️ **Komposisi Material & Jenis Tiang Utilitas**:\n\n` +
-          `* 🏢 **Tiang Beton**: **${poleTypeCounts.BETON || 0} tiang** (${(((poleTypeCounts.BETON || 0) / totalPoles) * 100).toFixed(1)}%)\n` +
-          `* ⚙️ **Tiang Besi / Baja**: **${poleTypeCounts.BESI || 0} tiang** (${(((poleTypeCounts.BESI || 0) / totalPoles) * 100).toFixed(1)}%)\n` +
-          `* 🪵 **Tiang Kayu**: **${poleTypeCounts.KAYU || 0} tiang** (${(((poleTypeCounts.KAYU || 0) / totalPoles) * 100).toFixed(1)}%)\n` +
+          `* 🏢 **Tiang Beton**: **${poleTypeCounts.BETON || 0} tiang** (${percent(poleTypeCounts.BETON || 0, totalPoles)}%)\n` +
+          `* ⚙️ **Tiang Besi / Baja**: **${poleTypeCounts.BESI || 0} tiang** (${percent(poleTypeCounts.BESI || 0, totalPoles)}%)\n` +
+          `* 🪵 **Tiang Kayu**: **${poleTypeCounts.KAYU || 0} tiang** (${percent(poleTypeCounts.KAYU || 0, totalPoles)}%)\n` +
           `* 🏷️ **Lainnya**: **${poleTypeCounts.LAINNYA || 0} tiang**\n\n` +
           `Karakteristik tiang dicatat lengkap dengan jalur kabel udara (${cableTypeCounts.UDARA || 0}) maupun bawah tanah (${cableTypeCounts.BAWAH_TANAH || 0}).`;
       } else if (
@@ -587,9 +784,9 @@ PANDUAN JAWABAN:
           `📊 **Rekapitulasi Eksekutif Inventaris Tiang (Kota Lubuklinggau)**:\n\n` +
           `* 📍 **Total Tiang Terdata**: **${totalPoles} titik tiang**\n` +
           `* 📏 **Total Panjang Kabel**: **${totalCableLengthKm} km** (${totalSegments} segmen)\n` +
-          `* 🟢 **Kondisi Baik**: **${goodCount} tiang** (${((goodCount / totalPoles) * 100).toFixed(1)}%)\n` +
-          `* 🟡 **Perlu Cek**: **${needsRepairCount} tiang** (${((needsRepairCount / totalPoles) * 100).toFixed(1)}%)\n` +
-          `* 🔴 **Rusak / Bahaya**: **${damagedCount} tiang** (${((damagedCount / totalPoles) * 100).toFixed(1)}%)\n\n` +
+          `* 🟢 **Kondisi Baik**: **${goodCount} tiang** (${percent(goodCount, totalPoles)}%)\n` +
+          `* 🟡 **Perlu Cek**: **${needsRepairCount} tiang** (${percent(needsRepairCount, totalPoles)}%)\n` +
+          `* 🔴 **Rusak / Bahaya**: **${damagedCount} tiang** (${percent(damagedCount, totalPoles)}%)\n\n` +
           `🏘️ **Kelurahan Teraktif**: ${kelurahanSummary}.\n` +
           `🛣️ **Ruas Jalan Terbanyak**: ${topRoadsSummary}.\n` +
           `Data tersinkronisasi langsung secara real-time dengan peta spasial GIS.`;
@@ -614,16 +811,7 @@ PANDUAN JAWABAN:
     let mapAction: any = null;
 
     // Check for date filter
-    const dateMatchForMap = lastUserMsg.match(/tanggal\s*(\d{1,2})|\b(\d{4}-\d{2}-\d{2})\b/i);
-    let matchedDateForMap = '';
-    if (dateMatchForMap) {
-      if (dateMatchForMap[2]) {
-        matchedDateForMap = dateMatchForMap[2];
-      } else if (dateMatchForMap[1]) {
-        const dayNum = dateMatchForMap[1].padStart(2, '0');
-        matchedDateForMap = Object.keys(dateCounts).find((k) => k.endsWith(`-${dayNum}`)) || '';
-      }
-    }
+    const matchedDateForMap = resolveDateFromMessage(lastUserMsg, dateCounts);
 
     if (matchedDateForMap && (lastUserMsg.includes('tampil') || lastUserMsg.includes('filter') || lastUserMsg.includes('peta') || lastUserMsg.includes('titik') || lastUserMsg.includes('lihat'))) {
       mapAction = {

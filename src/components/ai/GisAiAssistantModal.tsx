@@ -31,7 +31,11 @@ interface MapAction {
   surveyor?: string;
   kecamatan?: string;
   kelurahan?: string;
+  date?: string;
+  surveyDate?: string;
   search?: string;
+  typeFilter?: string;
+  reset?: boolean;
   label: string;
 }
 
@@ -120,6 +124,9 @@ export default function GisAiAssistantModal() {
         if (action.surveyor && action.surveyor !== 'ALL') params.set('surveyor', action.surveyor);
         if (action.kecamatan && action.kecamatan !== 'ALL') params.set('kecamatan', action.kecamatan);
         if (action.kelurahan && action.kelurahan !== 'ALL') params.set('kelurahan', action.kelurahan);
+        if (action.date && action.date !== 'ALL') params.set('date', action.date);
+        if (action.surveyDate && action.surveyDate !== 'ALL') params.set('date', action.surveyDate);
+        if (action.typeFilter && action.typeFilter !== 'ALL') params.set('type', action.typeFilter);
         if (action.search) params.set('q', action.search);
         router.push(`/map?${params.toString()}`);
       }

@@ -82,6 +82,7 @@ export default function SurveyForm({
   const [activeTab, setActiveTab] = useState<FormTab>('LOCATION');
 
   // --- 1. LOKASI & ALAMAT ---
+  const [districtsList, setDistrictsList] = useState<{ name: string; kelurahan: string[] }[]>(KECAMATAN_LUBUKLINGGAU);
   const [road, setRoad] = useState('');
   const [kecamatan, setKecamatan] = useState(KECAMATAN_LUBUKLINGGAU[0].name);
   const [kelurahan, setKelurahan] = useState(KECAMATAN_LUBUKLINGGAU[0].kelurahan[0]);
@@ -157,6 +158,28 @@ export default function SurveyForm({
       }
     }
     fetchExistingCodes();
+  }, []);
+
+  // 0.5 Fetch dynamic districts & subdistricts from database
+  useEffect(() => {
+    async function fetchDistricts() {
+      try {
+        const res = await fetch('/api/districts');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          const mapped = json.data.map((g: any) => ({
+            name: g.name,
+            kelurahan: g.kelurahan.map((k: any) => (typeof k === 'string' ? k : k.name)),
+          }));
+          if (mapped.length > 0) {
+            setDistrictsList(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch districts in SurveyForm:', err);
+      }
+    }
+    fetchDistricts();
   }, []);
 
   // 1. Smart Memory: Load previous pole attributes on initial mount
@@ -597,7 +620,7 @@ export default function SurveyForm({
                     onChange={handleKecamatanChange}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-900 font-medium focus:border-blue-500 outline-none"
                   >
-                    {KECAMATAN_LUBUKLINGGAU.map((k) => (
+                    {districtsList.map((k) => (
                       <option key={k.name} value={k.name}>
                         {k.name}
                       </option>

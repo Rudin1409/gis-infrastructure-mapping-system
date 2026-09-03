@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pole, PoleCondition, PoleType, SisiJalan, OwnershipStatus } from '@/types/pole';
 import { Provider } from '@/types/provider';
@@ -48,6 +48,7 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   const [isMapRepositionMode, setIsMapRepositionMode] = useState(false);
 
   // --- 1. KOORDINAT & LOKASI ---
+  const [districtsList, setDistrictsList] = useState<{ name: string; kelurahan: string[] }[]>(KECAMATAN_LUBUKLINGGAU);
   const [coord, setCoord] = useState<Coordinates>({
     lat: pole.poleLatitude,
     lng: pole.poleLongitude,
@@ -111,13 +112,35 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Fetch dynamic districts & subdistricts from database
+  useEffect(() => {
+    async function fetchDistricts() {
+      try {
+        const res = await fetch('/api/districts');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          const mapped = json.data.map((g: any) => ({
+            name: g.name,
+            kelurahan: g.kelurahan.map((k: any) => (typeof k === 'string' ? k : k.name)),
+          }));
+          if (mapped.length > 0) {
+            setDistrictsList(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch districts in EditPoleForm:', err);
+      }
+    }
+    fetchDistricts();
+  }, []);
+
   // Filter Kelurahan based on selected Kecamatan
-  const currentKecamatanObj = KECAMATAN_LUBUKLINGGAU.find((k) => k.name === kecamatan);
+  const currentKecamatanObj = districtsList.find((k) => k.name === kecamatan) || KECAMATAN_LUBUKLINGGAU.find((k) => k.name === kecamatan);
   const kelurahanList = currentKecamatanObj ? currentKecamatanObj.kelurahan : [];
 
   const handleKecamatanChange = (newKec: string) => {
     setKecamatan(newKec);
-    const matched = KECAMATAN_LUBUKLINGGAU.find((k) => k.name === newKec);
+    const matched = districtsList.find((k) => k.name === newKec) || KECAMATAN_LUBUKLINGGAU.find((k) => k.name === newKec);
     if (matched && matched.kelurahan.length > 0) {
       setKelurahan(matched.kelurahan[0]);
     }
@@ -139,7 +162,9 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
       if (geo) {
         if (geo.road) setRoad(geo.road);
         if (geo.kecamatan) {
-          const matchedKec = KECAMATAN_LUBUKLINGGAU.find((k) =>
+          const matchedKec = districtsList.find((k) =>
+            k.name.toLowerCase().includes(geo.kecamatan.toLowerCase())
+          ) || KECAMATAN_LUBUKLINGGAU.find((k) =>
             k.name.toLowerCase().includes(geo.kecamatan.toLowerCase())
           );
           if (matchedKec) {
@@ -400,7 +425,7 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                   onChange={(e) => handleKecamatanChange(e.target.value)}
                   className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium outline-none focus:border-blue-500"
                 >
-                  {KECAMATAN_LUBUKLINGGAU.map((k) => (
+                  {districtsList.map((k) => (
                     <option key={k.name} value={k.name}>
                       {k.name}
                     </option>

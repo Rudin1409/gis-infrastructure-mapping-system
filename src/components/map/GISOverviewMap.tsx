@@ -90,6 +90,8 @@ interface GISOverviewMapProps {
   initialSurveyor?: string;
   initialKecamatan?: string;
   initialKelurahan?: string;
+  initialSurveyDate?: string;
+  initialType?: string;
   isLicenseLocked?: boolean;
   licenseReason?: string;
 }
@@ -136,6 +138,8 @@ export default function GISOverviewMap({
   initialSurveyor,
   initialKecamatan,
   initialKelurahan,
+  initialSurveyDate,
+  initialType,
   isLicenseLocked = false,
   licenseReason,
 }: GISOverviewMapProps) {
@@ -273,8 +277,8 @@ export default function GISOverviewMap({
   const [selectedPjuCableFilter, setSelectedPjuCableFilter] = useState<'ALL' | 'WITH_CABLE' | 'WITHOUT_CABLE'>('ALL');
   const [selectedKecamatan, setSelectedKecamatan] = useState(initialKecamatan || 'ALL');
   const [selectedKelurahan, setSelectedKelurahan] = useState(initialKelurahan || 'ALL');
-  const [selectedSurveyDate, setSelectedSurveyDate] = useState<string>('ALL');
-  const [selectedType, setSelectedType] = useState('ALL');
+  const [selectedSurveyDate, setSelectedSurveyDate] = useState<string>(initialSurveyDate || 'ALL');
+  const [selectedType, setSelectedType] = useState(initialType || 'ALL');
   const [selectedHeight, setSelectedHeight] = useState('ALL'); // ALL, 5m, 6m, 7m, 9m, 12m
   const [selectedCableType, setSelectedCableType] = useState('ALL'); // UDARA, BAWAH_TANAH, TRANSISI_RISER
   const [selectedHazard, setSelectedHazard] = useState<'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'>('ALL');

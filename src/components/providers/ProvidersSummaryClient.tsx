@@ -28,11 +28,111 @@ import {
   Sparkles,
   TrendingUp,
   ShieldCheck,
+  Users,
+  UserCheck,
+  CalendarDays,
+  Clock3,
 } from 'lucide-react';
 
 interface ProvidersSummaryClientProps {
   initialPoles: Pole[];
   providers?: Provider[];
+}
+
+type InputTeam = 'KOMINFO' | 'BAPENDA' | 'LAINNYA';
+
+interface SurveyorMeta {
+  id: string;
+  displayName: string;
+  team: InputTeam;
+  teamLabel: string;
+  roleLabel: string;
+}
+
+const KNOWN_SURVEYORS: SurveyorMeta[] = [
+  {
+    id: 'USR-KOMINFO-ADMIN',
+    displayName: 'Admin DISKOMINFOTIKSAN',
+    team: 'KOMINFO',
+    teamLabel: 'Tim Kominfo',
+    roleLabel: 'Admin Kominfo',
+  },
+  {
+    id: 'USR-SURVEYOR-01',
+    displayName: 'M. Tri Saputra',
+    team: 'KOMINFO',
+    teamLabel: 'Tim Kominfo',
+    roleLabel: 'User Kominfo',
+  },
+  {
+    id: 'USR-SURVEYOR-02',
+    displayName: 'Yodi Heropralaga',
+    team: 'BAPENDA',
+    teamLabel: 'Tim Bapenda',
+    roleLabel: 'Surveyor Bapenda',
+  },
+  {
+    id: 'USR-SURVEYOR-03',
+    displayName: 'Andika Yulian Putra',
+    team: 'BAPENDA',
+    teamLabel: 'Tim Bapenda',
+    roleLabel: 'Surveyor Bapenda',
+  },
+  {
+    id: 'USR-SURVEYOR-04',
+    displayName: 'Pradigga Navigasi',
+    team: 'BAPENDA',
+    teamLabel: 'Tim Bapenda',
+    roleLabel: 'Surveyor Bapenda',
+  },
+];
+
+function getJakartaDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const year = parts.find((p) => p.type === 'year')?.value;
+  const month = parts.find((p) => p.type === 'month')?.value;
+  const day = parts.find((p) => p.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
+function getPoleInputDate(pole: Pole) {
+  return (pole.surveyDate || pole.createdAt || '').slice(0, 10) || 'TANPA_TANGGAL';
+}
+
+function resolveSurveyorMeta(pole: Pole): SurveyorMeta {
+  const rawId = (pole.surveyorId || '').trim();
+  const rawName = (pole.surveyorName || '').trim();
+  const lookup = `${rawId} ${rawName}`.toLowerCase();
+
+  const known =
+    KNOWN_SURVEYORS.find((user) => user.id === rawId) ||
+    KNOWN_SURVEYORS.find((user) => lookup.includes(user.displayName.toLowerCase().split(' ')[0]) && lookup.includes(user.displayName.toLowerCase().split(' ').slice(-1)[0])) ||
+    (lookup.includes('tri') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-01') : undefined) ||
+    (lookup.includes('yodi') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-02') : undefined) ||
+    (lookup.includes('andika') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-03') : undefined) ||
+    (lookup.includes('pradigga') || lookup.includes('pradiga') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-04') : undefined) ||
+    (lookup.includes('admin') || lookup.includes('kominfo') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-KOMINFO-ADMIN') : undefined);
+
+  if (known) return known;
+
+  return {
+    id: rawId || rawName || 'UNKNOWN_SURVEYOR',
+    displayName: rawName || rawId || 'Tidak diketahui',
+    team: 'LAINNYA',
+    teamLabel: 'Tim Lainnya',
+    roleLabel: 'User tidak terklasifikasi',
+  };
+}
+
+function formatPercent(count: number, total: number) {
+  if (!total) return '0.0';
+  return ((count / total) * 100).toFixed(1);
 }
 
 export default function ProvidersSummaryClient({
@@ -43,7 +143,7 @@ export default function ProvidersSummaryClient({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'ALL' | 'ACTIVE_ONLY' | 'GOV_PLN' | 'ISP_FO'>('ALL');
-  const [activeTab, setActiveTab] = useState<'SUMMARY' | 'VISUAL_GUIDE'>('SUMMARY');
+  const [activeTab, setActiveTab] = useState<'SUMMARY' | 'INPUT_USERS' | 'VISUAL_GUIDE'>('SUMMARY');
 
   // 1. Merge default providers with any custom provider records
   const allProvidersList = useMemo(() => {
@@ -242,6 +342,125 @@ export default function ProvidersSummaryClient({
     [totalPolesCount, plnCount, pjuCount]
   );
 
+  const todayJakarta = useMemo(() => getJakartaDateString(), []);
+
+  const inputStats = useMemo(() => {
+    const userMap = new Map<
+      string,
+      SurveyorMeta & {
+        total: number;
+        today: number;
+        goodCount: number;
+        repairCount: number;
+        damagedCount: number;
+        latestDate: string;
+      }
+    >();
+
+    KNOWN_SURVEYORS.forEach((user) => {
+      userMap.set(user.id, {
+        ...user,
+        total: 0,
+        today: 0,
+        goodCount: 0,
+        repairCount: 0,
+        damagedCount: 0,
+        latestDate: '-',
+      });
+    });
+
+    const teamMap: Record<
+      InputTeam,
+      {
+        team: InputTeam;
+        label: string;
+        total: number;
+        today: number;
+        users: number;
+      }
+    > = {
+      KOMINFO: { team: 'KOMINFO', label: 'Tim Kominfo', total: 0, today: 0, users: 0 },
+      BAPENDA: { team: 'BAPENDA', label: 'Tim Bapenda', total: 0, today: 0, users: 0 },
+      LAINNYA: { team: 'LAINNYA', label: 'Tim Lainnya', total: 0, today: 0, users: 0 },
+    };
+
+    const dailyMap = new Map<
+      string,
+      {
+        date: string;
+        total: number;
+        kominfo: number;
+        bapenda: number;
+        lainnya: number;
+      }
+    >();
+
+    livePoles.forEach((pole) => {
+      const meta = resolveSurveyorMeta(pole);
+      const date = getPoleInputDate(pole);
+      const key = meta.id;
+
+      if (!userMap.has(key)) {
+        userMap.set(key, {
+          ...meta,
+          total: 0,
+          today: 0,
+          goodCount: 0,
+          repairCount: 0,
+          damagedCount: 0,
+          latestDate: '-',
+        });
+      }
+
+      const user = userMap.get(key)!;
+      user.total += 1;
+      if (date === todayJakarta) user.today += 1;
+      if (pole.condition === 'GOOD') user.goodCount += 1;
+      else if (pole.condition === 'NEEDS_REPAIR') user.repairCount += 1;
+      else if (pole.condition === 'DAMAGED') user.damagedCount += 1;
+      if (date !== 'TANPA_TANGGAL' && (user.latestDate === '-' || date > user.latestDate)) {
+        user.latestDate = date;
+      }
+
+      const team = teamMap[meta.team];
+      team.total += 1;
+      if (date === todayJakarta) team.today += 1;
+
+      const daily = dailyMap.get(date) || {
+        date,
+        total: 0,
+        kominfo: 0,
+        bapenda: 0,
+        lainnya: 0,
+      };
+      daily.total += 1;
+      if (meta.team === 'KOMINFO') daily.kominfo += 1;
+      else if (meta.team === 'BAPENDA') daily.bapenda += 1;
+      else daily.lainnya += 1;
+      dailyMap.set(date, daily);
+    });
+
+    const users = Array.from(userMap.values()).sort((a, b) => {
+      const teamOrder = { KOMINFO: 0, BAPENDA: 1, LAINNYA: 2 };
+      if (teamOrder[a.team] !== teamOrder[b.team]) return teamOrder[a.team] - teamOrder[b.team];
+      if (b.total !== a.total) return b.total - a.total;
+      return a.displayName.localeCompare(b.displayName);
+    });
+
+    users.forEach((user) => {
+      teamMap[user.team].users += 1;
+    });
+
+    return {
+      users,
+      teams: [teamMap.KOMINFO, teamMap.BAPENDA, teamMap.LAINNYA].filter(
+        (team) => team.team !== 'LAINNYA' || team.total > 0
+      ),
+      daily: Array.from(dailyMap.values()).sort((a, b) => b.date.localeCompare(a.date)),
+      todayTotal: livePoles.filter((pole) => getPoleInputDate(pole) === todayJakarta).length,
+    };
+  }, [livePoles, todayJakarta]);
+
   return (
     <div className="space-y-4 font-sans text-slate-800 pb-16 animate-in fade-in">
       {/* 1. Header Bar */}
@@ -321,30 +540,42 @@ export default function ProvidersSummaryClient({
       </div>
 
       {/* 3. Navigation View Switcher */}
-      <div className="bg-slate-100 p-1 rounded-2xl flex items-center gap-1 text-xs font-bold">
+      <div className="bg-slate-100 p-1 rounded-2xl grid grid-cols-3 gap-1 text-[11px] font-bold">
         <button
           type="button"
           onClick={() => setActiveTab('SUMMARY')}
-          className={`flex-1 py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'SUMMARY'
               ? 'bg-white text-blue-700 shadow-md font-black'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <BarChart3 className="w-4 h-4" />
-          <span>Statistik &amp; Jumlah Tiang ({activeProvidersCount})</span>
+          <span className="leading-tight">Statistik Tiang ({activeProvidersCount})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('INPUT_USERS')}
+          className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            activeTab === 'INPUT_USERS'
+              ? 'bg-white text-blue-700 shadow-md font-black'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span className="leading-tight">Input User ({inputStats.users.length})</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('VISUAL_GUIDE')}
-          className={`flex-1 py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`py-2 px-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'VISUAL_GUIDE'
               ? 'bg-white text-blue-700 shadow-md font-black'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
           <Palette className="w-4 h-4" />
-          <span>Panduan Marka Warna ({allProvidersList.length})</span>
+          <span className="leading-tight">Marka Warna ({allProvidersList.length})</span>
         </button>
       </div>
 
@@ -573,7 +804,219 @@ export default function ProvidersSummaryClient({
       )}
 
       {/* ============================================================ */}
-      {/* VIEW 2: VISUAL GUIDE INFOGRAFIS RESMI                        */}
+      {/* VIEW 2: INPUT USER & TEAM RECAP                              */}
+      {/* ============================================================ */}
+      {activeTab === 'INPUT_USERS' && (
+        <div className="space-y-3.5 animate-in fade-in">
+          <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-blue-600" />
+                  <span>Data Input per User &amp; Tim</span>
+                </h2>
+                <p className="text-[11px] text-slate-500 leading-snug">
+                  Kominfo: Admin DISKOMINFOTIKSAN dan M. Tri Saputra. Bapenda: Yodi, Andika, dan Pradigga.
+                </p>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-black whitespace-nowrap">
+                Live Data
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-2xl p-3 bg-slate-950 text-white">
+                <span className="text-[9px] uppercase font-black text-slate-300">Total Semua</span>
+                <p className="text-2xl font-black font-mono leading-tight">{totalPolesCount}</p>
+                <span className="text-[10px] text-slate-300">input tiang</span>
+              </div>
+              <div className="rounded-2xl p-3 bg-blue-50 border border-blue-100">
+                <span className="text-[9px] uppercase font-black text-blue-700">Input Hari Ini</span>
+                <p className="text-2xl font-black font-mono text-blue-950 leading-tight">
+                  {inputStats.todayTotal}
+                </p>
+                <span className="text-[10px] text-blue-700">{todayJakarta}</span>
+              </div>
+              <div className="rounded-2xl p-3 bg-amber-50 border border-amber-100">
+                <span className="text-[9px] uppercase font-black text-amber-800">Hari Terdata</span>
+                <p className="text-2xl font-black font-mono text-amber-950 leading-tight">
+                  {inputStats.daily.length}
+                </p>
+                <span className="text-[10px] text-amber-800">tanggal input</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {inputStats.teams.map((team) => {
+              const isKominfo = team.team === 'KOMINFO';
+              return (
+                <div
+                  key={team.team}
+                  className={`rounded-3xl p-4 border shadow-[0_2px_12px_rgba(15,23,42,0.04)] ${
+                    isKominfo
+                      ? 'bg-blue-50/80 border-blue-100'
+                      : 'bg-emerald-50/80 border-emerald-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className={`text-[10px] uppercase font-black ${isKominfo ? 'text-blue-700' : 'text-emerald-700'}`}>
+                        {team.label}
+                      </p>
+                      <h3 className="text-lg font-black text-slate-900">
+                        {team.total} Input
+                      </h3>
+                    </div>
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${isKominfo ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white'}`}>
+                      <Users className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-white/75 rounded-2xl p-2 border border-white">
+                      <span className="text-slate-500 font-bold">Hari ini</span>
+                      <p className="font-black text-slate-900">{team.today} input</p>
+                    </div>
+                    <div className="bg-white/75 rounded-2xl p-2 border border-white">
+                      <span className="text-slate-500 font-bold">Pangsa</span>
+                      <p className="font-black text-slate-900">{formatPercent(team.total, totalPolesCount)}%</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span>Detail Tiap User</span>
+              </h3>
+              <span className="text-[10px] font-bold text-slate-500">
+                {inputStats.users.length} user
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {inputStats.users.map((user) => {
+                const isKominfo = user.team === 'KOMINFO';
+                return (
+                  <Link
+                    key={user.id}
+                    href={`/map?surveyor=${encodeURIComponent(user.id)}`}
+                    className="block rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-blue-200 transition-all p-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black ${isKominfo ? 'bg-blue-100 text-blue-700' : user.team === 'BAPENDA' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                            {user.teamLabel}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-white text-slate-500 border border-slate-100">
+                            {user.roleLabel}
+                          </span>
+                        </div>
+                        <h4 className="mt-1 text-sm font-black text-slate-900 truncate">
+                          {user.displayName}
+                        </h4>
+                        <p className="text-[10px] text-slate-500 font-mono truncate">
+                          {user.id}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xl font-black text-slate-900 font-mono leading-tight">
+                          {user.total}
+                        </p>
+                        <span className="text-[10px] font-bold text-slate-500">input</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-4 gap-1.5 text-[10px]">
+                      <div className="rounded-xl bg-white border border-slate-100 p-2">
+                        <span className="block text-slate-400 font-bold">Hari Ini</span>
+                        <strong className="text-blue-700">{user.today}</strong>
+                      </div>
+                      <div className="rounded-xl bg-white border border-slate-100 p-2">
+                        <span className="block text-slate-400 font-bold">Baik</span>
+                        <strong className="text-emerald-700">{user.goodCount}</strong>
+                      </div>
+                      <div className="rounded-xl bg-white border border-slate-100 p-2">
+                        <span className="block text-slate-400 font-bold">Cek</span>
+                        <strong className="text-amber-700">{user.repairCount}</strong>
+                      </div>
+                      <div className="rounded-xl bg-white border border-slate-100 p-2">
+                        <span className="block text-slate-400 font-bold">Rusak</span>
+                        <strong className="text-rose-700">{user.damagedCount}</strong>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+                      <span>Terakhir input: <strong className="text-slate-700">{user.latestDate}</strong></span>
+                      <span className="font-bold text-blue-600 flex items-center gap-0.5">
+                        Lihat titik <ChevronRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <CalendarDays className="w-4 h-4 text-blue-600" />
+                <span>Rekap Input per Hari</span>
+              </h3>
+              <span className="text-[10px] font-bold text-slate-500">
+                terbaru di atas
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {inputStats.daily.slice(0, 14).map((day) => (
+                <div
+                  key={day.date}
+                  className="rounded-2xl bg-slate-50 border border-slate-100 p-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Clock3 className="w-4 h-4 text-slate-400" />
+                      <span className="text-xs font-black text-slate-900">
+                        {day.date === todayJakarta ? `Hari Ini (${day.date})` : day.date}
+                      </span>
+                    </div>
+                    <span className="text-sm font-black font-mono text-slate-900">
+                      {day.total}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-1.5 text-[10px]">
+                    <span className="rounded-xl bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 font-bold">
+                      Kominfo {day.kominfo}
+                    </span>
+                    <span className="rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-1 font-bold">
+                      Bapenda {day.bapenda}
+                    </span>
+                    <span className="rounded-xl bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 font-bold">
+                      Lainnya {day.lainnya}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+              {inputStats.daily.length === 0 && (
+                <div className="rounded-2xl bg-slate-50 border border-slate-100 p-6 text-center">
+                  <p className="text-xs font-bold text-slate-500">Belum ada data input tiang.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* VIEW 3: VISUAL GUIDE INFOGRAFIS RESMI                        */}
       {/* ============================================================ */}
       {activeTab === 'VISUAL_GUIDE' && (
         <div className="space-y-4 animate-in fade-in">
