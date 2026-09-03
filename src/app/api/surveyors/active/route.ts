@@ -7,6 +7,28 @@ export const revalidate = 0;
 
 const ACTIVE_WINDOW_MINUTES = 45;
 
+async function ensureSurveyorLocationsTable() {
+  if (!isPostgresConfigured()) return;
+  await dbQuery(`
+    CREATE TABLE IF NOT EXISTS public.surveyor_locations (
+      user_id TEXT PRIMARY KEY,
+      user_name TEXT NOT NULL,
+      role_label TEXT,
+      team TEXT DEFAULT 'LAINNYA',
+      latitude DOUBLE PRECISION NOT NULL,
+      longitude DOUBLE PRECISION NOT NULL,
+      accuracy DOUBLE PRECISION,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await dbQuery(
+    'CREATE INDEX IF NOT EXISTS idx_surveyor_locations_updated_at ON public.surveyor_locations (updated_at DESC)'
+  );
+  await dbQuery(
+    'CREATE INDEX IF NOT EXISTS idx_surveyor_locations_lat_lng ON public.surveyor_locations (latitude, longitude)'
+  );
+}
+
 function resolveTeam(userId?: string, userName?: string): 'KOMINFO' | 'BAPENDA' | 'LAINNYA' {
   const key = `${userId || ''} ${userName || ''}`.toLowerCase();
   if (key.includes('kominfo') || key.includes('tri') || key.includes('admin')) return 'KOMINFO';
@@ -37,6 +59,7 @@ export async function GET(request: NextRequest) {
     let rows: any[] = [];
 
     if (isPostgresConfigured()) {
+      await ensureSurveyorLocationsTable();
       const result = await dbQuery(
         `
           SELECT user_id, user_name, role_label, team, latitude, longitude, accuracy, updated_at
@@ -117,6 +140,7 @@ export async function POST(request: NextRequest) {
     const team = resolveTeam(userId, userName);
 
     if (isPostgresConfigured()) {
+      await ensureSurveyorLocationsTable();
       await dbQuery(
         `
           INSERT INTO surveyor_locations

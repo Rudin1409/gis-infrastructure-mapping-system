@@ -213,9 +213,6 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
       {/* 1. TOP COMMAND BAR & USER HERO                               */}
       {/* ============================================================ */}
       <div className="relative overflow-hidden bg-slate-950 text-white pt-5 pb-8 px-4 sm:px-6 rounded-b-[40px] shadow-2xl shadow-slate-950/40 border-b border-slate-800/80">
-        {/* Ambient Spatial Radial Glows */}
-        <div className="absolute top-0 right-1/4 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-10 left-10 w-72 h-72 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:2.5rem_2.5rem] pointer-events-none opacity-40" />
 
         <div className="relative z-10 max-w-5xl mx-auto space-y-4">
@@ -443,11 +440,11 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             <span className="text-[10.5px] text-slate-400 font-medium">Terintegrasi DISKOMINFOTIKSAN</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {/* 1. Input Survei GPS */}
             <Link
               href="/poles/new"
-              className="p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-blue-400 hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-blue-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-xs">
@@ -461,8 +458,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <h3 className="text-xs font-black text-slate-900 group-hover:text-blue-600 transition-colors">
                   Survei GPS Baru
                 </h3>
-                <p className="text-[10px] text-slate-500 leading-snug mt-0.5">
-                  Pin koordinat, foto fisik tiang &amp; auto-reverse geocoding jalan.
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  GPS + Foto + Jalan
                 </p>
               </div>
             </Link>
@@ -470,7 +467,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             {/* 2. Peta Spasial GIS */}
             <Link
               href="/map"
-              className="p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-emerald-400 hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-emerald-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-xs">
@@ -484,8 +481,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <h3 className="text-xs font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
                   Peta Spasial Kota
                 </h3>
-                <p className="text-[10px] text-slate-500 leading-snug mt-0.5">
-                  Visualisasi sebaran titik, poligon kelurahan &amp; jalur segmen FO.
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  Titik + Tim Aktif
                 </p>
               </div>
             </Link>
@@ -493,7 +490,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             {/* 3. Penataan Kabel & Bahaya */}
             <Link
               href="/segments"
-              className="p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-amber-400 hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-amber-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all shadow-xs">
@@ -509,8 +506,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <h3 className="text-xs font-black text-slate-900 group-hover:text-amber-600 transition-colors">
                   Audit Penataan Kabel
                 </h3>
-                <p className="text-[10px] text-slate-500 leading-snug mt-0.5">
-                  Laporan tiang miring, kabel semrawut &amp; potensi bahaya jalan.
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  Bahaya + Kabel
                 </p>
               </div>
             </Link>
@@ -518,7 +515,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             {/* 4. Database Tiang & Filter */}
             <Link
               href="/poles"
-              className="p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-cyan-400 hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-cyan-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center group-hover:bg-cyan-600 group-hover:text-white transition-all shadow-xs">
@@ -532,8 +529,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <h3 className="text-xs font-black text-slate-900 group-hover:text-cyan-600 transition-colors">
                   Daftar Data Tiang
                 </h3>
-                <p className="text-[10px] text-slate-500 leading-snug mt-0.5">
-                  Tabel data inventarisasi, pencarian spesifikasi &amp; ekspor laporan.
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  Cari + Ekspor
                 </p>
               </div>
             </Link>
@@ -541,7 +538,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             {/* 5. Lampu PJU Pemkot */}
             <Link
               href="/poles?provider=PRV_PJU_PEMKOT"
-              className="p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-yellow-400 hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-yellow-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-yellow-50 text-yellow-700 flex items-center justify-center group-hover:bg-yellow-600 group-hover:text-white transition-all shadow-xs">
@@ -555,8 +552,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <h3 className="text-xs font-black text-slate-900 group-hover:text-yellow-700 transition-colors">
                   Penerangan Jalan (PJU)
                 </h3>
-                <p className="text-[10px] text-slate-500 leading-snug mt-0.5">
-                  Inventarisasi lampu jalan Pemkot, daya watt &amp; kondisi nyala.
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  Lampu + Daya
                 </p>
               </div>
             </Link>
@@ -564,7 +561,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             {/* 6. Katalog 20+ Provider & Marka */}
             <Link
               href="/providers"
-              className="p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-indigo-400 hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-indigo-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-xs">
@@ -578,8 +575,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <h3 className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
                   Katalog Provider &amp; Marka
                 </h3>
-                <p className="text-[10px] text-slate-500 leading-snug mt-0.5">
-                  Panduan standar ciri warna cat tiang, Telkom, PLN, Iconnet &amp; ISP.
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  Warna + Brand
                 </p>
               </div>
             </Link>
@@ -587,7 +584,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             {/* 7. Master 8 Kecamatan & Kelurahan */}
             <Link
               href="/districts"
-              className="p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-purple-400 hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-purple-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-xs">
@@ -601,8 +598,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <h3 className="text-xs font-black text-slate-900 group-hover:text-purple-600 transition-colors">
                   Wilayah 8 Kecamatan
                 </h3>
-                <p className="text-[10px] text-slate-500 leading-snug mt-0.5">
-                  Rekapitulasi 72 kelurahan &amp; fitur edit/manajemen data master.
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  72 Kelurahan
                 </p>
               </div>
             </Link>
@@ -610,7 +607,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
             {/* 8. Jaringan Kabel Bawah Tanah */}
             <Link
               href="/segments?filter=UNDERGROUND"
-              className="p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-teal-400 hover:shadow-md transition-all group flex flex-col justify-between space-y-3"
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-teal-400 hover:shadow-md transition-all group flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center group-hover:bg-teal-600 group-hover:text-white transition-all shadow-xs">
@@ -624,8 +621,8 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 <h3 className="text-xs font-black text-slate-900 group-hover:text-teal-700 transition-colors">
                   Ducting Bawah Tanah
                 </h3>
-                <p className="text-[10px] text-slate-500 leading-snug mt-0.5">
-                  Jalur kabel tanam dan transisi riser pole perkotaan.
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  Tanam + Riser
                 </p>
               </div>
             </Link>

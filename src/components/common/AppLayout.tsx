@@ -7,11 +7,15 @@ import BottomNav from './BottomNav';
 import GisAiAssistantModal from '@/components/ai/GisAiAssistantModal';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ViewModeProvider, useViewMode } from '@/context/ViewModeContext';
+import { useActiveSurveyorPresence } from '@/hooks/useActiveSurveyorPresence';
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const isLoginPage = pathname === '/login';
+  const isSurveyInputPage = pathname === '/poles/new';
+
+  useActiveSurveyorPresence(user, isAuthenticated);
 
   // Splash animation control
   const [showSplash, setShowSplash] = useState(true);
@@ -98,7 +102,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* AI Assistant Floating Copilot (except login) */}
-      {!isLoginPage && <GisAiAssistantModal />}
+      {!isLoginPage && !isSurveyInputPage && <GisAiAssistantModal />}
 
       {/* Modern Mobile Bottom Navigation (except login) */}
       {!isLoginPage && isAuthenticated && <BottomNav />}

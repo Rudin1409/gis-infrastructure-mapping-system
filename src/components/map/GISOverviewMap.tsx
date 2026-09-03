@@ -60,9 +60,11 @@ import {
   Maximize2,
   Minimize2,
   Lock,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useViewMode } from '@/context/ViewModeContext';
+import { useAuth } from '@/context/AuthContext';
 import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
 import { LUBUKLINGGAU_KELURAHAN_BOUNDARIES } from '@/lib/gis/boundaries';
 import MapPinLegendModal from './MapPinLegendModal';
@@ -108,6 +110,18 @@ interface MapRenderState {
   bounds: MapRenderBounds;
 }
 
+interface ActiveSurveyorLocation {
+  userId: string;
+  userName: string;
+  roleLabel?: string;
+  team?: string;
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  updatedAt?: string;
+  distanceMeters?: number;
+}
+
 const DETAIL_MARKER_ZOOM = 17;
 const LABEL_MARKER_ZOOM = 18;
 const MAX_DETAILED_MARKERS = 220;
@@ -127,6 +141,39 @@ function getPoleSurveyorLabel(pole: Pole) {
   return (pole.surveyorName || pole.surveyorId || 'Tidak diketahui').trim();
 }
 
+function escapeMapHtml(value?: string | number | null) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function getSurveyorInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || 'U') + (parts[1]?.[0] || '')).toUpperCase();
+}
+
+function createTeamLocationIcon(LInstance: typeof L, location: ActiveSurveyorLocation) {
+  const color = location.team === 'BAPENDA' ? '#059669' : '#2563eb';
+  const initials = escapeMapHtml(getSurveyorInitials(location.userName));
+  return LInstance.divIcon({
+    className: 'active-team-location-marker',
+    html: `
+      <div class="relative flex items-center justify-center select-none pointer-events-none" style="width:46px;height:46px;">
+        <div class="absolute w-11 h-11 rounded-full opacity-20 animate-ping" style="background:${color}"></div>
+        <div class="relative w-9 h-9 rounded-full border-2 border-white shadow-xl flex items-center justify-center text-white text-[10px] font-black ring-2 ring-white/30" style="background:${color}">
+          ${initials}
+        </div>
+      </div>
+    `,
+    iconSize: [46, 46],
+    iconAnchor: [23, 23],
+    popupAnchor: [0, -20],
+  });
+}
+
 export default function GISOverviewMap({
   poles,
   segments = [],
@@ -143,6 +190,7 @@ export default function GISOverviewMap({
   isLicenseLocked = false,
   licenseReason,
 }: GISOverviewMapProps) {
+  const { user } = useAuth();
   const { poles: livePoles, refreshPoles } = useSupabaseRealtimePoles(poles);
   const { viewMode, toggleViewMode, isFullscreen, toggleFullscreen } = useViewMode();
   const [isLocked, setIsLocked] = useState<boolean>(isLicenseLocked);
@@ -172,6 +220,7 @@ export default function GISOverviewMap({
   const boundariesLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const measureLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const corridorLayerGroupRef = useRef<L.LayerGroup | null>(null);
+  const activeSurveyorLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
   const markerIconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
 
@@ -303,6 +352,8 @@ export default function GISOverviewMap({
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isCopiedCoords, setIsCopiedCoords] = useState<boolean>(false);
   const [showGpsHud, setShowGpsHud] = useState<boolean>(false);
+  const [activeSurveyors, setActiveSurveyors] = useState<ActiveSurveyorLocation[]>([]);
+  const [showActiveSurveyors, setShowActiveSurveyors] = useState<boolean>(true);
 
   // Load Leaflet dynamically
   useEffect(() => {
@@ -423,6 +474,7 @@ export default function GISOverviewMap({
     measureLayerGroupRef.current = L.layerGroup().addTo(map);
     corridorLayerGroupRef.current = L.layerGroup().addTo(map);
     userLocationLayerGroupRef.current = L.layerGroup().addTo(map);
+    activeSurveyorLayerGroupRef.current = L.layerGroup().addTo(map);
 
     // Map Click Listener for Corridor Waypoint placement
     map.on('click', (e: L.LeafletMouseEvent) => {
@@ -485,9 +537,65 @@ export default function GISOverviewMap({
       map.remove();
       mapInstanceRef.current = null;
       selectionLayerGroupRef.current = null;
+      activeSurveyorLayerGroupRef.current = null;
       setMapRenderState(null);
     };
   }, [leafletLib]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchActiveSurveyors = async () => {
+      try {
+        const lat = userLocation?.latitude ?? LUBUKLINGGAU_CENTER.lat;
+        const lng = userLocation?.longitude ?? LUBUKLINGGAU_CENTER.lng;
+        const exclude = user?.id ? `&excludeUserId=${encodeURIComponent(user.id)}` : '';
+        const res = await fetch(`/api/surveyors/active?lat=${lat}&lng=${lng}${exclude}`, {
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (!cancelled && json.success) {
+          setActiveSurveyors(json.data || []);
+        }
+      } catch (_) {
+        if (!cancelled) setActiveSurveyors([]);
+      }
+    };
+
+    fetchActiveSurveyors();
+    const intervalId = window.setInterval(fetchActiveSurveyors, 20000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [user?.id, userLocation?.latitude, userLocation?.longitude]);
+
+  useEffect(() => {
+    if (!leafletLib || !mapInstanceRef.current || !activeSurveyorLayerGroupRef.current) return;
+    const L = leafletLib;
+    const group = activeSurveyorLayerGroupRef.current;
+    group.clearLayers();
+
+    if (!showActiveSurveyors) return;
+
+    activeSurveyors.forEach((location) => {
+      const marker = L.marker([location.latitude, location.longitude], {
+        icon: createTeamLocationIcon(L, location),
+        zIndexOffset: 1300,
+      }).bindPopup(`
+        <div style="min-width:175px">
+          <strong>${escapeMapHtml(location.userName)}</strong><br/>
+          <span>${escapeMapHtml(location.team || 'TIM')}</span><br/>
+          <small>GPS: ${escapeMapHtml(location.accuracy ? `±${Math.round(location.accuracy)}m` : '-')}</small><br/>
+          ${
+            typeof location.distanceMeters === 'number'
+              ? `<b>Jarak: ${escapeMapHtml(formatDistance(location.distanceMeters))}</b>`
+              : ''
+          }
+        </div>
+      `);
+      group.addLayer(marker);
+    });
+  }, [activeSurveyors, showActiveSurveyors, leafletLib]);
 
   // 📍 GPS Location Trigger & Realtime Tracking
   const startLocating = (centerMap: boolean = true) => {
@@ -2372,6 +2480,22 @@ export default function GISOverviewMap({
       {/* FLOATING MAP CONTROLS (LOCATE ME)                            */}
       {/* ============================================================ */}
       <div className="absolute right-3.5 bottom-44 sm:bottom-28 z-[400] flex flex-col items-center gap-2 pointer-events-auto select-none">
+        <button
+          type="button"
+          onClick={() => setShowActiveSurveyors((prev) => !prev)}
+          className={`relative flex h-11 w-11 items-center justify-center rounded-full border shadow-xl transition-all hover:scale-105 active:scale-95 ${
+            showActiveSurveyors
+              ? 'border-emerald-300 bg-emerald-600 text-white ring-4 ring-emerald-500/20'
+              : 'border-slate-200 bg-white/95 text-slate-500 backdrop-blur-md'
+          }`}
+          title="Tampilkan posisi user aktif di lapangan"
+        >
+          <Users className="h-5 w-5" />
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border border-white bg-slate-950 px-1 text-[9px] font-black text-white">
+            {activeSurveyors.length}
+          </span>
+        </button>
+
         {/* Locate Me Floating GPS Button */}
         <button
           type="button"
