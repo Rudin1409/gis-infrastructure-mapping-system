@@ -552,7 +552,7 @@ export default function PoleListFilterClient({
       )}
 
       {/* 4. Results List of Poles */}
-      <div className="space-y-2.5">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
         {isLoading ? (
           /* SKELETON LOADING UNTUK DAFTAR TIANG */
           <div className="space-y-3">
@@ -577,7 +577,7 @@ export default function PoleListFilterClient({
             ))}
           </div>
         ) : filteredPoles.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 border border-slate-100 text-center space-y-2 shadow-xs">
+          <div className="bg-white rounded-3xl p-8 border border-slate-100 text-center space-y-2 shadow-xs xl:col-span-2">
             <span className="text-3xl block">🔍</span>
             <h3 className="text-sm font-black text-slate-800">
               Tidak Ada Data Tiang yang Cocok

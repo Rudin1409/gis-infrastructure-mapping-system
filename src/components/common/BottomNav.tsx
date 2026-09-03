@@ -21,12 +21,12 @@ export default function BottomNav() {
     { href: '/', label: 'Beranda', icon: LayoutDashboard },
     { href: '/map', label: 'Peta GIS', icon: Map },
     { href: '/poles/new', label: 'Survey', icon: Plus, isPrimary: true },
-    { href: '/poles', label: 'Data Tiang', icon: Database },
+    { href: '/poles', label: 'Katalog', icon: Database },
     { href: '/profile', label: 'Profil', icon: User },
   ];
 
   return (
-    <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] z-40 bg-white/95 backdrop-blur-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.14)] rounded-3xl py-1 px-2 select-none transition-all duration-200">
+    <nav className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] z-40 bg-white/95 backdrop-blur-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.14)] rounded-3xl py-1 px-2 select-none transition-all duration-200 lg:hidden">
       <div className="flex items-center justify-around relative">
         {navItems.map((item) => {
           const Icon = item.icon;

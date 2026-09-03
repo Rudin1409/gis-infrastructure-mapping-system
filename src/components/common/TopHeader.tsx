@@ -57,8 +57,8 @@ export default function TopHeader() {
     }
     if (pathname === '/poles') {
       return {
-        title: 'Data Inventaris Tiang',
-        subtitle: 'Master Data Infrastruktur',
+        title: 'Katalog Data Tiang',
+        subtitle: 'Daftar Inventaris Infrastruktur',
         icon: Database,
         showBack: false,
       };
@@ -130,7 +130,7 @@ export default function TopHeader() {
 
   return (
     <header className="sticky top-0 w-full z-30 bg-gradient-to-r from-[#1e40af] via-[#2563eb] to-[#3b82f6] text-white shadow-[0_2px_12px_rgba(30,64,175,0.2)] border-b border-blue-400/20 select-none flex-shrink-0">
-      <div className={`px-3.5 py-2 flex items-center justify-between gap-2 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto' : 'max-w-md mx-auto'}`}>
+      <div className={`px-3.5 py-2 flex items-center justify-between gap-2 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto' : 'max-w-md mx-auto lg:w-full lg:max-w-7xl'}`}>
         {/* Left Side: Back Button OR Brand Emblem + Title */}
         <div className="flex items-center gap-2 min-w-0">
           {meta.showBack ? (
