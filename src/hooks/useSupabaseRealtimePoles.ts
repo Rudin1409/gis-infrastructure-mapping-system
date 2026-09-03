@@ -36,15 +36,18 @@ export function useSupabaseRealtimePoles(
   const onPolesChangeRef = useRef(onPolesChange);
   onPolesChangeRef.current = onPolesChange;
 
-  // Synchronize when initialPoles prop updates from server
+  // Synchronize when initialPoles prop updates from server (only if signature actually changed)
   useEffect(() => {
     if (initialPoles && initialPoles.length > 0) {
-      polesSignatureRef.current = buildPoleSnapshotSignature(initialPoles);
-      setPoles(initialPoles);
+      const initSig = buildPoleSnapshotSignature(initialPoles);
+      if (initSig !== polesSignatureRef.current) {
+        polesSignatureRef.current = initSig;
+        setPoles(initialPoles);
+      }
     }
   }, [initialPoles]);
 
-  // Fetch from the app API so the hook works with either Supabase atau PostgreSQL lokal.
+  // Fetch from the app API so the hook works with either Supabase atau PostgreSQL lokal VPS.
   const fetchFreshPoles = useCallback(async (showLoading = false) => {
     try {
       if (showLoading) setIsLoading(true);
@@ -55,7 +58,9 @@ export function useSupabaseRealtimePoles(
 
       if (json?.success && Array.isArray(json.data)) {
         const nextPoles = json.data as Pole[];
-        if (nextPoles.length === 0 && polesSignatureRef.current) {
+
+        // Safeguard: Never replace an existing valid list of poles with an empty array or glitch response
+        if (nextPoles.length === 0 && polesSignatureRef.current.length > 0) {
           console.warn('Realtime fetch returned 0 poles; keeping last valid snapshot.');
           return;
         }
@@ -70,10 +75,10 @@ export function useSupabaseRealtimePoles(
           }
         }
       } else if (json?.success === false) {
-        console.warn('Realtime fetch poles failed:', json.error || 'Unknown API error');
+        console.warn('Realtime fetch poles notice:', json.error || 'Unknown API notice');
       }
     } catch (err) {
-      console.warn('Realtime fetch poles notice:', err);
+      console.warn('Realtime fetch poles network notice:', err);
     } finally {
       setIsLoading(false);
       setIsSyncing(false);
@@ -81,14 +86,15 @@ export function useSupabaseRealtimePoles(
   }, []);
 
   useEffect(() => {
-    // 1. Only fetch if initialPoles was empty
+    // 1. Only fetch immediately if initialPoles was empty
     if (!initialPoles || initialPoles.length === 0) {
       fetchFreshPoles(true);
     }
 
+    // 2. Periodic background refresh every 20 seconds
     const interval = window.setInterval(() => {
       fetchFreshPoles(false);
-    }, 15000);
+    }, 20000);
 
     // 3. Global Hard-Refresh Event Listener (Tombol Reload Header)
     const handleHardRefresh = () => {

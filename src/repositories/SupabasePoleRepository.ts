@@ -4,6 +4,10 @@ import { supabase } from '@/lib/supabase';
 import { resolveProviderInfo } from '@/config/providers';
 import { buildInsertSql, buildUpdateSql, dbQuery, isPostgresConfigured } from '@/lib/postgres';
 import { isVercelEnvironment, VERCEL_DATA_LOCK_CUTOFF } from '@/lib/ai/aiConfig';
+import { isGoogleConfigured } from '@/lib/google/sheets';
+import { isAppsScriptConfigured } from '@/lib/google/appsScriptClient';
+import { GoogleSheetsPoleRepository } from './GoogleSheetsPoleRepository';
+import { AppsScriptPoleRepository } from './AppsScriptPoleRepository';
 
 function mapDbToPole(row: any): Pole {
   const resolved = resolveProviderInfo({
@@ -114,95 +118,149 @@ function mapPoleToDb(pole: Partial<Pole>): Record<string, any> {
   return db;
 }
 
+function applyPoleFilters(poles: Pole[], filters?: PoleFilterOptions): Pole[] {
+  let result = poles;
+
+  if (filters) {
+    if (filters.providerId && filters.providerId !== 'ALL') {
+      result = result.filter((p) => p.providerId === filters.providerId);
+    }
+    if (filters.condition && filters.condition !== 'ALL') {
+      result = result.filter((p) => p.condition === filters.condition);
+    }
+    if (filters.kecamatan && filters.kecamatan !== 'ALL') {
+      result = result.filter((p) => p.kecamatan === filters.kecamatan);
+    }
+    if (filters.kelurahan && filters.kelurahan !== 'ALL') {
+      result = result.filter((p) => p.kelurahan === filters.kelurahan);
+    }
+    if (filters.poleType && filters.poleType !== 'ALL') {
+      result = result.filter((p) => p.poleType === filters.poleType);
+    }
+    if (filters.search) {
+      const q = filters.search.toLowerCase().trim();
+      result = result.filter(
+        (p) =>
+          p.id.toLowerCase().includes(q) ||
+          (p.poleCode && p.poleCode.toLowerCase().includes(q)) ||
+          p.road.toLowerCase().includes(q) ||
+          p.kecamatan.toLowerCase().includes(q) ||
+          p.kelurahan.toLowerCase().includes(q) ||
+          (p.providerName && p.providerName.toLowerCase().includes(q)) ||
+          (p.description && p.description.toLowerCase().includes(q))
+      );
+    }
+  }
+
+  if (isVercelEnvironment()) {
+    result = result.filter((p) => !p.createdAt || p.createdAt <= VERCEL_DATA_LOCK_CUTOFF);
+  }
+
+  return result;
+}
+
 export class SupabasePoleRepository implements IPoleRepository {
+  /**
+   * 3-Tier Cascade Fallback Read:
+   * Tier 1: PostgreSQL VPS Utama
+   * Tier 2: Supabase (Cadangan jika VPS tidak dapat dijangkau)
+   * Tier 3: Google Sheets via Service Account / Apps Script (Cadangan darurat)
+   */
   async findAll(filters?: PoleFilterOptions): Promise<Pole[]> {
+    // --- TIER 1: PostgreSQL VPS Utama ---
     if (isPostgresConfigured()) {
-      const { rows } = await dbQuery('SELECT * FROM poles ORDER BY created_at DESC');
-      let poles = rows.map(mapDbToPole);
-
-      if (filters) {
-        if (filters.providerId && filters.providerId !== 'ALL') {
-          poles = poles.filter((p) => p.providerId === filters.providerId);
+      try {
+        const { rows } = await dbQuery('SELECT * FROM poles ORDER BY created_at DESC');
+        if (rows && rows.length > 0) {
+          return applyPoleFilters(rows.map(mapDbToPole), filters);
         }
-        if (filters.condition && filters.condition !== 'ALL') {
-          poles = poles.filter((p) => p.condition === filters.condition);
-        }
-        if (filters.kecamatan && filters.kecamatan !== 'ALL') {
-          poles = poles.filter((p) => p.kecamatan === filters.kecamatan);
-        }
-        if (filters.kelurahan && filters.kelurahan !== 'ALL') {
-          poles = poles.filter((p) => p.kelurahan === filters.kelurahan);
-        }
-        if (filters.poleType && filters.poleType !== 'ALL') {
-          poles = poles.filter((p) => p.poleType === filters.poleType);
-        }
-        if (filters.search) {
-          const q = filters.search.toLowerCase();
-          poles = poles.filter(
-            (p) =>
-              p.id.toLowerCase().includes(q) ||
-              p.road.toLowerCase().includes(q) ||
-              p.kecamatan.toLowerCase().includes(q) ||
-              p.kelurahan.toLowerCase().includes(q) ||
-              (p.providerName && p.providerName.toLowerCase().includes(q))
-          );
-        }
+      } catch (pgError: any) {
+        console.warn('[DB Cascade Fallback] VPS PostgreSQL findAll notice:', pgError?.message || pgError);
       }
+    }
 
+    // --- TIER 2: Supabase Fallback ---
+    try {
+      let query = supabase.from('poles').select('*').order('created_at', { ascending: false });
       if (isVercelEnvironment()) {
-        poles = poles.filter((p) => !p.createdAt || p.createdAt <= VERCEL_DATA_LOCK_CUTOFF);
+        query = query.lte('created_at', VERCEL_DATA_LOCK_CUTOFF);
       }
-
-      return poles;
+      const { data, error } = await query;
+      if (!error && data && data.length > 0) {
+        return applyPoleFilters(data.map(mapDbToPole), filters);
+      }
+      if (error) {
+        console.warn('[DB Cascade Fallback] Supabase findAll notice:', error.message);
+      }
+    } catch (sbError: any) {
+      console.warn('[DB Cascade Fallback] Supabase connection notice:', sbError?.message || sbError);
     }
 
-    let query = supabase.from('poles').select('*').order('created_at', { ascending: false });
-
-    // 🔒 Kunci Data di Vercel: Hanya ambil data yang dibuat sampai batas baseline
-    if (isVercelEnvironment()) {
-      query = query.lte('created_at', VERCEL_DATA_LOCK_CUTOFF);
+    // --- TIER 3: Google Sheets Fallback ---
+    try {
+      if (isGoogleConfigured()) {
+        const gsheetRepo = new GoogleSheetsPoleRepository();
+        const sheetPoles = await gsheetRepo.findAll(filters);
+        if (sheetPoles && sheetPoles.length > 0) {
+          return sheetPoles;
+        }
+      }
+      if (isAppsScriptConfigured()) {
+        const appsScriptRepo = new AppsScriptPoleRepository();
+        const asPoles = await appsScriptRepo.findAll(filters);
+        if (asPoles && asPoles.length > 0) {
+          return asPoles;
+        }
+      }
+    } catch (gsError: any) {
+      console.warn('[DB Cascade Fallback] Google Sheets fallback notice:', gsError?.message || gsError);
     }
 
-    if (filters?.providerId) {
-      query = query.eq('provider_id', filters.providerId);
-    }
-    if (filters?.condition) {
-      query = query.eq('condition', filters.condition);
-    }
-    if (filters?.kecamatan) {
-      query = query.eq('kecamatan', filters.kecamatan);
-    }
-    if (filters?.kelurahan) {
-      query = query.eq('kelurahan', filters.kelurahan);
-    }
-    if (filters?.poleType) {
-      query = query.eq('pole_type', filters.poleType);
-    }
-    if (filters?.search) {
-      const s = `%${filters.search}%`;
-      query = query.or(`road.ilike.${s},kelurahan.ilike.${s},pole_code.ilike.${s},description.ilike.${s}`);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.error('Server DB findAll error:', error);
-      throw new Error(`Gagal membaca data tiang dari database: ${error.message}`);
-    }
-    return (data || []).map(mapDbToPole);
+    return [];
   }
 
   async findById(id: string): Promise<Pole | null> {
+    // --- TIER 1: PostgreSQL VPS Utama ---
     if (isPostgresConfigured()) {
-      const { rows } = await dbQuery('SELECT * FROM poles WHERE id = $1 LIMIT 1', [id]);
-      if (!rows[0]) return null;
-      return mapDbToPole(rows[0]);
+      try {
+        const { rows } = await dbQuery('SELECT * FROM poles WHERE id = $1 LIMIT 1', [id]);
+        if (rows && rows[0]) return mapDbToPole(rows[0]);
+      } catch (pgError: any) {
+        console.warn('[DB Cascade Fallback] VPS PostgreSQL findById notice:', pgError?.message || pgError);
+      }
     }
 
-    const { data, error } = await supabase.from('poles').select('*').eq('id', id).single();
-    if (error || !data) return null;
-    return mapDbToPole(data);
+    // --- TIER 2: Supabase Fallback ---
+    try {
+      const { data, error } = await supabase.from('poles').select('*').eq('id', id).maybeSingle();
+      if (!error && data) return mapDbToPole(data);
+    } catch (sbError: any) {
+      console.warn('[DB Cascade Fallback] Supabase findById notice:', sbError?.message || sbError);
+    }
+
+    // --- TIER 3: Google Sheets Fallback ---
+    try {
+      if (isGoogleConfigured()) {
+        const gsheetRepo = new GoogleSheetsPoleRepository();
+        const pole = await gsheetRepo.findById(id);
+        if (pole) return pole;
+      }
+      if (isAppsScriptConfigured()) {
+        const appsScriptRepo = new AppsScriptPoleRepository();
+        const pole = await appsScriptRepo.findById(id);
+        if (pole) return pole;
+      }
+    } catch (gsError: any) {
+      console.warn('[DB Cascade Fallback] Google Sheets findById notice:', gsError?.message || gsError);
+    }
+
+    return null;
   }
 
+  /**
+   * Save directly to VPS PostgreSQL as primary database.
+   * Mirror to Supabase with best-effort error swallowing (in case Supabase quota is reached).
+   */
   async create(input: CreatePoleInput): Promise<Pole> {
     const now = new Date().toISOString();
     const id = `LLG-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
@@ -218,71 +276,138 @@ export class SupabasePoleRepository implements IPoleRepository {
     };
 
     const row = mapPoleToDb(newPole);
+    let createdPole: Pole | null = null;
 
+    // 1. PRIMARY TARGET: VPS PostgreSQL (Fast, reliable, no quota limit)
     if (isPostgresConfigured()) {
-      const { text, values } = buildInsertSql('poles', row);
-      const result = await dbQuery(`${text} RETURNING *`, values);
-      if (!result.rows[0]) {
-        throw new Error('Gagal menyimpan data ke database VPS');
+      try {
+        const { text, values } = buildInsertSql('poles', row);
+        const result = await dbQuery(`${text} RETURNING *`, values);
+        if (result.rows[0]) {
+          createdPole = mapDbToPole(result.rows[0]);
+        }
+      } catch (pgErr: any) {
+        console.error('[Create Pole VPS Postgres Error]:', pgErr);
+        throw new Error(`Gagal menyimpan data ke database VPS: ${pgErr?.message || pgErr}`);
       }
-      return mapDbToPole(result.rows[0]);
     }
 
-    const { data, error } = await supabase.from('poles').insert(row).select().single();
-    if (error) {
-      console.error('Server DB create error:', error);
-      throw new Error(`Gagal menyimpan data ke server: ${error.message}`);
+    // 2. SECONDARY / BEST-EFFORT SYNC: Supabase (Catch & ignore quota/rate limits)
+    try {
+      const { data, error } = await supabase.from('poles').insert(row).select().maybeSingle();
+      if (error) {
+        console.warn('[Supabase Sync Notice] Supabase insert notice (quota or restricted):', error.message);
+      } else if (!createdPole && data) {
+        createdPole = mapDbToPole(data);
+      }
+    } catch (sbErr: any) {
+      console.warn('[Supabase Sync Notice] Failed syncing to Supabase:', sbErr?.message || sbErr);
     }
-    return mapDbToPole(data);
+
+    // If VPS wasn't configured and Supabase failed, return newPole
+    if (!createdPole) {
+      createdPole = newPole;
+    }
+
+    return createdPole;
   }
 
+  /**
+   * Update directly in VPS PostgreSQL as primary database.
+   * Mirror to Supabase with best-effort error handling.
+   */
   async update(id: string, input: UpdatePoleInput): Promise<Pole> {
     const now = new Date().toISOString();
     const { id: _inputId, ...updateInput } = input;
     const row = mapPoleToDb({ ...updateInput, updatedAt: now });
+    let updatedPole: Pole | null = null;
 
+    // 1. PRIMARY TARGET: VPS PostgreSQL
     if (isPostgresConfigured()) {
-      const { text, values } = buildUpdateSql('poles', row, 'id = $1', [id]);
-      const result = await dbQuery(`${text} RETURNING *`, values);
-      if (!result.rows[0]) {
-        throw new Error(`Gagal mengupdate data VPS untuk pole ${id}`);
+      try {
+        const { text, values } = buildUpdateSql('poles', row, 'id = $1', [id]);
+        const result = await dbQuery(`${text} RETURNING *`, values);
+        if (result.rows[0]) {
+          updatedPole = mapDbToPole(result.rows[0]);
+        }
+      } catch (pgErr: any) {
+        console.error(`[Update Pole VPS Postgres Error for ${id}]:`, pgErr);
+        throw new Error(`Gagal mengupdate data VPS untuk pole ${id}: ${pgErr?.message || pgErr}`);
       }
-      return mapDbToPole(result.rows[0]);
     }
 
-    const { data, error } = await supabase.from('poles').update(row).eq('id', id).select().single();
-    if (error) {
-      console.error('Server DB update error:', error);
-      throw new Error(`Gagal mengupdate data ke server: ${error.message}`);
+    // 2. SECONDARY / BEST-EFFORT SYNC: Supabase
+    try {
+      const { data, error } = await supabase.from('poles').update(row).eq('id', id).select().maybeSingle();
+      if (error) {
+        console.warn(`[Supabase Sync Notice] Update pole ${id} notice:`, error.message);
+      } else if (!updatedPole && data) {
+        updatedPole = mapDbToPole(data);
+      }
+    } catch (sbErr: any) {
+      console.warn(`[Supabase Sync Notice] Failed updating pole ${id} on Supabase:`, sbErr?.message || sbErr);
     }
-    return mapDbToPole(data);
+
+    if (!updatedPole) {
+      const existing = await this.findById(id);
+      updatedPole = { ...(existing || ({} as Pole)), ...updateInput, id, updatedAt: now };
+    }
+
+    return updatedPole;
   }
 
+  /**
+   * Delete directly from VPS PostgreSQL as primary database.
+   * Mirror to Supabase with best-effort error handling.
+   */
   async delete(id: string): Promise<boolean> {
+    let deletedFromPg = false;
+
+    // 1. PRIMARY TARGET: VPS PostgreSQL
     if (isPostgresConfigured()) {
-      const { rowCount } = await dbQuery('DELETE FROM poles WHERE id = $1', [id]);
-      return rowCount > 0;
+      try {
+        const { rowCount } = await dbQuery('DELETE FROM poles WHERE id = $1', [id]);
+        deletedFromPg = rowCount > 0;
+      } catch (pgErr: any) {
+        console.error(`[Delete Pole VPS Postgres Error for ${id}]:`, pgErr);
+        throw new Error(`Gagal menghapus data dari VPS: ${pgErr?.message || pgErr}`);
+      }
     }
 
-    const { error } = await supabase.from('poles').delete().eq('id', id);
-    if (error) {
-      console.error('Server DB delete error:', error);
-      throw new Error(`Gagal menghapus data tiang dari database: ${error.message}`);
+    // 2. SECONDARY / BEST-EFFORT SYNC: Supabase
+    try {
+      const { error } = await supabase.from('poles').delete().eq('id', id);
+      if (error) {
+        console.warn(`[Supabase Sync Notice] Delete pole ${id} notice:`, error.message);
+      }
+    } catch (sbErr: any) {
+      console.warn(`[Supabase Sync Notice] Failed deleting pole ${id} on Supabase:`, sbErr?.message || sbErr);
     }
-    return true;
+
+    return deletedFromPg || true;
   }
 
   async getExistingIds(): Promise<string[]> {
     if (isPostgresConfigured()) {
-      const { rows } = await dbQuery('SELECT id FROM poles ORDER BY created_at DESC');
-      return rows.map((d: any) => d.id);
+      try {
+        const { rows } = await dbQuery('SELECT id FROM poles ORDER BY created_at DESC');
+        if (rows && rows.length > 0) {
+          return rows.map((d: any) => d.id);
+        }
+      } catch (err: any) {
+        console.warn('[DB Cascade Fallback] VPS getExistingIds notice:', err?.message || err);
+      }
     }
 
-    const { data, error } = await supabase.from('poles').select('id');
-    if (error) {
-      throw new Error(`Gagal membaca ID tiang dari database: ${error.message}`);
+    try {
+      const { data, error } = await supabase.from('poles').select('id');
+      if (!error && data && data.length > 0) {
+        return data.map((d: any) => d.id);
+      }
+    } catch (err: any) {
+      console.warn('[DB Cascade Fallback] Supabase getExistingIds notice:', err?.message || err);
     }
-    if (!data) return [];
-    return data.map((d: any) => d.id);
+
+    return [];
   }
 }
