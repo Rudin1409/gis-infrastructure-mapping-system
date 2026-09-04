@@ -4,7 +4,6 @@ import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
 import { Database, Map, PlusCircle, ShieldCheck } from 'lucide-react';
 import PoleListFilterClient from '@/components/survey/PoleListFilterClient';
-import ExportPolesModal from '@/components/export/ExportPolesModal';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,25 +45,20 @@ export default async function PolesListPage({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <Link
               href="/map"
-              className="flex-1 lg:flex-none py-2.5 px-4 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-100 font-black text-xs rounded-2xl border border-slate-700 flex items-center justify-center gap-2 transition-all"
+              className="flex-1 sm:flex-none py-2.5 px-4 bg-slate-800/90 hover:bg-slate-700 active:scale-95 text-slate-100 font-bold text-xs rounded-2xl border border-slate-700/80 flex items-center justify-center gap-2 transition-all shadow-sm"
             >
-              <Map className="w-4 h-4" />
-              <span>Peta GIS</span>
+              <Map className="w-4 h-4 text-cyan-400" />
+              <span className="whitespace-nowrap">Peta GIS</span>
             </Link>
-            <ExportPolesModal
-              currentPoles={allPoles}
-              totalPolesCount={allPoles.length}
-              triggerClassName="flex-1 lg:flex-none py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer border border-emerald-400/30"
-            />
             <Link
               href="/poles/new"
-              className="flex-1 lg:flex-none py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all border border-blue-400/30"
+              className="flex-1 sm:flex-none py-2.5 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all border border-blue-400/30"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Tambah Data</span>
+              <span className="whitespace-nowrap">Tambah Data</span>
             </Link>
           </div>
         </div>

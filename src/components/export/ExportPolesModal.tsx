@@ -107,14 +107,11 @@ export default function ExportPolesModal({
         onClick={() => setIsOpen(true)}
         className={
           triggerClassName ||
-          'py-2 px-3.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 shadow-xs flex items-center gap-2 transition-all cursor-pointer'
+          'inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 active:scale-95 text-slate-700 hover:text-blue-700 font-bold text-xs rounded-xl border border-slate-200 shadow-2xs transition-all cursor-pointer whitespace-nowrap'
         }
       >
-        <Download className="w-4 h-4 text-blue-600" />
-        <span>Export Data</span>
-        <span className="text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded font-mono font-bold border border-blue-200">
-          KML / CSV
-        </span>
+        <Download className="w-3.5 h-3.5 text-blue-600 stroke-[2.5]" />
+        <span>Export KML / CSV</span>
       </button>
 
       {/* Modal Dialog */}
