@@ -253,9 +253,20 @@ export default async function PoleDetailPage({
             <span className="font-mono text-emerald-600 font-bold block mt-0.5 text-xs">
               {pole.poleLatitude.toFixed(6)}, {pole.poleLongitude.toFixed(6)}
             </span>
-            <span className="text-[10px] text-slate-500 block mt-0.5">
-              Akurasi: {pole.gpsAccuracy ? `±${pole.gpsAccuracy.toFixed(1)}m` : 'Presisi'} • Deviasi: {formatDistance(pole.distanceFromDevice || 0)}
-            </span>
+            <div className="mt-2 pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-1.5">
+              <span className="text-[10px] text-slate-500">
+                Akurasi: {pole.gpsAccuracy ? `±${pole.gpsAccuracy.toFixed(1)}m` : 'Presisi'} • Deviasi: {formatDistance(pole.distanceFromDevice || 0)}
+              </span>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${pole.poleLatitude},${pole.poleLongitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold border border-blue-200 transition-all active:scale-95 shadow-sm"
+              >
+                <span>Google Maps</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
         </div>
 

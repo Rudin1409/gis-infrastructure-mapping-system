@@ -3468,11 +3468,23 @@ export default function GISOverviewMap({
             </div>
           </div>
 
-          <div className="text-[11px] text-slate-600 mb-2.5 flex items-center gap-1.5 px-0.5">
-            <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-            <span className="truncate">
-              <strong className="text-slate-900">{selectedPole.road}</strong>, Kel. {selectedPole.kelurahan}
-            </span>
+          <div className="text-[11px] text-slate-600 mb-2.5 flex items-center justify-between gap-1.5 px-0.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+              <span className="truncate">
+                <strong className="text-slate-900">{selectedPole.road}</strong>, Kel. {selectedPole.kelurahan}
+              </span>
+            </div>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${selectedPole.poleLatitude},${selectedPole.poleLongitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-bold text-blue-600 hover:text-blue-800 whitespace-nowrap flex items-center gap-0.5 flex-shrink-0 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg border border-blue-200 transition-all"
+              title="Buka rute navigasi di Google Maps"
+            >
+              <span>G-Maps</span>
+              <ExternalLink className="w-2.5 h-2.5" />
+            </a>
           </div>
 
           <div className="flex gap-2">
