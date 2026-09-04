@@ -85,6 +85,27 @@ const KNOWN_SURVEYORS: SurveyorMeta[] = [
     teamLabel: 'Tim Bapenda',
     roleLabel: 'Surveyor Bapenda',
   },
+  {
+    id: 'USR-SURVEYOR-05',
+    displayName: 'Frans Ahmad Zhafif',
+    team: 'KOMINFO',
+    teamLabel: 'Tim Kominfo',
+    roleLabel: 'User Kominfo',
+  },
+  {
+    id: 'USR-SURVEYOR-06',
+    displayName: 'M. Fadlil',
+    team: 'KOMINFO',
+    teamLabel: 'Tim Kominfo',
+    roleLabel: 'User Kominfo',
+  },
+  {
+    id: 'USR-SURVEYOR-07',
+    displayName: 'M. Rifqi',
+    team: 'KOMINFO',
+    teamLabel: 'Tim Kominfo',
+    roleLabel: 'User Kominfo',
+  },
 ];
 
 function getJakartaDateString(date = new Date()) {
@@ -114,6 +135,9 @@ function resolveSurveyorMeta(pole: Pole): SurveyorMeta {
     KNOWN_SURVEYORS.find((user) => user.id === rawId) ||
     KNOWN_SURVEYORS.find((user) => lookup.includes(user.displayName.toLowerCase().split(' ')[0]) && lookup.includes(user.displayName.toLowerCase().split(' ').slice(-1)[0])) ||
     (lookup.includes('tri') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-01') : undefined) ||
+    (lookup.includes('frans') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-05') : undefined) ||
+    (lookup.includes('fadlil') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-06') : undefined) ||
+    (lookup.includes('rifqi') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-07') : undefined) ||
     (lookup.includes('yodi') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-02') : undefined) ||
     (lookup.includes('andika') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-03') : undefined) ||
     (lookup.includes('pradigga') || lookup.includes('pradiga') ? KNOWN_SURVEYORS.find((user) => user.id === 'USR-SURVEYOR-04') : undefined) ||

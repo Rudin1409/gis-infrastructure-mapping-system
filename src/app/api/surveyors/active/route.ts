@@ -31,11 +31,26 @@ async function ensureSurveyorLocationsTable() {
 }
 
 function resolveTeam(userId?: string, userName?: string): 'KOMINFO' | 'BAPENDA' | 'LAINNYA' {
-  if (userId === 'USR-KOMINFO-ADMIN' || userId === 'USR-SURVEYOR-01') return 'KOMINFO';
+  if (
+    userId === 'USR-KOMINFO-ADMIN' ||
+    userId === 'USR-SURVEYOR-01' ||
+    userId === 'USR-SURVEYOR-05' ||
+    userId === 'USR-SURVEYOR-06' ||
+    userId === 'USR-SURVEYOR-07'
+  ) return 'KOMINFO';
   if (userId === 'USR-SURVEYOR-02' || userId === 'USR-SURVEYOR-03' || userId === 'USR-SURVEYOR-04') return 'BAPENDA';
 
   const key = `${userId || ''} ${userName || ''}`.toLowerCase();
-  if (key.includes('kominfo') || key.includes('tri') || key.includes('admin')) return 'KOMINFO';
+  if (
+    key.includes('kominfo') ||
+    key.includes('tri') ||
+    key.includes('admin') ||
+    key.includes('frans') ||
+    key.includes('zhafif') ||
+    key.includes('zhaaif') ||
+    key.includes('fadlil') ||
+    key.includes('rifqi')
+  ) return 'KOMINFO';
   if (key.includes('yodi') || key.includes('andika') || key.includes('pradigga') || key.includes('bapenda')) return 'BAPENDA';
   return 'LAINNYA';
 }

@@ -29,15 +29,14 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = localStorage.getItem('gis_screen_view_mode') as ViewMode | null;
       const isLargeScreen = typeof window !== 'undefined' && window.innerWidth >= 1024;
-      if (saved === 'DESKTOP') {
-        setViewModeState('DESKTOP');
-      } else if (saved === 'MOBILE' && !isLargeScreen) {
+      if (!isLargeScreen) {
+        // Mobile phones and narrow screens always start in optimal MOBILE mode
         setViewModeState('MOBILE');
-      } else if (isLargeScreen) {
-        // Large screens open in desktop by default, while the header toggle can still preview mobile.
-        setViewModeState('DESKTOP');
       } else if (saved === 'MOBILE') {
         setViewModeState('MOBILE');
+      } else {
+        // Large desktop screens default to DESKTOP mode
+        setViewModeState('DESKTOP');
       }
     } catch (_) {}
 

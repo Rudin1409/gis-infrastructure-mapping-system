@@ -161,19 +161,19 @@ export default function TopHeader() {
                 {meta.title}
               </h1>
               {pathname === '/' && viewMode === 'DESKTOP' && (
-                <span className="inline-flex items-center px-1.5 py-0.2 rounded-md bg-blue-500/20 text-blue-300 text-[9px] font-bold font-mono border border-blue-500/30">
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded-md bg-blue-500/20 text-blue-300 text-[9px] font-bold font-mono border border-blue-500/30">
                   PRO
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-slate-400 font-medium truncate leading-none mt-0.5">
+            <p className="text-[9.5px] sm:text-[10px] text-slate-400 font-medium truncate leading-none mt-0.5 max-w-[120px] sm:max-w-none">
               {meta.subtitle}
             </p>
           </div>
         </div>
 
         {/* Right Side: Desktop Mode Toggle, Fullscreen, Reload/Refresh Button & Active User */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
           {/* Desktop Widescreen / Mobile Mode Toggle Button */}
           <button
             type="button"
@@ -197,16 +197,16 @@ export default function TopHeader() {
             ) : (
               <>
                 <Monitor className="w-3.5 h-3.5 text-slate-300" />
-                <span className="text-[10px]">Desktop</span>
+                <span className="hidden sm:inline text-[10px]">Desktop</span>
               </>
             )}
           </button>
 
-          {/* Fullscreen F11 Toggle Button */}
+          {/* Fullscreen F11 Toggle Button (Only on tablet / desktop screens) */}
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="w-7 h-7 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white border border-slate-700/80 transition-all cursor-pointer"
+            className="hidden sm:flex w-7 h-7 rounded-xl bg-slate-900/90 hover:bg-slate-800 active:scale-90 items-center justify-center text-slate-300 hover:text-white border border-slate-700/80 transition-all cursor-pointer"
             title={isFullscreen ? 'Keluar dari Layar Penuh' : 'Layar Penuh (Fullscreen)'}
           >
             {isFullscreen ? (
@@ -234,16 +234,16 @@ export default function TopHeader() {
           {user && (
             <Link
               href="/profile"
-              className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-full text-[10.5px] text-slate-200 font-bold backdrop-blur-md transition-all active:scale-95 group"
+              className="flex items-center gap-1.5 pl-1.5 pr-2 py-0.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-full text-[10.5px] text-slate-200 font-bold backdrop-blur-md transition-all active:scale-95 group flex-shrink-0"
               title={`Akun Aktif: ${user.name || 'Petugas'} (${user.roleLabel || 'Surveyor'}) - Buka Halaman Profil`}
             >
-              <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center text-[10px] font-black shadow-xs">
+              <span className="w-5 h-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center text-[10px] font-black shadow-xs flex-shrink-0">
                 {user.avatar || (user.name ? user.name.charAt(0).toUpperCase() : 'A')}
               </span>
-              <span className="max-w-[80px] truncate text-[10px] text-slate-300 group-hover:text-white transition-colors">
+              <span className="max-w-[48px] sm:max-w-[80px] truncate text-[10px] text-slate-300 group-hover:text-white transition-colors">
                 {user.name ? user.name.split(' ')[0] : 'Admin'}
               </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
             </Link>
           )}
         </div>

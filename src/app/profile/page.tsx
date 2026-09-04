@@ -423,7 +423,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Database & Mode Tampilan Row */}
-        <div className={`grid gap-2.5 text-xs ${isDesktop ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        <div className={`grid gap-2.5 text-xs ${isDesktop ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
           <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -482,7 +482,7 @@ export default function ProfilePage() {
           <span>Pusat Panduan &amp; Modul Lapangan</span>
         </h3>
 
-        <div className={`grid gap-2 text-xs ${isDesktop ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        <div className={`grid gap-2 text-xs ${isDesktop ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
           {/* Katalog Ciri Warna Tiang */}
           <Link
             href="/providers"
