@@ -34,6 +34,20 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Register PWA Service Worker for offline capability
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((reg) => {
+          console.log('[PWA] Service Worker registered:', reg.scope);
+        })
+        .catch((err) => {
+          console.warn('[PWA] Service Worker registration notice:', err);
+        });
+    }
+  }, []);
+
   const isFullScreenPage = pathname.startsWith('/map') || pathname.startsWith('/poles/new') || isLoginPage;
 
   return (
