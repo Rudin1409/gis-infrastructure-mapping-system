@@ -86,6 +86,7 @@ export default function SurveyForm({
   // --- 1. LOKASI & ALAMAT ---
   const [districtsList, setDistrictsList] = useState<{ name: string; kelurahan: string[] }[]>(KECAMATAN_LUBUKLINGGAU);
   const [road, setRoad] = useState('');
+  const [isRoadAutoReliable, setIsRoadAutoReliable] = useState(false);
   const [kecamatan, setKecamatan] = useState(KECAMATAN_LUBUKLINGGAU[0].name);
   const [kelurahan, setKelurahan] = useState(KECAMATAN_LUBUKLINGGAU[0].kelurahan[0]);
   const [patokanLokasi, setPatokanLokasi] = useState('');
@@ -217,19 +218,27 @@ export default function SurveyForm({
     }
   }, [initialRoadSide]);
 
-  // 2. Auto-reverse geocode location from GPS coordinate (Always syncs with confirmed pin location)
+  // 2. Auto-detect administrative location from confirmed coordinates.
   useEffect(() => {
     let isMounted = true;
     async function fetchSmartDetails() {
       setIsAutoDetecting(true);
       try {
-        const geo = await reverseGeocodeLocation(confirmedCoord, existingPoleCodes);
+        const geo = await reverseGeocodeLocation(confirmedCoord, existingPoleCodes, {
+          lookupAddress: true,
+        });
         if (isMounted) {
-          // Always use actual road and district dynamically resolved from the confirmed coordinates
-          if (geo.road) setRoad(geo.road);
+          // Nama jalan hanya diisi otomatis kalau provider memberi field jalan yang kuat.
+          // Tebakan area/koridor sengaja dikosongkan supaya petugas isi manual.
+          if (geo.roadConfidence === 'HIGH' && geo.road) {
+            setRoad(geo.road);
+            setIsRoadAutoReliable(true);
+          } else {
+            setRoad('');
+            setIsRoadAutoReliable(false);
+          }
           if (geo.kecamatan) setKecamatan(geo.kecamatan);
           if (geo.kelurahan) setKelurahan(geo.kelurahan);
-          if (geo.patokanLokasi && !patokanLokasi) setPatokanLokasi(geo.patokanLokasi);
           if (geo.smartPoleCode) setPoleCode(geo.smartPoleCode);
           if (geo.smartSegmentCode) setSegmentCode(geo.smartSegmentCode);
         }
@@ -284,12 +293,6 @@ export default function SurveyForm({
     if (e) e.preventDefault();
     setErrorMessage(null);
     setOfflineNotice(null);
-
-    if (!road.trim()) {
-      setActiveTab('LOCATION');
-      setErrorMessage('Nama jalan / patokan lokasi wajib diisi.');
-      return;
-    }
 
     setIsSubmitting(true);
 
@@ -672,7 +675,7 @@ export default function SurveyForm({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
                   <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Detail Wilayah &amp; Jalan</span>
+                  <span>Detail Wilayah</span>
                 </h3>
                 <span
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -686,20 +689,20 @@ export default function SurveyForm({
                 </span>
               </div>
 
-              {/* Road Name */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Nama Jalan / Gang / Perumahan <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={road}
-                  onChange={(e) => setRoad(e.target.value)}
-                  placeholder="Contoh: Jl. Mayor Toha / Gg. Sekundang II"
-                  required
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-900 placeholder-slate-400 focus:border-blue-500 outline-none font-medium"
-                />
-              </div>
+              {isRoadAutoReliable && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Nama Jalan / Gang / Perumahan <span className="text-emerald-600">(terdeteksi)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={road}
+                    onChange={(e) => setRoad(e.target.value)}
+                    placeholder="Nama jalan terdeteksi otomatis"
+                    className="w-full px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-slate-900 placeholder-slate-400 focus:border-emerald-500 outline-none font-medium"
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 {/* Kecamatan */}
@@ -1699,7 +1702,9 @@ export default function SurveyForm({
                 <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
                     <span className="text-slate-400 block text-[9px] uppercase font-bold">Ruas Jalan</span>
-                    <span className="font-bold text-slate-900 block mt-0.5 text-xs">{road}</span>
+                    <span className="font-bold text-slate-900 block mt-0.5 text-xs">
+                      {road.trim() || 'Belum diisi'}
+                    </span>
                     {patokanLokasi && (
                       <span className="text-[10px] text-slate-600 block mt-0.5">
                         Patokan: <strong>{patokanLokasi}</strong>

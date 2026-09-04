@@ -25,7 +25,7 @@ export const createPoleSchema = z.object({
   providerName: z.string().optional(),
   poleType: z.string().default('BETON'),
   condition: z.string().default('GOOD'),
-  road: z.string().min(1, 'Nama jalan wajib diisi'),
+  road: z.string().optional().default(''),
   kelurahan: z.string().min(1, 'Kelurahan wajib dipilih'),
   kecamatan: z.string().min(1, 'Kecamatan wajib dipilih'),
   kota: z.string().optional().default('Kota Lubuklinggau'),

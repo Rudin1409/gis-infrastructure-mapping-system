@@ -5,54 +5,18 @@ export const dynamic = 'force-dynamic';
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 30; // 30 minutes cache
 
-function getGoogleMapsApiKey() {
-  return (
-    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ||
-    ''
-  );
+function getLocationIqApiKey() {
+  return process.env.LOCATIONIQ_API_KEY?.trim() || '';
 }
 
-function findGoogleComponent(
-  components: Array<{ long_name: string; short_name: string; types: string[] }>,
-  type: string
-) {
-  return components.find((component) => component.types.includes(type))?.long_name || '';
-}
-
-function normalizeGoogleGeocodeResult(payload: any) {
-  const results = Array.isArray(payload?.results) ? payload.results : [];
-  if (payload?.status !== 'OK' || results.length === 0) return null;
-
-  const routeResult =
-    results.find((result: any) =>
-      result.address_components?.some((component: any) => component.types?.includes('route'))
-    ) || results[0];
-
-  const components = routeResult.address_components || [];
-  const address = {
-    road: findGoogleComponent(components, 'route'),
-    neighbourhood:
-      findGoogleComponent(components, 'neighborhood') ||
-      findGoogleComponent(components, 'sublocality_level_2'),
-    suburb: findGoogleComponent(components, 'sublocality_level_1'),
-    village:
-      findGoogleComponent(components, 'administrative_area_level_4') ||
-      findGoogleComponent(components, 'administrative_area_level_3'),
-    city:
-      findGoogleComponent(components, 'locality') ||
-      findGoogleComponent(components, 'administrative_area_level_2'),
-    state: findGoogleComponent(components, 'administrative_area_level_1'),
-    postcode: findGoogleComponent(components, 'postal_code'),
-    country: findGoogleComponent(components, 'country'),
-  };
-
+function normalizeProviderPayload(payload: any, source: 'locationiq' | 'osm') {
+  if (!payload || payload.error) return null;
   return {
-    display_name: routeResult.formatted_address || '',
-    address,
-    extratags: {},
-    namedetails: {},
-    source: 'google',
+    ...payload,
+    address: payload.address || {},
+    extratags: payload.extratags || {},
+    namedetails: payload.namedetails || {},
+    source,
   };
 }
 
@@ -72,28 +36,30 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const googleApiKey = getGoogleMapsApiKey();
+    const locationIqApiKey = getLocationIqApiKey();
 
-    if (googleApiKey) {
-      const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${encodeURIComponent(
-        `${lat},${lng}`
-      )}&language=id&region=id&key=${encodeURIComponent(googleApiKey)}`;
-      const googleRes = await fetch(googleUrl, {
+    if (locationIqApiKey) {
+      const locationIqUrl = `https://us1.locationiq.com/v1/reverse?key=${encodeURIComponent(
+        locationIqApiKey
+      )}&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(
+        lng
+      )}&format=json&addressdetails=1&normalizeaddress=1&accept-language=id,en`;
+      const locationIqRes = await fetch(locationIqUrl, {
         next: { revalidate: 3600 },
       });
 
-      if (googleRes.ok) {
-        const googlePayload = await googleRes.json();
-        const normalizedGoogleData = normalizeGoogleGeocodeResult(googlePayload);
-        if (normalizedGoogleData) {
-          cache.set(cacheKey, { data: normalizedGoogleData, timestamp: Date.now() });
+      if (locationIqRes.ok) {
+        const locationIqPayload = await locationIqRes.json();
+        const normalizedLocationIqData = normalizeProviderPayload(locationIqPayload, 'locationiq');
+        if (normalizedLocationIqData) {
+          cache.set(cacheKey, { data: normalizedLocationIqData, timestamp: Date.now() });
           return NextResponse.json({
             success: true,
-            data: normalizedGoogleData,
+            data: normalizedLocationIqData,
           });
         }
       } else {
-        console.warn('Google reverse geocode status:', googleRes.status);
+        console.warn('LocationIQ reverse geocode status:', locationIqRes.status);
       }
     }
 
@@ -110,7 +76,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: `Nominatim status ${res.status}` }, { status: 502 });
     }
 
-    const data = await res.json();
+    const payload = await res.json();
+    const data = normalizeProviderPayload(payload, 'osm') || payload;
     cache.set(cacheKey, { data, timestamp: Date.now() });
 
     return NextResponse.json({

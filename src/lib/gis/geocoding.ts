@@ -12,12 +12,17 @@ export interface GeocodedAddress {
   smartSegmentCode: string;
   rawDisplayName?: string;
   confidence: 'HIGH_SPATIAL' | 'GEOMETRIC_NEAREST' | 'FALLBACK';
+  roadConfidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
 }
 
 export interface KelurahanCentroid {
   name: string;
   kecamatan: string;
   center: Coordinates;
+}
+
+export interface ReverseGeocodeOptions {
+  lookupAddress?: boolean;
 }
 
 /**
@@ -303,8 +308,10 @@ export const LUBUKLINGGAU_MAJOR_ROAD_CORRIDORS: RoadCorridor[] = [
  */
 export async function reverseGeocodeLocation(
   coord: Coordinates,
-  existingCodes: string[] = []
+  existingCodes: string[] = [],
+  options: ReverseGeocodeOptions = {}
 ): Promise<GeocodedAddress> {
+  const shouldLookupAddress = options.lookupAddress ?? true;
   // 1. Tentukan Kecamatan Resmi via Point-in-Polygon
   let detectedKecamatan = '';
   let confidence: 'HIGH_SPATIAL' | 'GEOMETRIC_NEAREST' | 'FALLBACK' = 'FALLBACK';
@@ -349,101 +356,110 @@ export async function reverseGeocodeLocation(
     }
   }
 
-  // 3. Ambil data jalan & POI/patokan dari OpenStreetMap
+  // 3. Ambil data jalan & POI/patokan dari provider eksternal hanya saat diperlukan.
   let detectedRoad = '';
+  let roadConfidence: GeocodedAddress['roadConfidence'] = 'NONE';
   let patokanLokasi = '';
   let rawDisplayName = '';
 
-  try {
-    let osmData: any = null;
+  if (shouldLookupAddress) {
+    try {
+      let osmData: any = null;
 
-    // A. Coba panggil server proxy API internal terlebih dahulu (cepat & ada cache)
-    if (typeof window !== 'undefined') {
-      try {
-        const proxyRes = await fetch(`/api/gis/reverse-geocode?lat=${coord.lat}&lng=${coord.lng}`);
-        if (proxyRes.ok) {
-          const json = await proxyRes.json();
-          if (json.success && json.data) {
-            osmData = json.data;
+      // A. Coba panggil server proxy API internal terlebih dahulu (cepat & ada cache)
+      if (typeof window !== 'undefined') {
+        try {
+          const proxyRes = await fetch(`/api/gis/reverse-geocode?lat=${coord.lat}&lng=${coord.lng}`);
+          if (proxyRes.ok) {
+            const json = await proxyRes.json();
+            if (json.success && json.data) {
+              osmData = json.data;
+            }
+          }
+        } catch {}
+      }
+
+      // B. Fallback langsung ke Nominatim jika server proxy tidak tersedia
+      if (!osmData) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coord.lat}&lon=${coord.lng}&zoom=19&addressdetails=1&extratags=1&namedetails=1`;
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': 'InfraMap-Lubuklinggau-GIS/2.0 (admin@lubuklinggaukota.go.id)',
+            'Accept-Language': 'id,en',
+          },
+        });
+        if (response.ok) {
+          osmData = await response.json();
+        }
+      }
+
+      if (osmData) {
+        rawDisplayName = osmData.display_name || '';
+        const addr = osmData.address || {};
+        const extra = osmData.extratags || {};
+
+        // Ekstrak nama jalan mikro
+        const highConfidenceRoad =
+          addr.road ||
+          addr.pedestrian ||
+          addr.residential ||
+          addr.service ||
+          addr.living_street;
+        const mediumConfidenceRoad = addr.footway || addr.path || addr.highway;
+        const lowConfidenceRoad = addr.neighbourhood;
+        const roadCandidate = highConfidenceRoad || mediumConfidenceRoad || lowConfidenceRoad;
+
+        if (roadCandidate && highConfidenceRoad) {
+          detectedRoad = formatRoadName(roadCandidate);
+          roadConfidence = 'HIGH';
+        } else if (roadCandidate && mediumConfidenceRoad) {
+          detectedRoad = formatRoadName(roadCandidate);
+          roadConfidence = 'MEDIUM';
+        } else if (roadCandidate) {
+          detectedRoad = formatRoadName(roadCandidate);
+          roadConfidence = 'LOW';
+        }
+
+        // Ekstrak patokan lokasi / landmark POI
+        const poiCandidate =
+          addr.amenity ||
+          addr.building ||
+          addr.shop ||
+          addr.tourism ||
+          addr.office ||
+          addr.place ||
+          extra.brand ||
+          extra.operator;
+
+        if (poiCandidate) {
+          patokanLokasi = `Dekat ${poiCandidate}`;
+        } else if (addr.house_number) {
+          patokanLokasi = `No. ${addr.house_number}`;
+        }
+
+        // Cek apakah OSM mengandung nama kelurahan resmi Lubuklinggau
+        const fullText = (rawDisplayName + ' ' + (addr.village || '') + ' ' + (addr.suburb || '') + ' ' + (addr.quarter || '')).toLowerCase();
+
+        for (const kel of candidateKelurahans) {
+          const kelLower = kel.name.toLowerCase();
+          if (
+            fullText.includes(kelLower) ||
+            (addr.village && addr.village.toLowerCase() === kelLower) ||
+            (addr.suburb && addr.suburb.toLowerCase() === kelLower)
+          ) {
+            detectedKelurahan = kel.name;
+            confidence = 'HIGH_SPATIAL';
+            break;
           }
         }
-      } catch {}
+      }
+    } catch (err) {
+      console.warn('OSM Geocode network notice:', err);
     }
-
-    // B. Fallback langsung ke Nominatim jika server proxy tidak tersedia
-    if (!osmData) {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coord.lat}&lon=${coord.lng}&zoom=19&addressdetails=1&extratags=1&namedetails=1`;
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'InfraMap-Lubuklinggau-GIS/2.0 (admin@lubuklinggaukota.go.id)',
-          'Accept-Language': 'id,en',
-        },
-      });
-      if (response.ok) {
-        osmData = await response.json();
-      }
-    }
-
-    if (osmData) {
-      rawDisplayName = osmData.display_name || '';
-      const addr = osmData.address || {};
-      const extra = osmData.extratags || {};
-
-      // Ekstrak nama jalan mikro
-      const roadCandidate =
-        addr.road ||
-        addr.pedestrian ||
-        addr.residential ||
-        addr.footway ||
-        addr.path ||
-        addr.highway ||
-        addr.service ||
-        addr.living_street ||
-        addr.neighbourhood;
-
-      if (roadCandidate) {
-        detectedRoad = formatRoadName(roadCandidate);
-      }
-
-      // Ekstrak patokan lokasi / landmark POI
-      const poiCandidate =
-        addr.amenity ||
-        addr.building ||
-        addr.shop ||
-        addr.tourism ||
-        addr.office ||
-        addr.place ||
-        extra.brand ||
-        extra.operator;
-
-      if (poiCandidate) {
-        patokanLokasi = `Dekat ${poiCandidate}`;
-      } else if (addr.house_number) {
-        patokanLokasi = `No. ${addr.house_number}`;
-      }
-
-      // Cek apakah OSM mengandung nama kelurahan resmi Lubuklinggau
-      const fullText = (rawDisplayName + ' ' + (addr.village || '') + ' ' + (addr.suburb || '') + ' ' + (addr.quarter || '')).toLowerCase();
-
-      for (const kel of candidateKelurahans) {
-        const kelLower = kel.name.toLowerCase();
-        if (
-          fullText.includes(kelLower) ||
-          (addr.village && addr.village.toLowerCase() === kelLower) ||
-          (addr.suburb && addr.suburb.toLowerCase() === kelLower)
-        ) {
-          detectedKelurahan = kel.name;
-          confidence = 'HIGH_SPATIAL';
-          break;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('OSM Geocode network notice:', err);
   }
 
   // Fallback 1: Jika OSM tidak mengembalikan nama jalan spesifik, cek koridor jalan utama Lubuklinggau
-  if (!detectedRoad) {
+  if (shouldLookupAddress && !detectedRoad) {
     for (const corridor of LUBUKLINGGAU_MAJOR_ROAD_CORRIDORS) {
       if (
         coord.lat >= corridor.minLat &&
@@ -453,6 +469,7 @@ export async function reverseGeocodeLocation(
       ) {
         if (!corridor.kecamatan || corridor.kecamatan.toLowerCase() === detectedKecamatan.toLowerCase()) {
           detectedRoad = corridor.name;
+          roadConfidence = 'LOW';
           confidence = 'HIGH_SPATIAL';
           break;
         }
@@ -463,6 +480,7 @@ export async function reverseGeocodeLocation(
   // Fallback 2: Jika nama jalan tidak terdaftar di OSM atau koridor utama, kosongkan nama jalan (tidak mengarang)
   if (!detectedRoad) {
     detectedRoad = '';
+    roadConfidence = 'NONE';
   }
 
   // Generate kode aset penomoran otomatis (e.g. LLG-T1-TJ-001)
@@ -481,5 +499,6 @@ export async function reverseGeocodeLocation(
     smartSegmentCode,
     rawDisplayName,
     confidence,
+    roadConfidence,
   };
 }
