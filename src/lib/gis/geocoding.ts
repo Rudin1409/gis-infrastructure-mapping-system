@@ -220,6 +220,73 @@ export function formatRoadName(rawName: string): string {
   return cleaned;
 }
 
+export interface RoadCorridor {
+  name: string;
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+  kecamatan?: string;
+}
+
+export const LUBUKLINGGAU_MAJOR_ROAD_CORRIDORS: RoadCorridor[] = [
+  {
+    name: 'Jl. Garuda',
+    minLat: -3.336,
+    maxLat: -3.314,
+    minLng: 102.821,
+    maxLng: 102.849,
+    kecamatan: 'Lubuklinggau Barat I',
+  },
+  {
+    name: 'Jl. Jend. Pol. Moch Hasan',
+    minLat: -3.336,
+    maxLat: -3.308,
+    minLng: 102.822,
+    maxLng: 102.868,
+    kecamatan: 'Lubuklinggau Barat I',
+  },
+  {
+    name: 'Jl. Dayang Torek',
+    minLat: -3.316,
+    maxLat: -3.303,
+    minLng: 102.833,
+    maxLng: 102.842,
+    kecamatan: 'Lubuklinggau Barat I',
+  },
+  {
+    name: 'Jl. Letkol Sukirno',
+    minLat: -3.285,
+    maxLat: -3.269,
+    minLng: 102.910,
+    maxLng: 102.916,
+    kecamatan: 'Lubuklinggau Timur I',
+  },
+  {
+    name: 'Jl. Fatmawati Soekarno',
+    minLat: -3.310,
+    maxLat: -3.285,
+    minLng: 102.866,
+    maxLng: 102.908,
+  },
+  {
+    name: 'Jl. Yos Sudarso',
+    minLat: -3.302,
+    maxLat: -3.268,
+    minLng: 102.854,
+    maxLng: 102.919,
+    kecamatan: 'Lubuklinggau Timur I',
+  },
+  {
+    name: 'Jl. Ahmad Yani',
+    minLat: -3.286,
+    maxLat: -3.260,
+    minLng: 102.850,
+    maxLng: 102.868,
+    kecamatan: 'Lubuklinggau Utara II',
+  },
+];
+
 /**
  * Universal High-Precision Reverse Geocoding Engine for Kota Lubuklinggau.
  * 1. Ray-Casting Point-in-Polygon (PIP) on Official 8 Kecamatan Polygons (2,127+ points).
@@ -367,7 +434,25 @@ export async function reverseGeocodeLocation(
     console.warn('OSM Geocode network notice:', err);
   }
 
-  // Fallback nama jalan jika tidak ada jalan terdaftar di OpenStreetMap
+  // Fallback 1: Jika OSM tidak mengembalikan nama jalan spesifik, cek koridor jalan utama Lubuklinggau
+  if (!detectedRoad) {
+    for (const corridor of LUBUKLINGGAU_MAJOR_ROAD_CORRIDORS) {
+      if (
+        coord.lat >= corridor.minLat &&
+        coord.lat <= corridor.maxLat &&
+        coord.lng >= corridor.minLng &&
+        coord.lng <= corridor.maxLng
+      ) {
+        if (!corridor.kecamatan || corridor.kecamatan.toLowerCase() === detectedKecamatan.toLowerCase()) {
+          detectedRoad = corridor.name;
+          confidence = 'HIGH_SPATIAL';
+          break;
+        }
+      }
+    }
+  }
+
+  // Fallback 2: Jika bukan di koridor utama terdaftar, gunakan identitas area kelurahan terdekat
   if (!detectedRoad) {
     detectedRoad = `Jl. Area Kel. ${detectedKelurahan}`;
   }

@@ -185,7 +185,7 @@ export default function SurveyForm({
     fetchDistricts();
   }, []);
 
-  // 1. Smart Memory: Load previous pole attributes on initial mount
+  // 1. Smart Memory: Load previous pole attributes on initial mount (Physical specs only, NEVER location)
   useEffect(() => {
     try {
       const saved = localStorage.getItem('gis_smart_memory_pole');
@@ -196,9 +196,8 @@ export default function SurveyForm({
         if (data.condition) setCondition(data.condition);
         if (data.height) setHeight(data.height);
         if (data.ownershipStatus) setOwnershipStatus(data.ownershipStatus);
-        if (data.road) setRoad(data.road);
-        if (data.kecamatan) setKecamatan(data.kecamatan);
-        if (data.kelurahan) setKelurahan(data.kelurahan);
+        // Catatan: Lokasi (road, kelurahan, kecamatan) TIDAK di-load dari tiang sebelumnya.
+        // Lokasi wajib dihitung secara dinamis dan presisi dari titik koordinat GPS (confirmedCoord).
         if (!initialRoadSide && data.sisiJalan) setSisiJalan(data.sisiJalan);
         if (data.infrastructureCategory) setInfrastructureCategory(data.infrastructureCategory);
         if (data.cableInstallationType) setCableInstallationType(data.cableInstallationType);
@@ -210,7 +209,7 @@ export default function SurveyForm({
 
         setIsSmartMemoryApplied(true);
         setSmartMemoryNotice(
-          `${data.road || 'Jalan'} • ${data.providerName || data.providerId || 'Provider'}`
+          `Spesifikasi Fisik • ${data.providerName || data.providerId || 'Provider'} (${data.poleType || 'Tiang'} ${data.height || '7m'})`
         );
       }
     } catch (e) {
@@ -226,10 +225,11 @@ export default function SurveyForm({
       try {
         const geo = await reverseGeocodeLocation(confirmedCoord, existingPoleCodes);
         if (isMounted) {
-          // Always use actual road and district from the confirmed coordinates
+          // Always use actual road and district dynamically resolved from the confirmed coordinates
           if (geo.road) setRoad(geo.road);
           if (geo.kecamatan) setKecamatan(geo.kecamatan);
           if (geo.kelurahan) setKelurahan(geo.kelurahan);
+          if (geo.patokanLokasi && !patokanLokasi) setPatokanLokasi(geo.patokanLokasi);
           if (geo.smartPoleCode) setPoleCode(geo.smartPoleCode);
           if (geo.smartSegmentCode) setSegmentCode(geo.smartSegmentCode);
         }
@@ -307,9 +307,6 @@ export default function SurveyForm({
           condition,
           height,
           ownershipStatus,
-          road: road.trim(),
-          kelurahan,
-          kecamatan,
           sisiJalan,
           infrastructureCategory,
           cableInstallationType,
