@@ -50,6 +50,7 @@ if [[ -e "$RELEASE_DIR" ]]; then
   esac
 fi
 
+echo "==> [1/5] Mengekstrak release archive..."
 mkdir -p "$RELEASE_DIR"
 tar -xzf "$RESOLVED_ARCHIVE" -C "$RELEASE_DIR"
 
@@ -63,10 +64,17 @@ ln -s "$SHARED_ENV_FILE" "${RELEASE_DIR}/.env.local"
 
 cd "$RELEASE_DIR"
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
+
+echo "==> [2/5] Menginstal dependensi di VPS (npm ci)..."
 npm ci --no-audit --no-fund
+
+echo "==> [3/5] Membangun bundle produksi Next.js (npm run build)..."
 npm run build
+
+echo "==> [4/5] Membersihkan dev dependencies (npm prune)..."
 npm prune --omit=dev --no-audit --no-fund
 
+echo "==> [5/5] Mengalihkan ke rilis baru & merestart PM2..."
 NEXT_LINK="${DEPLOY_ROOT}/current.next"
 rm -f "$NEXT_LINK"
 ln -s "$RELEASE_DIR" "$NEXT_LINK"
@@ -90,6 +98,7 @@ if ! pm2 start "${CURRENT_LINK}/ecosystem.config.cjs" --update-env; then
   fail "PM2 could not start the new release"
 fi
 
+echo "==> Menjalankan healthcheck server (http://127.0.0.1:3000)..."
 HEALTHY=false
 for _ in $(seq 1 30); do
   if curl --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/ >/dev/null; then
