@@ -262,8 +262,20 @@ export class SupabasePoleRepository implements IPoleRepository {
    * Mirror to Supabase with best-effort error swallowing (in case Supabase quota is reached).
    */
   async create(input: CreatePoleInput): Promise<Pole> {
+    // Idempotency guard for retried offline / flaky network submissions
+    if (input.id) {
+      try {
+        const existing = await this.findById(input.id);
+        if (existing) {
+          return existing;
+        }
+      } catch (checkErr) {
+        console.warn('[Idempotency Check Notice]:', checkErr);
+      }
+    }
+
     const now = new Date().toISOString();
-    const id = `LLG-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+    const id = input.id || `LLG-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
     const newPole: Pole = {
       ...input,
@@ -287,6 +299,11 @@ export class SupabasePoleRepository implements IPoleRepository {
           createdPole = mapDbToPole(result.rows[0]);
         }
       } catch (pgErr: any) {
+        // If unique key violation on id, return the existing record
+        if (pgErr?.code === '23505' && id) {
+          const existing = await this.findById(id);
+          if (existing) return existing;
+        }
         console.error('[Create Pole VPS Postgres Error]:', pgErr);
         throw new Error(`Gagal menyimpan data ke database VPS: ${pgErr?.message || pgErr}`);
       }

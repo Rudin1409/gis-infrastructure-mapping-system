@@ -95,6 +95,8 @@ export interface Pole {
 }
 
 export interface CreatePoleInput {
+  id?: string;
+  clientDraftId?: string;
   poleCode?: string;
   poleLatitude: number;
   poleLongitude: number;

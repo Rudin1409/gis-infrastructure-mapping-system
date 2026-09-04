@@ -5,6 +5,8 @@ export const poleTypeSchema = z.enum(['BETON', 'BESI', 'KAYU', 'LAINNYA', 'TIDAK
 export const validationStatusSchema = z.enum(['DRAFT', 'SUBMITTED', 'VERIFIED', 'REJECTED']);
 
 export const createPoleSchema = z.object({
+  id: z.string().optional(),
+  clientDraftId: z.string().optional(),
   poleCode: z.string().optional().default(''),
   poleLatitude: z
     .number({ required_error: 'Latitude tiang wajib ada' })

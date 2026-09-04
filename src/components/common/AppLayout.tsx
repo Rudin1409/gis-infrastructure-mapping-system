@@ -8,6 +8,7 @@ import GisAiAssistantModal from '@/components/ai/GisAiAssistantModal';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ViewModeProvider, useViewMode } from '@/context/ViewModeContext';
 import { useActiveSurveyorPresence } from '@/hooks/useActiveSurveyorPresence';
+import OfflineQueueWidget from '@/components/offline/OfflineQueueWidget';
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -106,6 +107,9 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Modern Mobile Bottom Navigation (except login) */}
       {!isLoginPage && isAuthenticated && <BottomNav />}
+
+      {/* Offline Outbox Sync Pill & Modal */}
+      {!isLoginPage && isAuthenticated && <OfflineQueueWidget />}
     </>
   );
 }

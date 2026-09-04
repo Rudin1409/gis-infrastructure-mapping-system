@@ -51,9 +51,11 @@ import {
   Zap,
   Lightbulb,
   Plus,
+  WifiOff,
 } from 'lucide-react';
 import PoleVisualGuideModal, { PoleMiniGraphic } from './PoleVisualGuideModal';
 import { useAuth } from '@/context/AuthContext';
+import { saveToOfflineQueue, fileToDataUrl } from '@/lib/offline/offlineQueue';
 
 interface SurveyFormProps {
   confirmedCoord: Coordinates;
@@ -137,9 +139,10 @@ export default function SurveyForm({
   // --- SUBMISSION STATE ---
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStage, setSubmitStage] = useState<
-    'IDLE' | 'UPLOADING_PHOTO' | 'SAVING_SHEET' | 'SUCCESS'
+    'IDLE' | 'UPLOADING_PHOTO' | 'SAVING_SHEET' | 'SAVING_OFFLINE' | 'SUCCESS'
   >('IDLE');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [offlineNotice, setOfflineNotice] = useState<string | null>(null);
 
   // --- EXISTING POLE CODES FROM SERVER (for sequential numbering) ---
   const [existingPoleCodes, setExistingPoleCodes] = useState<string[]>([]);
@@ -280,6 +283,7 @@ export default function SurveyForm({
   const handleSubmit = async (e?: React.FormEvent, continueNext: boolean = false) => {
     if (e) e.preventDefault();
     setErrorMessage(null);
+    setOfflineNotice(null);
 
     if (!road.trim()) {
       setActiveTab('LOCATION');
@@ -289,58 +293,86 @@ export default function SurveyForm({
 
     setIsSubmitting(true);
 
+    const resolved = resolveProviderInfo({
+      providerId,
+      infrastructureCategory,
+    });
+
+    const persistSmartMemory = () => {
+      try {
+        const smartMemoryData = {
+          providerId: resolved.providerId,
+          providerName: resolved.providerName,
+          poleType,
+          condition,
+          height,
+          ownershipStatus,
+          road: road.trim(),
+          kelurahan,
+          kecamatan,
+          sisiJalan,
+          infrastructureCategory,
+          cableInstallationType,
+          pjuLampType,
+          pjuLampPower,
+          pjuLampCondition,
+          hasKwhMeter,
+          hasNetworkCable,
+        };
+        localStorage.setItem('gis_smart_memory_pole', JSON.stringify(smartMemoryData));
+
+        const kecCode = getKecamatanCode(kecamatan);
+        const kelCode = getKelurahanCode(kelurahan);
+        const matchNum = (poleCode || '').match(/-(\d+)$/);
+        if (matchNum && matchNum[1]) {
+          const parsedNum = parseInt(matchNum[1], 10);
+          if (!isNaN(parsedNum)) {
+            localStorage.setItem(`gis_last_seq_${kecCode}_${kelCode}`, String(parsedNum));
+          }
+        }
+      } catch (smErr) {
+        console.warn('Smart memory save notice:', smErr);
+      }
+
+      if (poleCode.trim()) {
+        setExistingPoleCodes((prev) => [...prev, poleCode.trim()]);
+      }
+    };
+
     try {
       let photoFileId = '';
       let photoUrl = '';
 
-      // Street View captures are clean static images. Convert them to a real file so the
-      // existing upload pipeline stores a durable copy in Drive instead of an iframe URL.
       let photoFileForUpload = selectedPhotoFile;
       if (!photoFileForUpload && photoPreviewUrl?.includes('/api/streetview/photo?')) {
-        const captureResponse = await fetch(photoPreviewUrl, { cache: 'no-store' });
-        if (!captureResponse.ok) {
-          throw new Error('Foto Street View terkunci gagal diambil. Periksa konfigurasi API Google Maps.');
-        }
-        const blob = await captureResponse.blob();
-        if (!blob.type.startsWith('image/')) {
-          throw new Error('Hasil tangkapan Street View bukan berkas gambar yang valid.');
-        }
-        photoFileForUpload = new File(
-          [blob],
-          `streetview-pole-${Date.now()}.jpg`,
-          { type: blob.type || 'image/jpeg' }
-        );
-      }
-
-      // Step 1: Upload Photo to Google Drive / API if selected or captured from Street View
-      if (photoFileForUpload) {
-        setSubmitStage('UPLOADING_PHOTO');
-        const uploadFormData = new FormData();
-        uploadFormData.append('photo', photoFileForUpload);
-
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadFormData,
-        });
-
-        if (uploadRes.ok) {
-          const uploadJson = await uploadRes.json();
-          if (uploadJson.success && uploadJson.data) {
-            photoFileId = uploadJson.data.photoFileId || '';
-            photoUrl = uploadJson.data.photoUrl || '';
+        try {
+          const captureResponse = await fetch(photoPreviewUrl, { cache: 'no-store' });
+          if (captureResponse.ok) {
+            const blob = await captureResponse.blob();
+            if (blob.type.startsWith('image/')) {
+              photoFileForUpload = new File(
+                [blob],
+                `streetview-pole-${Date.now()}.jpg`,
+                { type: blob.type || 'image/jpeg' }
+              );
+            }
           }
+        } catch {
+          // Ignore streetview fetch fail in low signal
         }
       }
 
-      // Step 2: Save record to server API
-      setSubmitStage('SAVING_SHEET');
+      // Convert file to Base64 for safe offline preservation
+      let photoBase64 = photoPreviewUrl;
+      if (photoFileForUpload) {
+        try {
+          photoBase64 = await fileToDataUrl(photoFileForUpload);
+        } catch (b64Err) {
+          console.warn('Base64 conversion notice:', b64Err);
+        }
+      }
 
-      const resolved = resolveProviderInfo({
-        providerId,
-        infrastructureCategory,
-      });
-
-      const payload = {
+      const payload: Record<string, any> = {
         poleLatitude: confirmedCoord.lat,
         poleLongitude: confirmedCoord.lng,
         deviceLatitude: deviceCoord?.lat,
@@ -382,72 +414,135 @@ export default function SurveyForm({
         validationStatus: 'SUBMITTED',
       };
 
-      const res = await fetch('/api/poles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      // Helper to store in IndexedDB offline queue
+      const saveOfflineAndFinish = async (userNotice: string) => {
+        setSubmitStage('SAVING_OFFLINE');
+        const offlineId = `LLG-OFF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menyimpan data tiang ke server.');
-      }
-
-      // Save to Smart Memory for next poles
-      try {
-        const smartMemoryData = {
-          providerId: resolved.providerId,
-          providerName: resolved.providerName,
-          poleType,
-          condition,
-          height,
-          ownershipStatus,
+        await saveToOfflineQueue({
+          id: offlineId,
+          createdAt: new Date().toISOString(),
           road: road.trim(),
-          kelurahan,
           kecamatan,
-          sisiJalan,
-          infrastructureCategory,
-          cableInstallationType,
-          pjuLampType,
-          pjuLampPower,
-          pjuLampCondition,
-          hasKwhMeter,
-          hasNetworkCable,
-        };
-        localStorage.setItem('gis_smart_memory_pole', JSON.stringify(smartMemoryData));
+          kelurahan,
+          poleCode: poleCode.trim() || undefined,
+          payload: {
+            ...payload,
+            id: offlineId,
+          },
+          photoDataUrl: photoBase64 || photoPreviewUrl,
+          photoFileName: photoFileForUpload?.name || `photo_${offlineId}.jpg`,
+        });
 
-        // Save last sequence number for this kecamatan & kelurahan
-        const kecCode = getKecamatanCode(kecamatan);
-        const kelCode = getKelurahanCode(kelurahan);
-        const matchNum = (poleCode || '').match(/-(\d+)$/);
-        if (matchNum && matchNum[1]) {
-          const parsedNum = parseInt(matchNum[1], 10);
-          if (!isNaN(parsedNum)) {
-            localStorage.setItem(`gis_last_seq_${kecCode}_${kelCode}`, String(parsedNum));
-          }
-        }
-      } catch (smErr) {
-        console.warn('Smart memory save notice:', smErr);
-      }
+        persistSmartMemory();
+        setOfflineNotice(userNotice);
+        setSubmitStage('SUCCESS');
 
-      // Add the new pole code to existing codes list so next pole gets correct number
-      if (poleCode.trim()) {
-        setExistingPoleCodes((prev) => [...prev, poleCode.trim()]);
-      }
-
-      setSubmitStage('SUCCESS');
-
-      // Auto redirect or Continue next pole
-      if (continueNext) {
         setTimeout(() => {
           onBackToMap();
-        }, 700);
-      } else {
-        setTimeout(() => {
-          router.push(`/poles/${json.data.id}`);
-          router.refresh();
-        }, 1200);
+        }, continueNext ? 900 : 1500);
+      };
+
+      // 🛑 SCENARIO 1: Device is completely offline
+      if (!navigator.onLine) {
+        await saveOfflineAndFinish(
+          '📶 Sinyal terputus (Offline). Data tiang & foto berhasil diamankan di Memori HP tanpa hilang! Akan otomatis dikirim saat ada sinyal.'
+        );
+        return;
+      }
+
+      // 🌐 SCENARIO 2: Online or flaky connection -> Attempt cloud upload with 15s timeout
+      try {
+        // Step 1: Upload Photo with timeout
+        if (photoFileForUpload) {
+          setSubmitStage('UPLOADING_PHOTO');
+          const uploadFormData = new FormData();
+          uploadFormData.append('photo', photoFileForUpload);
+
+          const uploadAbort = new AbortController();
+          const uploadTimeout = setTimeout(() => uploadAbort.abort(), 15000);
+
+          try {
+            const uploadRes = await fetch('/api/upload', {
+              method: 'POST',
+              body: uploadFormData,
+              signal: uploadAbort.signal,
+            });
+            clearTimeout(uploadTimeout);
+
+            if (uploadRes.ok) {
+              const uploadJson = await uploadRes.json();
+              if (uploadJson.success && uploadJson.data) {
+                photoFileId = uploadJson.data.photoFileId || '';
+                photoUrl = uploadJson.data.photoUrl || '';
+                payload.photoFileId = photoFileId || undefined;
+                payload.photoUrl = photoUrl || photoPreviewUrl || undefined;
+              }
+            }
+          } catch (uploadErr) {
+            clearTimeout(uploadTimeout);
+            console.warn('Photo upload interrupted by network:', uploadErr);
+            // Fallback to local outbox
+            await saveOfflineAndFinish(
+              '⚠️ Sinyal lemah saat upload foto. Data & foto berhasil diamankan di Memori HP dan akan dikirim ulang saat sinyal stabil.'
+            );
+            return;
+          }
+        }
+
+        // Step 2: Save to server API with timeout
+        setSubmitStage('SAVING_SHEET');
+        const poleAbort = new AbortController();
+        const poleTimeout = setTimeout(() => poleAbort.abort(), 15000);
+
+        const res = await fetch('/api/poles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: poleAbort.signal,
+        });
+        clearTimeout(poleTimeout);
+
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok || !json.success) {
+          if (res.status === 400) {
+            throw new Error(json.error || 'Validasi data gagal');
+          }
+          await saveOfflineAndFinish(
+            '⚠️ Server atau sinyal terputus sesaat. Data tiang telah diamankan di Memori HP tanpa ada data yang hilang!'
+          );
+          return;
+        }
+
+        // Confirmed server success
+        persistSmartMemory();
+        setSubmitStage('SUCCESS');
+
+        if (continueNext) {
+          setTimeout(() => {
+            onBackToMap();
+          }, 700);
+        } else {
+          setTimeout(() => {
+            router.push(`/poles/${json.data.id}`);
+            router.refresh();
+          }, 1200);
+        }
+      } catch (networkErr: any) {
+        const isNetwork =
+          networkErr.name === 'AbortError' ||
+          networkErr.message?.includes('fetch') ||
+          networkErr.message?.includes('NetworkError') ||
+          !navigator.onLine;
+
+        if (isNetwork) {
+          await saveOfflineAndFinish(
+            '📶 Koneksi terputus di tengah jalan. Data tiang & foto TIDAK HILANG — berhasil diamankan di Memori HP dan akan otomatis dikirim!'
+          );
+        } else {
+          throw networkErr;
+        }
       }
     } catch (err: any) {
       console.error('Survey submission error:', err);
@@ -1694,6 +1789,21 @@ export default function SurveyForm({
               </div>
             </div>
 
+            {/* Offline notification card */}
+            {offlineNotice && (
+              <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-950 flex items-start gap-2.5 animate-in fade-in shadow-xs">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-bold block text-amber-900">
+                    Tersimpan Aman di Memori HP (Mode Antrean Offline)
+                  </span>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    {offlineNotice}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Error message */}
             {errorMessage && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-700 flex items-start gap-2 animate-in shake">
@@ -1718,6 +1828,8 @@ export default function SurveyForm({
                         ? 'Mengunggah Foto Media...'
                         : submitStage === 'SAVING_SHEET'
                         ? 'Menyimpan Data Survei ke Cloud...'
+                        : submitStage === 'SAVING_OFFLINE'
+                        ? 'Mengamankan Data ke Memori HP...'
                         : 'Menyimpan Data...'}
                     </span>
                   </>
