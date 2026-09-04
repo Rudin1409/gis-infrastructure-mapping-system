@@ -17,8 +17,10 @@ export async function GET(request: NextRequest) {
     const kelurahan = searchParams.get('kelurahan') || undefined;
     const poleType = searchParams.get('poleType') || undefined;
     const search = searchParams.get('search') || undefined;
-    const lat = Number(searchParams.get('lat'));
-    const lng = Number(searchParams.get('lng'));
+    const latParam = searchParams.get('lat');
+    const lngParam = searchParams.get('lng');
+    const lat = latParam !== null ? Number(latParam) : null;
+    const lng = lngParam !== null ? Number(lngParam) : null;
     const radius = Math.min(Math.max(Number(searchParams.get('radius')) || 75, 10), 500);
     const limit = Math.min(Math.max(Number(searchParams.get('limit')) || 20, 1), 100);
 
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
       search,
     });
 
-    const hasNearbyFilter = Number.isFinite(lat) && Number.isFinite(lng);
+    const hasNearbyFilter = lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng);
     const data = hasNearbyFilter
       ? poles
           .map((pole) => ({
