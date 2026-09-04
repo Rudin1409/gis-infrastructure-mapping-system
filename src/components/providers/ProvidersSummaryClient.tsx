@@ -170,6 +170,8 @@ export default function ProvidersSummaryClient({
   const [activeTab, setActiveTab] = useState<'SUMMARY' | 'INPUT_USERS' | 'VISUAL_GUIDE'>('SUMMARY');
   const [selectedInputDate, setSelectedInputDate] = useState('');
   const [dailyPage, setDailyPage] = useState(1);
+  const [userTeamFilter, setUserTeamFilter] = useState<'ALL' | 'KOMINFO' | 'BAPENDA'>('ALL');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
 
   // 1. Merge default providers with any custom provider records
   const allProvidersList = useMemo(() => {
@@ -568,6 +570,26 @@ export default function ProvidersSummaryClient({
       return a.displayName.localeCompare(b.displayName);
     });
   }, [inputStats.users, livePoles, selectedDayStats.date]);
+
+  const filteredUsers = useMemo(() => {
+    return selectedUserStats.filter((u) => {
+      const matchTeam = userTeamFilter === 'ALL' || u.team === userTeamFilter;
+      const matchSearch =
+        !userSearchQuery.trim() ||
+        u.displayName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+        u.id.toLowerCase().includes(userSearchQuery.toLowerCase());
+      return matchTeam && matchSearch;
+    });
+  }, [selectedUserStats, userTeamFilter, userSearchQuery]);
+
+  const kominfoSurveyorCount = useMemo(
+    () => selectedUserStats.filter((u) => u.team === 'KOMINFO').length,
+    [selectedUserStats]
+  );
+  const bapendaSurveyorCount = useMemo(
+    () => selectedUserStats.filter((u) => u.team === 'BAPENDA').length,
+    [selectedUserStats]
+  );
 
   const dailyPageSize = 5;
   const dailyTotalPages = Math.max(1, Math.ceil(inputStats.daily.length / dailyPageSize));
@@ -1015,90 +1037,445 @@ export default function ProvidersSummaryClient({
             })}
           </div>
 
+          {/* ============================================================ */}
+          {/* LANGKAH 1: FILTER TANGGAL INPUT DULUAN                        */}
+          {/* ============================================================ */}
           <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-600" />
-                <span>Detail Tiap User</span>
-              </h3>
-              <span className="text-[10px] font-bold text-slate-500">
-                {selectedDayStats.date}
-              </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold flex-shrink-0">
+                    <CalendarDays className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-black text-slate-900">
+                        Filter Tanggal Input
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-black">
+                        Langkah 1
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      Pilih tanggal untuk melihat detail input petugas di bawah
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dropdown pemilih semua tanggal */}
+              {inputStats.daily.length > 0 && (
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <label htmlFor="select-input-date" className="text-[11px] font-bold text-slate-500 whitespace-nowrap hidden sm:inline">
+                    Pilih Tanggal:
+                  </label>
+                  <select
+                    id="select-input-date"
+                    value={selectedDayStats.date}
+                    onChange={(e) => setSelectedInputDate(e.target.value)}
+                    className="w-full sm:w-auto text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 hover:bg-white text-slate-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer shadow-sm"
+                  >
+                    {inputStats.daily.map((d) => (
+                      <option key={d.date} value={d.date}>
+                        {d.date === todayJakarta ? `🌟 Hari Ini (${d.date})` : d.date} — {d.total} tiang
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2">
-              {selectedUserStats.map((user) => {
+            {/* Quick Date Pills (scroll horizontal di HP) */}
+            {inputStats.daily.length > 0 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 whitespace-nowrap mr-1 flex items-center gap-1">
+                  <Clock3 className="w-3 h-3 text-slate-400" /> Cepat:
+                </span>
+                {inputStats.daily.slice(0, 6).map((d) => {
+                  const isSelected = d.date === selectedDayStats.date;
+                  const isToday = d.date === todayJakarta;
+                  return (
+                    <button
+                      type="button"
+                      key={d.date}
+                      onClick={() => setSelectedInputDate(d.date)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 active:scale-95 flex-shrink-0 ${
+                        isSelected
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 font-black'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/60'
+                      }`}
+                    >
+                      <span>{isToday ? '🌟 Hari Ini' : d.date}</span>
+                      <span
+                        className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-white text-slate-600'
+                        }`}
+                      >
+                        {d.total}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Banner status tanggal aktif */}
+            <div className="rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/40 to-slate-50 border border-blue-100/90 p-3 flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
+                <span className="text-xs font-bold text-slate-700">
+                  Data Terpilih: <strong className="text-blue-950 font-black">{selectedDayStats.date === todayJakarta ? `Hari Ini (${selectedDayStats.date})` : selectedDayStats.date}</strong>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="px-2.5 py-1 rounded-xl bg-slate-900 text-white font-mono font-bold text-[11px] shadow-sm">
+                  Total: {selectedDayStats.total} tiang
+                </span>
+                <span className="px-2.5 py-1 rounded-xl bg-blue-100 text-blue-800 font-bold text-[11px]">
+                  Kominfo: {selectedDayStats.kominfo}
+                </span>
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 font-bold text-[11px]">
+                  Bapenda: {selectedDayStats.bapenda}
+                </span>
+                {selectedDayStats.lainnya > 0 && (
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-200 text-slate-700 font-bold text-[11px]">
+                    Lainnya: {selectedDayStats.lainnya}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ============================================================ */}
+          {/* LANGKAH 2: DETAIL TIAP USER / PETUGAS LAPANGAN               */}
+          {/* ============================================================ */}
+          <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3.5">
+            {/* Header Bagian Detail User */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <span>Detail Input Tiap Petugas</span>
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
+                    {filteredUsers.length} Petugas
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Rekap per petugas pada tanggal <strong className="text-slate-700">{selectedDayStats.date}</strong>
+                </p>
+              </div>
+
+              {/* Filter Tim & Pencarian Petugas */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {/* Team Filter Pills */}
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setUserTeamFilter('ALL')}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                      userTeamFilter === 'ALL'
+                        ? 'bg-white text-slate-900 shadow-sm font-black'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Semua ({selectedUserStats.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUserTeamFilter('KOMINFO')}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                      userTeamFilter === 'KOMINFO'
+                        ? 'bg-blue-600 text-white shadow-sm font-black'
+                        : 'text-slate-600 hover:text-blue-700'
+                    }`}
+                  >
+                    Kominfo ({kominfoSurveyorCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUserTeamFilter('BAPENDA')}
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                      userTeamFilter === 'BAPENDA'
+                        ? 'bg-emerald-600 text-white shadow-sm font-black'
+                        : 'text-slate-600 hover:text-emerald-700'
+                    }`}
+                  >
+                    Bapenda ({bapendaSurveyorCount})
+                  </button>
+                </div>
+
+                {/* Search Bar Petugas */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={userSearchQuery}
+                    onChange={(e) => setUserSearchQuery(e.target.value)}
+                    placeholder="Cari petugas..."
+                    className="w-full sm:w-36 pl-8 pr-2.5 py-1 text-xs bg-slate-50 hover:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold placeholder:font-normal placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* A. TAMPILAN DESKTOP: TABEL RAPI & KOMPAK (hidden md:block) */}
+            <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-100 bg-white">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50/90 border-b border-slate-100 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">Petugas</th>
+                    <th className="py-3 px-3">Tim</th>
+                    <th className="py-3 px-3 text-center">Input ({selectedDayStats.date === todayJakarta ? 'Hari Ini' : selectedDayStats.date})</th>
+                    <th className="py-3 px-3">Kondisi Fisik</th>
+                    <th className="py-3 px-3 text-center">Total Akumulasi</th>
+                    <th className="py-3 px-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredUsers.map((user) => {
+                    const isKominfo = user.team === 'KOMINFO';
+                    const hasInput = user.selectedTotal > 0;
+                    return (
+                      <tr
+                        key={user.id}
+                        className="hover:bg-blue-50/40 transition-colors group"
+                      >
+                        {/* Petugas */}
+                        <td className="py-2.5 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs flex-shrink-0 shadow-sm ${
+                                isKominfo
+                                  ? 'bg-blue-600 text-white'
+                                  : user.team === 'BAPENDA'
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-slate-600 text-white'
+                              }`}
+                            >
+                              {user.displayName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-black text-slate-900 truncate">
+                                {user.displayName}
+                              </p>
+                              <span className="text-[10px] text-slate-400 font-mono block">
+                                {user.id}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Tim */}
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[9px] font-black ${
+                                isKominfo
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : user.team === 'BAPENDA'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-slate-200 text-slate-600'
+                              }`}
+                            >
+                              {user.teamLabel}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-50 text-slate-500 border border-slate-200">
+                              {user.roleLabel}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Input Tanggal Terpilih */}
+                        <td className="py-2.5 px-3 text-center">
+                          {hasInput ? (
+                            <div>
+                              <span className="text-base font-black font-mono text-blue-600 leading-tight">
+                                {user.selectedTotal}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block font-bold">
+                                {formatPercent(user.selectedTotal, selectedDayStats.total)}% pangsa
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-300 font-mono font-bold">-</span>
+                          )}
+                        </td>
+
+                        {/* Kondisi Fisik */}
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Baik: {user.goodCount}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold text-[10px] border border-amber-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              Cek: {user.repairCount}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 font-bold text-[10px] border border-rose-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              Rusak: {user.damagedCount}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Total Akumulasi */}
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="font-mono font-black text-slate-800 text-sm">
+                            {user.allTotal}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block font-bold">tiang</span>
+                        </td>
+
+                        {/* Aksi */}
+                        <td className="py-2.5 px-4 text-right">
+                          <Link
+                            href={`/map?surveyor=${encodeURIComponent(user.id)}`}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                          >
+                            <span>Lihat Titik</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* B. TAMPILAN MOBILE: DAFTAR BARIS RAMPING & PADAT (md:hidden) */}
+            <div className="md:hidden space-y-2">
+              {filteredUsers.map((user) => {
                 const isKominfo = user.team === 'KOMINFO';
+                const hasInputToday = user.selectedTotal > 0;
                 return (
                   <Link
                     key={user.id}
                     href={`/map?surveyor=${encodeURIComponent(user.id)}`}
-                    className="block rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-blue-200 transition-all p-3"
+                    className={`block rounded-2xl border p-3 transition-all ${
+                      hasInputToday
+                        ? 'bg-white border-blue-100/90 shadow-[0_2px_10px_rgba(37,99,235,0.06)] active:scale-[0.99]'
+                        : 'bg-slate-50/70 border-slate-100/80 hover:bg-white'
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black ${isKominfo ? 'bg-blue-100 text-blue-700' : user.team === 'BAPENDA' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
-                            {user.teamLabel}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-white text-slate-500 border border-slate-100">
-                            {user.roleLabel}
-                          </span>
+                    {/* Baris Atas: Profil Petugas + Angka Input Hari Ini */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs flex-shrink-0 shadow-sm ${
+                            isKominfo
+                              ? 'bg-blue-600 text-white'
+                              : user.team === 'BAPENDA'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-600 text-white'
+                          }`}
+                        >
+                          {user.displayName.charAt(0).toUpperCase()}
                         </div>
-                        <h4 className="mt-1 text-sm font-black text-slate-900 truncate">
-                          {user.displayName}
-                        </h4>
-                        <p className="text-[10px] text-slate-500 font-mono truncate">
-                          {user.id}
-                        </p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs font-black text-slate-900 truncate">
+                              {user.displayName}
+                            </h4>
+                            <span
+                              className={`px-1.5 py-0.2 rounded text-[9px] font-black ${
+                                isKominfo
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : user.team === 'BAPENDA'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-slate-200 text-slate-600'
+                              }`}
+                            >
+                              {user.teamLabel}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-mono truncate">
+                            {user.id}
+                          </p>
+                        </div>
                       </div>
+
+                      {/* Angka Input Hari Ini */}
                       <div className="text-right flex-shrink-0">
-                        <p className="text-xl font-black text-slate-900 font-mono leading-tight">
-                          {user.selectedTotal}
-                        </p>
-                        <span className="text-[10px] font-bold text-slate-500">input</span>
+                        <div className="flex items-baseline justify-end gap-1">
+                          <span
+                            className={`text-lg font-black font-mono leading-none ${
+                              hasInputToday ? 'text-blue-600' : 'text-slate-400'
+                            }`}
+                          >
+                            {user.selectedTotal}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-500">input</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 block font-bold">
+                          Tot: {user.allTotal}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
-                      <div className="rounded-xl bg-white border border-slate-100 p-2">
-                        <span className="block text-slate-400 font-bold">Semua</span>
-                        <strong className="text-blue-700">{user.allTotal}</strong>
+                    {/* Baris Bawah: Mini Kondisi Fisik & Link Titik */}
+                    <div className="mt-2 pt-2 border-t border-slate-100/90 flex items-center justify-between text-[10px]">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-100/60">
+                          🟢 {user.goodCount}
+                        </span>
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold border border-amber-100/60">
+                          🟡 {user.repairCount}
+                        </span>
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 font-bold border border-rose-100/60">
+                          🔴 {user.damagedCount}
+                        </span>
                       </div>
-                      <div className="rounded-xl bg-white border border-slate-100 p-2">
-                        <span className="block text-slate-400 font-bold">Baik</span>
-                        <strong className="text-emerald-700">{user.goodCount}</strong>
-                      </div>
-                      <div className="rounded-xl bg-white border border-slate-100 p-2">
-                        <span className="block text-slate-400 font-bold">Cek</span>
-                        <strong className="text-amber-700">{user.repairCount}</strong>
-                      </div>
-                      <div className="rounded-xl bg-white border border-slate-100 p-2">
-                        <span className="block text-slate-400 font-bold">Rusak</span>
-                        <strong className="text-rose-700">{user.damagedCount}</strong>
-                      </div>
-                    </div>
 
-                    <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-                      <span>Tanggal aktif: <strong className="text-slate-700">{selectedDayStats.date}</strong></span>
                       <span className="font-bold text-blue-600 flex items-center gap-0.5">
-                        Lihat titik <ChevronRight className="w-3 h-3" />
+                        Lihat Titik <ChevronRight className="w-3 h-3" />
                       </span>
                     </div>
                   </Link>
                 );
               })}
             </div>
+
+            {/* Empty State jika tidak ada petugas */}
+            {filteredUsers.length === 0 && (
+              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-6 text-center">
+                <p className="text-xs font-bold text-slate-500">
+                  Tidak ada petugas yang cocok dengan filter tim atau pencarian &quot;{userSearchQuery}&quot;.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserTeamFilter('ALL');
+                    setUserSearchQuery('');
+                  }}
+                  className="mt-2 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-[11px] font-bold shadow-sm"
+                >
+                  Reset Filter
+                </button>
+              </div>
+            )}
           </div>
 
+          {/* ============================================================ */}
+          {/* LANGKAH 3: RIWAYAT INPUT PER HARI (REKAP HARIAN LENGKAP)      */}
+          {/* ============================================================ */}
           <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-blue-600" />
-                <span>Rekap Input per Hari</span>
-              </h3>
-              <span className="text-[10px] font-bold text-slate-500">
-                5 data / halaman
+              <div>
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <Clock3 className="w-4 h-4 text-blue-600" />
+                  <span>Riwayat Rekap Input per Hari</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Klik pada baris tanggal untuk melihat detail data hari tersebut di atas
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                5 data / hal
               </span>
             </div>
 
@@ -1106,46 +1483,54 @@ export default function ProvidersSummaryClient({
               {paginatedDaily.map((day) => {
                 const isSelectedDay = day.date === selectedDayStats.date;
                 return (
-                <button
-                  type="button"
-                  key={day.date}
-                  onClick={() => setSelectedInputDate(day.date)}
-                  className={`w-full text-left rounded-2xl border p-3 transition-all ${
-                    isSelectedDay
-                      ? 'bg-blue-50 border-blue-200 shadow-[0_8px_22px_rgba(37,99,235,0.12)]'
-                      : 'bg-slate-50 border-slate-100 hover:bg-white hover:border-blue-100'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Clock3 className={`w-4 h-4 ${isSelectedDay ? 'text-blue-600' : 'text-slate-400'}`} />
-                      <span className="text-xs font-black text-slate-900">
-                        {day.date === todayJakarta ? `Hari Ini (${day.date})` : day.date}
-                      </span>
+                  <button
+                    type="button"
+                    key={day.date}
+                    onClick={() => setSelectedInputDate(day.date)}
+                    className={`w-full text-left rounded-2xl border p-3 transition-all cursor-pointer ${
+                      isSelectedDay
+                        ? 'bg-blue-50 border-blue-200 shadow-[0_8px_22px_rgba(37,99,235,0.12)] ring-1 ring-blue-400'
+                        : 'bg-slate-50/70 border-slate-100 hover:bg-white hover:border-blue-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                            isSelectedDay ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
+                          }`}
+                        >
+                          <CalendarDays className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs font-black text-slate-900">
+                          {day.date === todayJakarta ? `🌟 Hari Ini (${day.date})` : day.date}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isSelectedDay && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-black">
+                            Dipilih
+                          </span>
+                        )}
+                        <span className="text-sm font-black font-mono text-slate-900">
+                          {day.total} <span className="text-[10px] font-normal text-slate-500 font-sans">tiang</span>
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {isSelectedDay && (
-                        <span className="hidden sm:inline px-2 py-0.5 rounded-full bg-blue-600 text-white text-[9px] font-black">
-                          Dipilih
+                    <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[10px]">
+                      <span className="rounded-xl bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 font-bold">
+                        Kominfo: {day.kominfo}
+                      </span>
+                      <span className="rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-1 font-bold">
+                        Bapenda: {day.bapenda}
+                      </span>
+                      {day.lainnya > 0 && (
+                        <span className="rounded-xl bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 font-bold">
+                          Lainnya: {day.lainnya}
                         </span>
                       )}
-                      <span className="text-sm font-black font-mono text-slate-900">
-                        {day.total}
-                      </span>
                     </div>
-                  </div>
-                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-[10px]">
-                    <span className="rounded-xl bg-blue-50 text-blue-700 border border-blue-100 px-2 py-1 font-bold">
-                      Kominfo {day.kominfo}
-                    </span>
-                    <span className="rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-1 font-bold">
-                      Bapenda {day.bapenda}
-                    </span>
-                    <span className="rounded-xl bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 font-bold">
-                      Lainnya {day.lainnya}
-                    </span>
-                  </div>
-                </button>
+                  </button>
                 );
               })}
 
