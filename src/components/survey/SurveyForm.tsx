@@ -406,7 +406,7 @@ export default function SurveyForm({
         poleCode: poleCode.trim() || undefined,
         description: description.trim() || undefined,
         photoFileId: photoFileId || undefined,
-        photoUrl: photoUrl || photoPreviewUrl || undefined,
+        photoUrl: photoUrl || photoBase64 || photoPreviewUrl || undefined,
         surveyorId: user?.id || 'USR-KOMINFO-ADMIN',
         surveyorName,
         surveyDate,

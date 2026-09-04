@@ -189,17 +189,25 @@ export async function updateOfflineQueueItem(
 /**
  * Helper to convert a DataURL (base64) into a File object for multipart upload.
  */
-export function dataUrlToFile(dataUrl: string, filename: string): File {
-  const arr = dataUrl.split(',');
-  const mimeMatch = arr[0].match(/:(.*?);/);
-  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
+export function dataUrlToFile(dataUrl: string, filename: string): File | null {
+  if (!dataUrl || !dataUrl.includes(',')) {
+    return null;
   }
-  return new File([u8arr], filename, { type: mime });
+  try {
+    const arr = dataUrl.split(',');
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  } catch (err) {
+    console.warn('dataUrlToFile notice:', err);
+    return null;
+  }
 }
 
 /**
@@ -227,7 +235,7 @@ export interface SyncProgress {
 
 /**
  * Synchronize offline queue to server one-by-one (FIFO).
- * Uses 15-second AbortController timeout for each network call.
+ * Uses 20-second AbortController timeout for each network call.
  * If network drops mid-upload, the item remains intact in IndexedDB for the next retry.
  */
 export async function syncOfflineQueue(
@@ -267,46 +275,59 @@ export async function syncOfflineQueue(
         let photoFileId = item.payload.photoFileId || '';
         let photoUrl = item.payload.photoUrl || '';
 
-        // Step A: Upload photo if present and not yet uploaded
+        // Step A: Upload photo if present
         if (item.photoDataUrl && (!photoFileId || photoUrl.startsWith('data:'))) {
           const photoFile = dataUrlToFile(
             item.photoDataUrl,
             item.photoFileName || `offline_${item.id}.jpg`
           );
 
-          const uploadFormData = new FormData();
-          uploadFormData.append('photo', photoFile);
+          if (photoFile) {
+            const uploadFormData = new FormData();
+            uploadFormData.append('photo', photoFile);
 
-          const abortCtrl = new AbortController();
-          const timeoutId = setTimeout(() => abortCtrl.abort(), 15000); // 15s timeout
+            const abortCtrl = new AbortController();
+            const timeoutId = setTimeout(() => abortCtrl.abort(), 20000); // 20s timeout
 
-          const uploadRes = await fetch('/api/upload', {
-            method: 'POST',
-            body: uploadFormData,
-            signal: abortCtrl.signal,
-          });
+            try {
+              const uploadRes = await fetch('/api/upload', {
+                method: 'POST',
+                body: uploadFormData,
+                signal: abortCtrl.signal,
+              });
 
-          clearTimeout(timeoutId);
+              clearTimeout(timeoutId);
 
-          if (uploadRes.ok) {
-            const uploadJson = await uploadRes.json();
-            if (uploadJson.success && uploadJson.data) {
-              photoFileId = uploadJson.data.photoFileId || '';
-              photoUrl = uploadJson.data.photoUrl || '';
+              if (!uploadRes.ok) {
+                throw new Error(`Upload foto gagal (HTTP ${uploadRes.status})`);
+              }
+
+              const uploadJson = await uploadRes.json();
+              if (uploadJson.success && uploadJson.data) {
+                photoFileId = uploadJson.data.photoFileId || '';
+                photoUrl = uploadJson.data.photoUrl || '';
+              }
+            } catch (upErr: any) {
+              clearTimeout(timeoutId);
+              console.warn(`[Offline Sync] Upload foto gagal untuk ${item.id}:`, upErr);
+              throw new Error(`Gagal mengunggah foto tiang: ${upErr.message || 'Koneksi terputus'}`);
             }
           }
         }
 
-        // Step B: Send pole payload to /api/poles
+        // Preserve photo: use uploaded URL, payload URL, or direct data URL as fallback
+        const finalPhotoUrl = photoUrl || item.payload.photoUrl || item.photoDataUrl || undefined;
+
+        // Step B: Send complete pole payload to /api/poles
         const payloadToSend = {
           ...item.payload,
           id: item.id, // Idempotency key
-          photoFileId: photoFileId || item.payload.photoFileId,
-          photoUrl: photoUrl || item.payload.photoUrl,
+          photoFileId: photoFileId || item.payload.photoFileId || undefined,
+          photoUrl: finalPhotoUrl,
         };
 
         const abortCtrl = new AbortController();
-        const timeoutId = setTimeout(() => abortCtrl.abort(), 15000); // 15s timeout
+        const timeoutId = setTimeout(() => abortCtrl.abort(), 20000); // 20s timeout
 
         const poleRes = await fetch('/api/poles', {
           method: 'POST',
@@ -330,6 +351,11 @@ export async function syncOfflineQueue(
         // CONFIRMED SUCCESS: Safely remove from local IndexedDB
         await removeOfflineQueueItem(item.id);
         syncedCount++;
+
+        // Notify app to refresh map and statistics
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('inframap-pole-synced', { detail: { id: item.id } }));
+        }
       } catch (itemErr: any) {
         console.warn(`[Offline Sync] Failed syncing item ${item.id}:`, itemErr);
 
