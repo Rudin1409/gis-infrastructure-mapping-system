@@ -71,7 +71,7 @@ export function createUserGpsMarkerIcon(
 
 export function createDraggablePinIcon(LInstance: typeof L) {
   const html = `
-    <div class="relative flex flex-col items-center group cursor-grab active:cursor-grabbing">
+    <div class="relative flex flex-col items-center group cursor-grab active:cursor-grabbing select-none" style="touch-action:none;-webkit-user-select:none;">
       <div class="w-10 h-10 bg-gradient-to-tr from-blue-700 to-indigo-600 rounded-full border-3 border-white shadow-xl flex items-center justify-center text-white font-bold text-xs transform transition-transform group-hover:scale-110">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-current" viewBox="0 0 24 24">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>

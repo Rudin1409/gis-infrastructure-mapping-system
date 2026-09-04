@@ -169,6 +169,7 @@ export default function PinSelectorMap({
   const activeSurveyorLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const isMountedRef = useRef<boolean>(true);
   const gpsReadingRef = useRef<GpsReading | null>(null);
+  const hasUserInteractedRef = useRef<boolean>(Boolean(initialPinCoord || originalCoord));
 
   const [isLoadingLicense, setIsLoadingLicense] = useState(true);
   const [isLicenseLocked, setIsLicenseLocked] = useState(false);
@@ -354,20 +355,24 @@ export default function PinSelectorMap({
           weight: 2.5,
           dashArray: '6, 6',
           opacity: 0.85,
+          interactive: false,
         }
       ).addTo(map);
       shiftLineRef.current = leaderLine;
     }
 
-    // Draggable Pin Marker
+    // Draggable Pin Marker with smooth auto-pan
     const pinIcon = createDraggablePinIcon(L);
     const pinMarker = L.marker([initialCenter.lat, initialCenter.lng], {
       draggable: true,
+      autoPan: true,
+      autoPanPadding: [40, 40],
+      autoPanSpeed: 10,
       icon: pinIcon,
       zIndexOffset: 1000,
     }).addTo(map);
 
-    // 🌐 Lingkaran Visual Radius Radar (75m dinamis)
+    // 🌐 Lingkaran Visual Radius Radar (75m dinamis mengikuti posisi pin)
     const radiusCircle = L.circle([initialCenter.lat, initialCenter.lng], {
       radius: 75,
       color: '#0284c7',
@@ -375,36 +380,53 @@ export default function PinSelectorMap({
       dashArray: '5, 5',
       fillColor: '#38bdf8',
       fillOpacity: 0.12,
+      interactive: false,
     }).addTo(map);
     radiusCircleRef.current = radiusCircle;
 
-    pinMarker.on('drag', (e: any) => {
-      const pos = e.target.getLatLng();
-      setPinCoord({ lat: pos.lat, lng: pos.lng });
+    const updatePinVisuals = (lat: number, lng: number) => {
+      const latLng: [number, number] = [lat, lng];
       if (radiusCircleRef.current) {
-        radiusCircleRef.current.setLatLng(pos);
+        radiusCircleRef.current.setLatLng(latLng);
       }
       if (originalCoord && shiftLineRef.current) {
         shiftLineRef.current.setLatLngs([
           [originalCoord.lat, originalCoord.lng],
-          [pos.lat, pos.lng],
+          latLng,
         ]);
       }
+      if (distanceLineRef.current && gpsReadingRef.current) {
+        distanceLineRef.current.setLatLngs([
+          [gpsReadingRef.current.latitude, gpsReadingRef.current.longitude],
+          latLng,
+        ]);
+      }
+    };
+
+    pinMarker.on('dragstart', () => {
+      hasUserInteractedRef.current = true;
+    });
+
+    pinMarker.on('drag', (e: any) => {
+      hasUserInteractedRef.current = true;
+      const pos = e.target.getLatLng();
+      updatePinVisuals(pos.lat, pos.lng);
+      setPinCoord({ lat: pos.lat, lng: pos.lng });
+    });
+
+    pinMarker.on('dragend', (e: any) => {
+      hasUserInteractedRef.current = true;
+      const pos = e.target.getLatLng();
+      updatePinVisuals(pos.lat, pos.lng);
+      setPinCoord({ lat: pos.lat, lng: pos.lng });
     });
 
     // Tap map anywhere to move pin immediately
     map.on('click', (e: L.LeafletMouseEvent) => {
+      hasUserInteractedRef.current = true;
       pinMarker.setLatLng(e.latlng);
+      updatePinVisuals(e.latlng.lat, e.latlng.lng);
       setPinCoord({ lat: e.latlng.lat, lng: e.latlng.lng });
-      if (radiusCircleRef.current) {
-        radiusCircleRef.current.setLatLng(e.latlng);
-      }
-      if (originalCoord && shiftLineRef.current) {
-        shiftLineRef.current.setLatLngs([
-          [originalCoord.lat, originalCoord.lng],
-          [e.latlng.lat, e.latlng.lng],
-        ]);
-      }
     });
 
     pinMarkerRef.current = pinMarker;
@@ -426,7 +448,7 @@ export default function PinSelectorMap({
 
     // Watch position continuously for live satellite refinement and dynamic surveyor movement
     let watchId: number | null = null;
-    if (!isEditingSavedLocation && typeof navigator !== 'undefined' && navigator.geolocation) {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           if (!isMountedRef.current || !mapInstanceRef.current) return;
@@ -438,17 +460,34 @@ export default function PinSelectorMap({
             timestamp: pos.timestamp,
           });
 
+          // 📍 Update device surveyor marker (blue dot)
           if (surveyorMarkerRef.current) {
             surveyorMarkerRef.current.setLatLng([latitude, longitude]);
+          } else if (mapInstanceRef.current) {
+            const surveyorIcon = createSurveyorBlueDotIcon(L);
+            surveyorMarkerRef.current = L.marker([latitude, longitude], {
+              icon: surveyorIcon,
+              zIndexOffset: 500,
+              interactive: false,
+            }).addTo(mapInstanceRef.current);
           }
 
-          // 📍 Lingkaran radius dinamis selalu bergerak presisi mengikuti langkah surveyor
-          if (radiusCircleRef.current) {
-            radiusCircleRef.current.setLatLng([latitude, longitude]);
-          }
-          if (pinMarkerRef.current) {
+          // Pin marker is ONLY placed on first fix if user NEVER moved pin
+          // and no initialPinCoord or originalCoord was provided.
+          if (!hasUserInteractedRef.current && pinMarkerRef.current) {
+            hasUserInteractedRef.current = true;
             pinMarkerRef.current.setLatLng([latitude, longitude]);
+            updatePinVisuals(latitude, longitude);
             setPinCoord({ lat: latitude, lng: longitude });
+          }
+
+          // Update distance line connecting surveyor to current pin position
+          if (distanceLineRef.current && pinMarkerRef.current) {
+            const currentPinPos = pinMarkerRef.current.getLatLng();
+            distanceLineRef.current.setLatLngs([
+              [latitude, longitude],
+              [currentPinPos.lat, currentPinPos.lng],
+            ]);
           }
         },
         () => {},
@@ -709,18 +748,17 @@ export default function PinSelectorMap({
               }).addTo(map);
             }
 
-            // If pin is still at default Lubuklinggau center, place pin near user
-            if (
-              pinMarker &&
-              Math.abs(pinCoord.lat - LUBUKLINGGAU_CENTER.lat) < 0.001 &&
-              Math.abs(pinCoord.lng - LUBUKLINGGAU_CENTER.lng) < 0.001
-            ) {
+            // If user has NOT manually chosen/dragged a location yet, initialize pin to GPS position
+            if (!hasUserInteractedRef.current && pinMarker) {
+              hasUserInteractedRef.current = true;
               pinMarker.setLatLng([latitude, longitude]);
+              if (radiusCircleRef.current) {
+                radiusCircleRef.current.setLatLng([latitude, longitude]);
+              }
               setPinCoord({ lat: latitude, lng: longitude });
+              // Zoom deep into user position (Level 19)
+              map.setView([latitude, longitude], 19, { animate: true });
             }
-
-            // Zoom deep into user position (Level 19)
-            map.setView([latitude, longitude], 19, { animate: true });
           } catch (err) {
             console.warn('Leaflet map update safely ignored:', err);
           }
@@ -755,8 +793,24 @@ export default function PinSelectorMap({
       if (data && data.length > 0) {
         const lat = parseFloat(data[0].lat);
         const lng = parseFloat(data[0].lon);
+        hasUserInteractedRef.current = true;
         if (pinMarkerRef.current) {
           pinMarkerRef.current.setLatLng([lat, lng]);
+        }
+        if (radiusCircleRef.current) {
+          radiusCircleRef.current.setLatLng([lat, lng]);
+        }
+        if (originalCoord && shiftLineRef.current) {
+          shiftLineRef.current.setLatLngs([
+            [originalCoord.lat, originalCoord.lng],
+            [lat, lng],
+          ]);
+        }
+        if (distanceLineRef.current && gpsReadingRef.current) {
+          distanceLineRef.current.setLatLngs([
+            [gpsReadingRef.current.latitude, gpsReadingRef.current.longitude],
+            [lat, lng],
+          ]);
         }
         setPinCoord({ lat, lng });
         mapInstanceRef.current.setView([lat, lng], 19, { animate: true });
@@ -805,7 +859,23 @@ export default function PinSelectorMap({
   const centerPinToMap = () => {
     if (!mapInstanceRef.current || !pinMarkerRef.current) return;
     const center = mapInstanceRef.current.getCenter();
+    hasUserInteractedRef.current = true;
     pinMarkerRef.current.setLatLng(center);
+    if (radiusCircleRef.current) {
+      radiusCircleRef.current.setLatLng(center);
+    }
+    if (originalCoord && shiftLineRef.current) {
+      shiftLineRef.current.setLatLngs([
+        [originalCoord.lat, originalCoord.lng],
+        [center.lat, center.lng],
+      ]);
+    }
+    if (distanceLineRef.current && gpsReadingRef.current) {
+      distanceLineRef.current.setLatLngs([
+        [gpsReadingRef.current.latitude, gpsReadingRef.current.longitude],
+        [center.lat, center.lng],
+      ]);
+    }
     setPinCoord({ lat: center.lat, lng: center.lng });
   };
 
@@ -820,20 +890,58 @@ export default function PinSelectorMap({
     }
   };
 
+  // Explicitly snap pin to surveyor's current GPS location
+  const snapPinToGps = () => {
+    if (!gpsReading || !pinMarkerRef.current || !mapInstanceRef.current) {
+      requestGpsLocation();
+      return;
+    }
+    hasUserInteractedRef.current = true;
+    const { latitude, longitude } = gpsReading;
+    pinMarkerRef.current.setLatLng([latitude, longitude]);
+    if (radiusCircleRef.current) {
+      radiusCircleRef.current.setLatLng([latitude, longitude]);
+    }
+    if (originalCoord && shiftLineRef.current) {
+      shiftLineRef.current.setLatLngs([
+        [originalCoord.lat, originalCoord.lng],
+        [latitude, longitude],
+      ]);
+    }
+    if (distanceLineRef.current) {
+      distanceLineRef.current.setLatLngs([
+        [latitude, longitude],
+        [latitude, longitude],
+      ]);
+    }
+    setPinCoord({ lat: latitude, lng: longitude });
+    mapInstanceRef.current.panTo([latitude, longitude]);
+  };
+
   const shiftFromOriginal = originalCoord
     ? calculateHaversineDistance(originalCoord, pinCoord)
     : 0;
 
   const resetToOriginal = () => {
     if (!originalCoord || !pinMarkerRef.current || !mapInstanceRef.current) return;
+    hasUserInteractedRef.current = true;
     pinMarkerRef.current.setLatLng([originalCoord.lat, originalCoord.lng]);
-    setPinCoord(originalCoord);
+    if (radiusCircleRef.current) {
+      radiusCircleRef.current.setLatLng([originalCoord.lat, originalCoord.lng]);
+    }
     if (shiftLineRef.current) {
       shiftLineRef.current.setLatLngs([
         [originalCoord.lat, originalCoord.lng],
         [originalCoord.lat, originalCoord.lng],
       ]);
     }
+    if (distanceLineRef.current && gpsReadingRef.current) {
+      distanceLineRef.current.setLatLngs([
+        [gpsReadingRef.current.latitude, gpsReadingRef.current.longitude],
+        [originalCoord.lat, originalCoord.lng],
+      ]);
+    }
+    setPinCoord(originalCoord);
     mapInstanceRef.current.panTo([originalCoord.lat, originalCoord.lng]);
   };
 
@@ -857,10 +965,17 @@ export default function PinSelectorMap({
       ? 'warning'
       : 'clear';
 
-  // Handle confirmation
+  // Handle confirmation: read coordinates accurately directly from pinMarker if active
   const handleConfirm = () => {
+    const finalCoord = pinMarkerRef.current
+      ? {
+          lat: Number(pinMarkerRef.current.getLatLng().lat.toFixed(7)),
+          lng: Number(pinMarkerRef.current.getLatLng().lng.toFixed(7)),
+        }
+      : pinCoord;
+
     onConfirmLocation({
-      poleCoord: pinCoord,
+      poleCoord: finalCoord,
       deviceCoord: deviceCoord || undefined,
       gpsAccuracy: gpsReading?.accuracy,
       distanceFromDevice: distance,
@@ -1014,18 +1129,27 @@ export default function PinSelectorMap({
             )}
           </div>
 
-          {originalCoord && (
-            <div className="text-[8px] text-amber-300 border-t border-white/10 pt-0.5 flex items-center justify-between">
-              <span>Geser: <strong>{formatDistance(shiftFromOriginal)}</strong></span>
+          <div className="text-[8px] text-slate-300 border-t border-white/10 pt-1 flex items-center justify-between gap-1">
+            <button
+              type="button"
+              onClick={snapPinToGps}
+              className="px-2 py-0.5 bg-blue-600/80 hover:bg-blue-600 active:scale-95 text-white rounded text-[8px] font-bold flex items-center gap-1 cursor-pointer transition-all"
+              title="Pindahkan pin ke posisi GPS perangkat saat ini"
+            >
+              <Crosshair className="w-2.5 h-2.5" />
+              <span>Pin ke GPS</span>
+            </button>
+            {originalCoord && (
               <button
                 type="button"
                 onClick={resetToOriginal}
-                className="px-1 py-0.2 bg-amber-500/30 hover:bg-amber-500/50 text-amber-200 rounded text-[8px] font-bold cursor-pointer"
+                className="px-2 py-0.5 bg-amber-500/30 hover:bg-amber-500/50 text-amber-200 rounded text-[8px] font-bold cursor-pointer transition-all"
+                title={`Geser: ${formatDistance(shiftFromOriginal)}`}
               >
-                Reset
+                Reset ({formatDistance(shiftFromOriginal)})
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Nearby existing poles and active surveyor radar */}
