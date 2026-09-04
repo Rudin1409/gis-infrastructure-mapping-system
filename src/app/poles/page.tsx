@@ -4,6 +4,7 @@ import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
 import { Database, Map, PlusCircle, ShieldCheck } from 'lucide-react';
 import PoleListFilterClient from '@/components/survey/PoleListFilterClient';
+import ExportPolesModal from '@/components/export/ExportPolesModal';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,6 +54,11 @@ export default async function PolesListPage({
               <Map className="w-4 h-4" />
               <span>Peta GIS</span>
             </Link>
+            <ExportPolesModal
+              currentPoles={allPoles}
+              totalPolesCount={allPoles.length}
+              triggerClassName="flex-1 lg:flex-none py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer border border-emerald-400/30"
+            />
             <Link
               href="/poles/new"
               className="flex-1 lg:flex-none py-2.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all border border-blue-400/30"

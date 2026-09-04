@@ -25,6 +25,7 @@ import {
   Flame,
   Check,
 } from 'lucide-react';
+import ExportPolesModal from '@/components/export/ExportPolesModal';
 
 interface PoleListFilterClientProps {
   initialPoles: Pole[];
@@ -550,6 +551,29 @@ export default function PoleListFilterClient({
           </button>
         </div>
       )}
+
+      {/* Header bar: Count & Export Modal */}
+      <div className="flex items-center justify-between gap-3 px-1 py-1">
+        <div className="text-xs text-slate-600 font-bold flex items-center gap-1.5">
+          <span>Menampilkan</span>
+          <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-blue-600 font-black font-mono shadow-2xs">
+            {filteredPoles.length}
+          </span>
+          <span>tiang</span>
+        </div>
+
+        <ExportPolesModal
+          currentPoles={filteredPoles}
+          totalPolesCount={livePoles.length}
+          activeFiltersDesc={
+            selectedKecamatan !== 'ALL'
+              ? `Kec. ${selectedKecamatan}`
+              : selectedProvider !== 'ALL'
+              ? `Provider ${selectedProvider}`
+              : undefined
+          }
+        />
+      </div>
 
       {/* 4. Results List of Poles */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
