@@ -26,10 +26,10 @@ export interface KelurahanCentroid {
  */
 export const LUBUKLINGGAU_KELURAHAN_CENTROIDS: KelurahanCentroid[] = [
   // 1. Lubuklinggau Timur I (8 Kelurahan)
-  { name: 'Air Kuti', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2755, lng: 102.8790 } },
+  { name: 'Air Kuti', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.28086, lng: 102.90846 } },
   { name: 'Batu Urip Taba', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2820, lng: 102.8710 } },
   { name: 'Majapahit', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2920, lng: 102.8680 } },
-  { name: 'Nikan Jaya', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2790, lng: 102.8850 } },
+  { name: 'Nikan Jaya', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.27597, lng: 102.91919 } },
   { name: 'Taba Jemekeh', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2964, lng: 102.8617 } },
   { name: 'Taba Koji', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2990, lng: 102.8590 } },
   { name: 'Taba Lestari', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2860, lng: 102.8640 } },
@@ -230,6 +230,14 @@ export interface RoadCorridor {
 }
 
 export const LUBUKLINGGAU_MAJOR_ROAD_CORRIDORS: RoadCorridor[] = [
+  {
+    name: 'Jl. S.Kuti',
+    minLat: -3.2830,
+    maxLat: -3.2750,
+    minLng: 102.9100,
+    maxLng: 102.9125,
+    kecamatan: 'Lubuklinggau Timur I',
+  },
   {
     name: 'Jl. Garuda',
     minLat: -3.336,
@@ -452,9 +460,9 @@ export async function reverseGeocodeLocation(
     }
   }
 
-  // Fallback 2: Jika bukan di koridor utama terdaftar, gunakan identitas area kelurahan terdekat
+  // Fallback 2: Jika nama jalan tidak terdaftar di OSM atau koridor utama, kosongkan nama jalan (tidak mengarang)
   if (!detectedRoad) {
-    detectedRoad = `Jl. Area Kel. ${detectedKelurahan}`;
+    detectedRoad = '';
   }
 
   // Generate kode aset penomoran otomatis (e.g. LLG-T1-TJ-001)

@@ -690,7 +690,7 @@ export default function CableAuditClient({
                       )}
                     </div>
                     <p className="text-[11px] font-semibold text-slate-700 leading-tight">
-                      {pole.road}
+                      {pole.road || (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}
                     </p>
                   </div>
 

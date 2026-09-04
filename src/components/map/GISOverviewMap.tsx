@@ -3472,7 +3472,17 @@ export default function GISOverviewMap({
             <div className="flex items-center gap-1.5 min-w-0">
               <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
               <span className="truncate">
-                <strong className="text-slate-900">{selectedPole.road}</strong>, Kel. {selectedPole.kelurahan}
+                {selectedPole.road ? (
+                  <>
+                    <strong className="text-slate-900">{selectedPole.road}</strong>
+                    {selectedPole.kelurahan ? `, Kel. ${selectedPole.kelurahan}` : ''}
+                    {selectedPole.kecamatan ? `, Kec. ${selectedPole.kecamatan}` : ''}
+                  </>
+                ) : (
+                  <strong className="text-slate-900">
+                    {selectedPole.kecamatan ? `Kec. ${selectedPole.kecamatan}` : (selectedPole.kelurahan ? `Kel. ${selectedPole.kelurahan}` : 'Kota Lubuklinggau')}
+                  </strong>
+                )}
               </span>
             </div>
             <a

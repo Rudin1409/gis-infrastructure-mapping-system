@@ -232,7 +232,7 @@ export default async function PoleDetailPage({
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
             <span className="text-slate-400 block text-[9px] uppercase font-bold">Alamat Spasial</span>
             <span className="font-bold text-slate-900 block mt-0.5 text-xs">
-              {pole.road}
+              {pole.road || (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}
             </span>
             {pole.patokanLokasi && (
               <span className="text-[10px] text-slate-600 block mt-0.5">
@@ -240,7 +240,11 @@ export default async function PoleDetailPage({
               </span>
             )}
             <span className="text-[10px] text-slate-500 block mt-0.5">
-              Kel. {pole.kelurahan}, Kec. {pole.kecamatan}
+              {pole.road ? (
+                `Kel. ${pole.kelurahan}, Kec. ${pole.kecamatan}`
+              ) : (
+                pole.kelurahan ? `Kel. ${pole.kelurahan}, Kota Lubuklinggau` : 'Kota Lubuklinggau'
+              )}
             </span>
           </div>
 

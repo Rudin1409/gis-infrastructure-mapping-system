@@ -1002,7 +1002,11 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                         <p className="text-[11px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
                           <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
                           <span className="truncate">
-                            {pole.road || 'Jalan Utama'}{pole.kelurahan ? `, ${pole.kelurahan}` : (pole.kecamatan ? `, ${pole.kecamatan}` : '')}
+                            {pole.road ? (
+                              `${pole.road}${pole.kelurahan ? `, Kel. ${pole.kelurahan}` : ''}${pole.kecamatan ? `, Kec. ${pole.kecamatan}` : ''}`
+                            ) : (
+                              pole.kecamatan ? `Kec. ${pole.kecamatan}` : (pole.kelurahan ? `Kel. ${pole.kelurahan}` : 'Kota Lubuklinggau')
+                            )}
                           </span>
                         </p>
 

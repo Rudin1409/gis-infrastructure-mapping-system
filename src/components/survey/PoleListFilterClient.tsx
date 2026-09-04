@@ -706,11 +706,13 @@ export default function PoleListFilterClient({
                   </div>
                   <div className="text-xs text-slate-600 flex items-start gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="line-clamp-1">{pole.road}</span>
+                    <span className="line-clamp-1">{pole.road || (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}</span>
                   </div>
-                  <div className="text-[10px] text-slate-400 pl-5">
-                    Kel. {pole.kelurahan}, Kec. {pole.kecamatan}
-                  </div>
+                  {pole.road && (
+                    <div className="text-[10px] text-slate-400 pl-5">
+                      Kel. {pole.kelurahan}, Kec. {pole.kecamatan}
+                    </div>
+                  )}
                 </div>
 
                 {/* Hazard Tags (If any) */}

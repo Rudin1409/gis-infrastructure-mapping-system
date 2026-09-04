@@ -5,6 +5,57 @@ export const dynamic = 'force-dynamic';
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 30; // 30 minutes cache
 
+function getGoogleMapsApiKey() {
+  return (
+    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ||
+    ''
+  );
+}
+
+function findGoogleComponent(
+  components: Array<{ long_name: string; short_name: string; types: string[] }>,
+  type: string
+) {
+  return components.find((component) => component.types.includes(type))?.long_name || '';
+}
+
+function normalizeGoogleGeocodeResult(payload: any) {
+  const results = Array.isArray(payload?.results) ? payload.results : [];
+  if (payload?.status !== 'OK' || results.length === 0) return null;
+
+  const routeResult =
+    results.find((result: any) =>
+      result.address_components?.some((component: any) => component.types?.includes('route'))
+    ) || results[0];
+
+  const components = routeResult.address_components || [];
+  const address = {
+    road: findGoogleComponent(components, 'route'),
+    neighbourhood:
+      findGoogleComponent(components, 'neighborhood') ||
+      findGoogleComponent(components, 'sublocality_level_2'),
+    suburb: findGoogleComponent(components, 'sublocality_level_1'),
+    village:
+      findGoogleComponent(components, 'administrative_area_level_4') ||
+      findGoogleComponent(components, 'administrative_area_level_3'),
+    city:
+      findGoogleComponent(components, 'locality') ||
+      findGoogleComponent(components, 'administrative_area_level_2'),
+    state: findGoogleComponent(components, 'administrative_area_level_1'),
+    postcode: findGoogleComponent(components, 'postal_code'),
+    country: findGoogleComponent(components, 'country'),
+  };
+
+  return {
+    display_name: routeResult.formatted_address || '',
+    address,
+    extratags: {},
+    namedetails: {},
+    source: 'google',
+  };
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const lat = searchParams.get('lat');
@@ -21,6 +72,31 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const googleApiKey = getGoogleMapsApiKey();
+
+    if (googleApiKey) {
+      const googleUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${encodeURIComponent(
+        `${lat},${lng}`
+      )}&language=id&region=id&key=${encodeURIComponent(googleApiKey)}`;
+      const googleRes = await fetch(googleUrl, {
+        next: { revalidate: 3600 },
+      });
+
+      if (googleRes.ok) {
+        const googlePayload = await googleRes.json();
+        const normalizedGoogleData = normalizeGoogleGeocodeResult(googlePayload);
+        if (normalizedGoogleData) {
+          cache.set(cacheKey, { data: normalizedGoogleData, timestamp: Date.now() });
+          return NextResponse.json({
+            success: true,
+            data: normalizedGoogleData,
+          });
+        }
+      } else {
+        console.warn('Google reverse geocode status:', googleRes.status);
+      }
+    }
+
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=19&addressdetails=1&extratags=1&namedetails=1`;
     const res = await fetch(url, {
       headers: {

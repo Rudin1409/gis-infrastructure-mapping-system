@@ -633,7 +633,7 @@ export default function PinSelectorMap({
         <div style="min-width:170px">
           <strong>${escapeHtml(pole.poleCode || pole.id)}</strong><br/>
           <span>${escapeHtml(pole.providerName || 'Data tiang')}</span><br/>
-          <small>${escapeHtml(pole.road || '-')}, ${escapeHtml(pole.kelurahan || '-')}</small><br/>
+          <small>${escapeHtml(pole.road ? `${pole.road}, Kel. ${pole.kelurahan || '-'}` : (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau'))}</small><br/>
           <b>Jarak: ${escapeHtml(formatDistance(pole.distanceMeters || 0))}</b>
         </div>
       `);
