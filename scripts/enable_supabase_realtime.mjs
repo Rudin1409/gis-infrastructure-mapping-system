@@ -10,7 +10,7 @@ const client = new Client({
   user: `postgres.${PROJECT_REF}`,
   password: DB_PASSWORD,
   database: 'postgres',
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 async function enableRealtime() {

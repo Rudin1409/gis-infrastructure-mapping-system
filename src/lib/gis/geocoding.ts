@@ -31,92 +31,240 @@ export interface ReverseGeocodeOptions {
  */
 export const LUBUKLINGGAU_KELURAHAN_CENTROIDS: KelurahanCentroid[] = [
   // 1. Lubuklinggau Timur I (8 Kelurahan)
-  { name: 'Air Kuti', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.28086, lng: 102.90846 } },
-  { name: 'Batu Urip Taba', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2820, lng: 102.8710 } },
-  { name: 'Majapahit', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2920, lng: 102.8680 } },
-  { name: 'Nikan Jaya', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.27597, lng: 102.91919 } },
-  { name: 'Taba Jemekeh', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2964, lng: 102.8617 } },
-  { name: 'Taba Koji', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2990, lng: 102.8590 } },
-  { name: 'Taba Lestari', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2860, lng: 102.8640 } },
+  {
+    name: 'Air Kuti',
+    kecamatan: 'Lubuklinggau Timur I',
+    center: { lat: -3.28086, lng: 102.90846 },
+  },
+  {
+    name: 'Batu Urip Taba',
+    kecamatan: 'Lubuklinggau Timur I',
+    center: { lat: -3.282, lng: 102.871 },
+  },
+  { name: 'Majapahit', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.292, lng: 102.868 } },
+  {
+    name: 'Nikan Jaya',
+    kecamatan: 'Lubuklinggau Timur I',
+    center: { lat: -3.27597, lng: 102.91919 },
+  },
+  {
+    name: 'Taba Jemekeh',
+    kecamatan: 'Lubuklinggau Timur I',
+    center: { lat: -3.2964, lng: 102.8617 },
+  },
+  { name: 'Taba Koji', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.299, lng: 102.859 } },
+  {
+    name: 'Taba Lestari',
+    kecamatan: 'Lubuklinggau Timur I',
+    center: { lat: -3.286, lng: 102.864 },
+  },
   { name: 'Watervang', kecamatan: 'Lubuklinggau Timur I', center: { lat: -3.2847, lng: 102.8805 } },
 
   // 2. Lubuklinggau Timur II (9 Kelurahan)
-  { name: 'Cereme Taba', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.2980, lng: 102.8640 } },
-  { name: 'Dempo', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3020, lng: 102.8630 } },
-  { name: 'Jawa Kanan', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.2985, lng: 102.8570 } },
-  { name: 'Jawa Kiri', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.2995, lng: 102.8560 } },
-  { name: 'Karya Bakti', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3040, lng: 102.8600 } },
-  { name: 'Mesat Jaya', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3080, lng: 102.8640 } },
-  { name: 'Mesat Seni', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3110, lng: 102.8660 } },
-  { name: 'Wira Karya', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3010, lng: 102.8590 } },
-  { name: 'Zellaz', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.3060, lng: 102.8580 } },
+  {
+    name: 'Cereme Taba',
+    kecamatan: 'Lubuklinggau Timur II',
+    center: { lat: -3.298, lng: 102.864 },
+  },
+  { name: 'Dempo', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.302, lng: 102.863 } },
+  {
+    name: 'Jawa Kanan',
+    kecamatan: 'Lubuklinggau Timur II',
+    center: { lat: -3.2985, lng: 102.857 },
+  },
+  { name: 'Jawa Kiri', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.2995, lng: 102.856 } },
+  { name: 'Karya Bakti', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.304, lng: 102.86 } },
+  { name: 'Mesat Jaya', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.308, lng: 102.864 } },
+  { name: 'Mesat Seni', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.311, lng: 102.866 } },
+  { name: 'Wira Karya', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.301, lng: 102.859 } },
+  { name: 'Zellaz', kecamatan: 'Lubuklinggau Timur II', center: { lat: -3.306, lng: 102.858 } },
 
   // 3. Lubuklinggau Barat I (11 Kelurahan)
-  { name: 'Bandung Kiri', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2960, lng: 102.8460 } },
-  { name: 'Bandung Ujung', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2930, lng: 102.8420 } },
-  { name: 'Kayu Ara', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3020, lng: 102.8360 } },
-  { name: 'Lubuk Aman', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2990, lng: 102.8410 } },
-  { name: 'Lubuk Tanjung', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3110, lng: 102.8300 } },
-  { name: 'Muara Enim', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2920, lng: 102.8380 } },
-  { name: 'Pelita Jaya', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2890, lng: 102.8490 } },
-  { name: 'Sukajadi', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3080, lng: 102.8420 } },
-  { name: 'Tanjung Aman', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3020, lng: 102.8480 } },
-  { name: 'Tanjung Indah', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.2970, lng: 102.8500 } },
-  { name: 'Watas Lubuk Durian', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.3150, lng: 102.7850 } },
+  {
+    name: 'Bandung Kiri',
+    kecamatan: 'Lubuklinggau Barat I',
+    center: { lat: -3.296, lng: 102.846 },
+  },
+  {
+    name: 'Bandung Ujung',
+    kecamatan: 'Lubuklinggau Barat I',
+    center: { lat: -3.293, lng: 102.842 },
+  },
+  { name: 'Kayu Ara', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.302, lng: 102.836 } },
+  { name: 'Lubuk Aman', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.299, lng: 102.841 } },
+  {
+    name: 'Lubuk Tanjung',
+    kecamatan: 'Lubuklinggau Barat I',
+    center: { lat: -3.311, lng: 102.83 },
+  },
+  { name: 'Muara Enim', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.292, lng: 102.838 } },
+  { name: 'Pelita Jaya', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.289, lng: 102.849 } },
+  { name: 'Sukajadi', kecamatan: 'Lubuklinggau Barat I', center: { lat: -3.308, lng: 102.842 } },
+  {
+    name: 'Tanjung Aman',
+    kecamatan: 'Lubuklinggau Barat I',
+    center: { lat: -3.302, lng: 102.848 },
+  },
+  {
+    name: 'Tanjung Indah',
+    kecamatan: 'Lubuklinggau Barat I',
+    center: { lat: -3.297, lng: 102.85 },
+  },
+  {
+    name: 'Watas Lubuk Durian',
+    kecamatan: 'Lubuklinggau Barat I',
+    center: { lat: -3.315, lng: 102.785 },
+  },
 
   // 4. Lubuklinggau Barat II (8 Kelurahan)
-  { name: 'Keputraan', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2930, lng: 102.8560 } },
-  { name: 'Lubuklinggau Ilir', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2910, lng: 102.8540 } },
-  { name: 'Lubuklinggau Ulu', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2880, lng: 102.8520 } },
-  { name: 'Pasar Permiri', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2955, lng: 102.8545 } },
-  { name: 'Sidorejo', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2970, lng: 102.8510 } },
-  { name: 'Tapak Lebar', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2940, lng: 102.8490 } },
-  { name: 'Ulak Lebar', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2860, lng: 102.8460 } },
-  { name: 'Wisma Karya', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.2985, lng: 102.8525 } },
+  { name: 'Keputraan', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.293, lng: 102.856 } },
+  {
+    name: 'Lubuklinggau Ilir',
+    kecamatan: 'Lubuklinggau Barat II',
+    center: { lat: -3.291, lng: 102.854 },
+  },
+  {
+    name: 'Lubuklinggau Ulu',
+    kecamatan: 'Lubuklinggau Barat II',
+    center: { lat: -3.288, lng: 102.852 },
+  },
+  {
+    name: 'Pasar Permiri',
+    kecamatan: 'Lubuklinggau Barat II',
+    center: { lat: -3.2955, lng: 102.8545 },
+  },
+  { name: 'Sidorejo', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.297, lng: 102.851 } },
+  {
+    name: 'Tapak Lebar',
+    kecamatan: 'Lubuklinggau Barat II',
+    center: { lat: -3.294, lng: 102.849 },
+  },
+  { name: 'Ulak Lebar', kecamatan: 'Lubuklinggau Barat II', center: { lat: -3.286, lng: 102.846 } },
+  {
+    name: 'Wisma Karya',
+    kecamatan: 'Lubuklinggau Barat II',
+    center: { lat: -3.2985, lng: 102.8525 },
+  },
 
   // 5. Lubuklinggau Selatan I (9 Kelurahan)
-  { name: 'Air Kati', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3680, lng: 102.8300 } },
-  { name: 'Air Temam', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3480, lng: 102.8380 } },
-  { name: 'Bakti Karya', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3520, lng: 102.8450 } },
-  { name: 'Jukung', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3600, lng: 102.8520 } },
-  { name: 'Kelingi', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3420, lng: 102.8310 } },
-  { name: 'Lubuk Binjai', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3750, lng: 102.8220 } },
-  { name: 'Lubuk Kupang', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3380, lng: 102.8480 } },
-  { name: 'Perumnas Rahmah', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3590, lng: 102.8390 } },
-  { name: 'Rahmah', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.3650, lng: 102.8350 } },
+  { name: 'Air Kati', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.368, lng: 102.83 } },
+  { name: 'Air Temam', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.348, lng: 102.838 } },
+  {
+    name: 'Bakti Karya',
+    kecamatan: 'Lubuklinggau Selatan I',
+    center: { lat: -3.352, lng: 102.845 },
+  },
+  { name: 'Jukung', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.36, lng: 102.852 } },
+  { name: 'Kelingi', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.342, lng: 102.831 } },
+  {
+    name: 'Lubuk Binjai',
+    kecamatan: 'Lubuklinggau Selatan I',
+    center: { lat: -3.375, lng: 102.822 },
+  },
+  {
+    name: 'Lubuk Kupang',
+    kecamatan: 'Lubuklinggau Selatan I',
+    center: { lat: -3.338, lng: 102.848 },
+  },
+  {
+    name: 'Perumnas Rahmah',
+    kecamatan: 'Lubuklinggau Selatan I',
+    center: { lat: -3.359, lng: 102.839 },
+  },
+  { name: 'Rahmah', kecamatan: 'Lubuklinggau Selatan I', center: { lat: -3.365, lng: 102.835 } },
 
   // 6. Lubuklinggau Selatan II (9 Kelurahan)
-  { name: 'Batu Urip', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3180, lng: 102.8720 } },
-  { name: 'Karang Ketuan', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3350, lng: 102.8650 } },
-  { name: 'Marga Mulya', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3190, lng: 102.8620 } },
-  { name: 'Marga Rahayu', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3240, lng: 102.8640 } },
-  { name: 'Moneng Sepati', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3150, lng: 102.8600 } },
-  { name: 'Simpang Periuk', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3282, lng: 102.8710 } },
-  { name: 'Siring Agung', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3380, lng: 102.8780 } },
-  { name: 'Tabarenah', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3220, lng: 102.8850 } },
-  { name: 'Tanah Periuk', kecamatan: 'Lubuklinggau Selatan II', center: { lat: -3.3320, lng: 102.8820 } },
+  {
+    name: 'Batu Urip',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.318, lng: 102.872 },
+  },
+  {
+    name: 'Karang Ketuan',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.335, lng: 102.865 },
+  },
+  {
+    name: 'Marga Mulya',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.319, lng: 102.862 },
+  },
+  {
+    name: 'Marga Rahayu',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.324, lng: 102.864 },
+  },
+  {
+    name: 'Moneng Sepati',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.315, lng: 102.86 },
+  },
+  {
+    name: 'Simpang Periuk',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.3282, lng: 102.871 },
+  },
+  {
+    name: 'Siring Agung',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.338, lng: 102.878 },
+  },
+  {
+    name: 'Tabarenah',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.322, lng: 102.885 },
+  },
+  {
+    name: 'Tanah Periuk',
+    kecamatan: 'Lubuklinggau Selatan II',
+    center: { lat: -3.332, lng: 102.882 },
+  },
 
   // 7. Lubuklinggau Utara I (9 Kelurahan)
-  { name: 'Belalau I', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2350, lng: 102.8720 } },
-  { name: 'Belalau II', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2280, lng: 102.8680 } },
-  { name: 'Durian Rampak', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2510, lng: 102.8790 } },
-  { name: 'Margasari', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2100, lng: 102.8850 } },
-  { name: 'Petanang Ilir', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2400, lng: 102.8950 } },
-  { name: 'Petanang Ulu', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2450, lng: 102.8900 } },
-  { name: 'Sumber Agung', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2180, lng: 102.8920 } },
-  { name: 'Tanjung Raya', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2550, lng: 102.8820 } },
-  { name: 'Taba Baru', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.2480, lng: 102.8740 } },
+  { name: 'Belalau I', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.235, lng: 102.872 } },
+  { name: 'Belalau II', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.228, lng: 102.868 } },
+  {
+    name: 'Durian Rampak',
+    kecamatan: 'Lubuklinggau Utara I',
+    center: { lat: -3.251, lng: 102.879 },
+  },
+  { name: 'Margasari', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.21, lng: 102.885 } },
+  {
+    name: 'Petanang Ilir',
+    kecamatan: 'Lubuklinggau Utara I',
+    center: { lat: -3.24, lng: 102.895 },
+  },
+  { name: 'Petanang Ulu', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.245, lng: 102.89 } },
+  {
+    name: 'Sumber Agung',
+    kecamatan: 'Lubuklinggau Utara I',
+    center: { lat: -3.218, lng: 102.892 },
+  },
+  {
+    name: 'Tanjung Raya',
+    kecamatan: 'Lubuklinggau Utara I',
+    center: { lat: -3.255, lng: 102.882 },
+  },
+  { name: 'Taba Baru', kecamatan: 'Lubuklinggau Utara I', center: { lat: -3.248, lng: 102.874 } },
 
   // 8. Lubuklinggau Utara II (9 Kelurahan)
-  { name: 'Batu Febri', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2800, lng: 102.8520 } },
-  { name: 'Kenanga', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2750, lng: 102.8550 } },
-  { name: 'Megang', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2820, lng: 102.8610 } },
-  { name: 'Pasar Satelit', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2780, lng: 102.8650 } },
-  { name: 'Ponorogo', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2710, lng: 102.8580 } },
-  { name: 'Puncak Kemuning', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2680, lng: 102.8630 } },
-  { name: 'Senalang', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2730, lng: 102.8680 } },
-  { name: 'Sumberejo', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2640, lng: 102.8550 } },
-  { name: 'Ulaksurung', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.2840, lng: 102.8530 } },
+  { name: 'Batu Febri', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.28, lng: 102.852 } },
+  { name: 'Kenanga', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.275, lng: 102.855 } },
+  { name: 'Megang', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.282, lng: 102.861 } },
+  {
+    name: 'Pasar Satelit',
+    kecamatan: 'Lubuklinggau Utara II',
+    center: { lat: -3.278, lng: 102.865 },
+  },
+  { name: 'Ponorogo', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.271, lng: 102.858 } },
+  {
+    name: 'Puncak Kemuning',
+    kecamatan: 'Lubuklinggau Utara II',
+    center: { lat: -3.268, lng: 102.863 },
+  },
+  { name: 'Senalang', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.273, lng: 102.868 } },
+  { name: 'Sumberejo', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.264, lng: 102.855 } },
+  { name: 'Ulaksurung', kecamatan: 'Lubuklinggau Utara II', center: { lat: -3.284, lng: 102.853 } },
 ];
 
 // Ray-Casting algorithm for Spatial Point-in-Polygon (PIP)
@@ -219,7 +367,12 @@ export function formatRoadName(rawName: string): string {
   cleaned = cleaned.replace(/^jalan\s+/i, 'Jl. ');
   cleaned = cleaned.replace(/^gang\s+/i, 'Gg. ');
   cleaned = cleaned.replace(/^lorong\s+/i, 'Lr. ');
-  if (!cleaned.startsWith('Jl.') && !cleaned.startsWith('Gg.') && !cleaned.startsWith('Lr.') && !cleaned.startsWith('Komp.')) {
+  if (
+    !cleaned.startsWith('Jl.') &&
+    !cleaned.startsWith('Gg.') &&
+    !cleaned.startsWith('Lr.') &&
+    !cleaned.startsWith('Komp.')
+  ) {
     cleaned = `Jl. ${cleaned}`;
   }
   return cleaned;
@@ -237,9 +390,9 @@ export interface RoadCorridor {
 export const LUBUKLINGGAU_MAJOR_ROAD_CORRIDORS: RoadCorridor[] = [
   {
     name: 'Jl. S.Kuti',
-    minLat: -3.2830,
-    maxLat: -3.2750,
-    minLng: 102.9100,
+    minLat: -3.283,
+    maxLat: -3.275,
+    minLng: 102.91,
     maxLng: 102.9125,
     kecamatan: 'Lubuklinggau Timur I',
   },
@@ -271,13 +424,13 @@ export const LUBUKLINGGAU_MAJOR_ROAD_CORRIDORS: RoadCorridor[] = [
     name: 'Jl. Letkol Sukirno',
     minLat: -3.285,
     maxLat: -3.269,
-    minLng: 102.910,
+    minLng: 102.91,
     maxLng: 102.916,
     kecamatan: 'Lubuklinggau Timur I',
   },
   {
     name: 'Jl. Fatmawati Soekarno',
-    minLat: -3.310,
+    minLat: -3.31,
     maxLat: -3.285,
     minLng: 102.866,
     maxLng: 102.908,
@@ -293,8 +446,8 @@ export const LUBUKLINGGAU_MAJOR_ROAD_CORRIDORS: RoadCorridor[] = [
   {
     name: 'Jl. Ahmad Yani',
     minLat: -3.286,
-    maxLat: -3.260,
-    minLng: 102.850,
+    maxLat: -3.26,
+    minLng: 102.85,
     maxLng: 102.868,
     kecamatan: 'Lubuklinggau Utara II',
   },
@@ -369,7 +522,9 @@ export async function reverseGeocodeLocation(
       // A. Coba panggil server proxy API internal terlebih dahulu (cepat & ada cache)
       if (typeof window !== 'undefined') {
         try {
-          const proxyRes = await fetch(`/api/gis/reverse-geocode?lat=${coord.lat}&lng=${coord.lng}`);
+          const proxyRes = await fetch(
+            `/api/gis/reverse-geocode?lat=${coord.lat}&lng=${coord.lng}`
+          );
           if (proxyRes.ok) {
             const json = await proxyRes.json();
             if (json.success && json.data) {
@@ -400,11 +555,7 @@ export async function reverseGeocodeLocation(
 
         // Ekstrak nama jalan mikro
         const highConfidenceRoad =
-          addr.road ||
-          addr.pedestrian ||
-          addr.residential ||
-          addr.service ||
-          addr.living_street;
+          addr.road || addr.pedestrian || addr.residential || addr.service || addr.living_street;
         const mediumConfidenceRoad = addr.footway || addr.path || addr.highway;
         const lowConfidenceRoad = addr.neighbourhood;
         const roadCandidate = highConfidenceRoad || mediumConfidenceRoad || lowConfidenceRoad;
@@ -438,7 +589,15 @@ export async function reverseGeocodeLocation(
         }
 
         // Cek apakah OSM mengandung nama kelurahan resmi Lubuklinggau
-        const fullText = (rawDisplayName + ' ' + (addr.village || '') + ' ' + (addr.suburb || '') + ' ' + (addr.quarter || '')).toLowerCase();
+        const fullText = (
+          rawDisplayName +
+          ' ' +
+          (addr.village || '') +
+          ' ' +
+          (addr.suburb || '') +
+          ' ' +
+          (addr.quarter || '')
+        ).toLowerCase();
 
         for (const kel of candidateKelurahans) {
           const kelLower = kel.name.toLowerCase();
@@ -467,7 +626,10 @@ export async function reverseGeocodeLocation(
         coord.lng >= corridor.minLng &&
         coord.lng <= corridor.maxLng
       ) {
-        if (!corridor.kecamatan || corridor.kecamatan.toLowerCase() === detectedKecamatan.toLowerCase()) {
+        if (
+          !corridor.kecamatan ||
+          corridor.kecamatan.toLowerCase() === detectedKecamatan.toLowerCase()
+        ) {
           detectedRoad = corridor.name;
           roadConfidence = 'LOW';
           confidence = 'HIGH_SPATIAL';

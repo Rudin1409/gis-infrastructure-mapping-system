@@ -1,14 +1,14 @@
 import https from 'https';
 
 const testPoints = [
-  { name: 'Simpang Periuk (Selatan II)', lat: -3.3282, lng: 102.8710 },
+  { name: 'Simpang Periuk (Selatan II)', lat: -3.3282, lng: 102.871 },
   { name: 'Watervang (Timur I)', lat: -3.2847, lng: 102.8805 },
   { name: 'Taba Jemekeh (Timur I)', lat: -3.2964, lng: 102.8617 },
-  { name: 'Pasar Permiri / Mesat (Barat II)', lat: -3.2970, lng: 102.8550 },
-  { name: 'Sukajadi (Barat I)', lat: -3.3080, lng: 102.8420 },
-  { name: 'Petanang Ulu (Utara I)', lat: -3.2450, lng: 102.8900 },
-  { name: 'Kenanga (Utara II)', lat: -3.2750, lng: 102.8550 },
-  { name: 'Rahmah (Selatan I)', lat: -3.3650, lng: 102.8350 },
+  { name: 'Pasar Permiri / Mesat (Barat II)', lat: -3.297, lng: 102.855 },
+  { name: 'Sukajadi (Barat I)', lat: -3.308, lng: 102.842 },
+  { name: 'Petanang Ulu (Utara I)', lat: -3.245, lng: 102.89 },
+  { name: 'Kenanga (Utara II)', lat: -3.275, lng: 102.855 },
+  { name: 'Rahmah (Selatan I)', lat: -3.365, lng: 102.835 },
 ];
 
 function reverseGeocode(lat, lng) {
@@ -17,20 +17,22 @@ function reverseGeocode(lat, lng) {
     const options = {
       headers: {
         'User-Agent': 'InfraMap-Lubuklinggau/1.0 (admin@lubuklinggaukota.go.id)',
-        'Accept-Language': 'id,en'
-      }
+        'Accept-Language': 'id,en',
+      },
     };
-    https.get(url, options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          resolve(null);
-        }
-      });
-    }).on('error', (err) => resolve(null));
+    https
+      .get(url, options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      })
+      .on('error', (err) => resolve(null));
   });
 }
 
@@ -45,7 +47,7 @@ async function run() {
     } else {
       console.log('   Failed to get OSM data:', data);
     }
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
   }
 }
 

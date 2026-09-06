@@ -48,7 +48,8 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   const [isMapRepositionMode, setIsMapRepositionMode] = useState(false);
 
   // --- 1. KOORDINAT & LOKASI ---
-  const [districtsList, setDistrictsList] = useState<{ name: string; kelurahan: string[] }[]>(KECAMATAN_LUBUKLINGGAU);
+  const [districtsList, setDistrictsList] =
+    useState<{ name: string; kelurahan: string[] }[]>(KECAMATAN_LUBUKLINGGAU);
   const [coord, setCoord] = useState<Coordinates>({
     lat: pole.poleLatitude,
     lng: pole.poleLongitude,
@@ -69,19 +70,19 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   const [photoFileId, setPhotoFileId] = useState<string | undefined>(pole.photoFileId);
 
   // --- 3. INFORMASI TIANG & SPESIFIKASI ---
-  const [infrastructureCategory, setInfrastructureCategory] = useState<import('@/types/pole').InfrastructureCategory>(
-    pole.infrastructureCategory || 'FO_WIFI'
-  );
-  const [cableInstallationType, setCableInstallationType] = useState<import('@/types/pole').CableInstallationType>(
-    pole.cableInstallationType || 'UDARA'
-  );
+  const [infrastructureCategory, setInfrastructureCategory] = useState<
+    import('@/types/pole').InfrastructureCategory
+  >(pole.infrastructureCategory || 'FO_WIFI');
+  const [cableInstallationType, setCableInstallationType] = useState<
+    import('@/types/pole').CableInstallationType
+  >(pole.cableInstallationType || 'UDARA');
   const [pjuLampType, setPjuLampType] = useState<import('@/types/pole').LampuPjuType>(
     pole.pjuLampType || 'LED'
   );
   const [pjuLampPower, setPjuLampPower] = useState(pole.pjuLampPower || '90W');
-  const [pjuLampCondition, setPjuLampCondition] = useState<import('@/types/pole').LampuPjuCondition>(
-    pole.pjuLampCondition || 'MENYALA_NORMAL'
-  );
+  const [pjuLampCondition, setPjuLampCondition] = useState<
+    import('@/types/pole').LampuPjuCondition
+  >(pole.pjuLampCondition || 'MENYALA_NORMAL');
   const [hasKwhMeter, setHasKwhMeter] = useState(!!pole.hasKwhMeter);
   const [hasNetworkCable, setHasNetworkCable] = useState(!!pole.hasNetworkCable);
 
@@ -135,12 +136,16 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
   }, []);
 
   // Filter Kelurahan based on selected Kecamatan
-  const currentKecamatanObj = districtsList.find((k) => k.name === kecamatan) || KECAMATAN_LUBUKLINGGAU.find((k) => k.name === kecamatan);
+  const currentKecamatanObj =
+    districtsList.find((k) => k.name === kecamatan) ||
+    KECAMATAN_LUBUKLINGGAU.find((k) => k.name === kecamatan);
   const kelurahanList = currentKecamatanObj ? currentKecamatanObj.kelurahan : [];
 
   const handleKecamatanChange = (newKec: string) => {
     setKecamatan(newKec);
-    const matched = districtsList.find((k) => k.name === newKec) || KECAMATAN_LUBUKLINGGAU.find((k) => k.name === newKec);
+    const matched =
+      districtsList.find((k) => k.name === newKec) ||
+      KECAMATAN_LUBUKLINGGAU.find((k) => k.name === newKec);
     if (matched && matched.kelurahan.length > 0) {
       setKelurahan(matched.kelurahan[0]);
     }
@@ -162,11 +167,11 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
       if (geo) {
         if (geo.road) setRoad(geo.road);
         if (geo.kecamatan) {
-          const matchedKec = districtsList.find((k) =>
-            k.name.toLowerCase().includes(geo.kecamatan.toLowerCase())
-          ) || KECAMATAN_LUBUKLINGGAU.find((k) =>
-            k.name.toLowerCase().includes(geo.kecamatan.toLowerCase())
-          );
+          const matchedKec =
+            districtsList.find((k) => k.name.toLowerCase().includes(geo.kecamatan.toLowerCase())) ||
+            KECAMATAN_LUBUKLINGGAU.find((k) =>
+              k.name.toLowerCase().includes(geo.kecamatan.toLowerCase())
+            );
           if (matchedKec) {
             setKecamatan(matchedKec.name);
             if (geo.kelurahan) {
@@ -235,11 +240,26 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
         ownershipStatus,
         cableInstallationType,
         infrastructureCategory,
-        pjuLampType: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampType : undefined,
-        pjuLampPower: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampPower : undefined,
-        pjuLampCondition: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampCondition : undefined,
-        hasKwhMeter: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasKwhMeter : undefined,
-        hasNetworkCable: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasNetworkCable : undefined,
+        pjuLampType:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? pjuLampType
+            : undefined,
+        pjuLampPower:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? pjuLampPower
+            : undefined,
+        pjuLampCondition:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? pjuLampCondition
+            : undefined,
+        hasKwhMeter:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? hasKwhMeter
+            : undefined,
+        hasNetworkCable:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? hasNetworkCable
+            : undefined,
         isTilted,
         isMessyCable,
         isLowCable,
@@ -297,7 +317,9 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
       }
 
       setShowDeleteModal(false);
-      setSuccessMessage(`Data tiang (${pole.poleCode || pole.id}) berhasil dihapus permanen dari server basis data!`);
+      setSuccessMessage(
+        `Data tiang (${pole.poleCode || pole.id}) berhasil dihapus permanen dari server basis data!`
+      );
 
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('gis:hard-refresh'));
@@ -501,7 +523,11 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
               type="button"
               onClick={() => {
                 setInfrastructureCategory('FO_WIFI');
-                if (providerId === 'PRV_PJU_PEMKOT' || providerId === 'PRV_PLN_PJU_GABUNG' || providerId === 'PRV_PLN_DISTRIBUSI') {
+                if (
+                  providerId === 'PRV_PJU_PEMKOT' ||
+                  providerId === 'PRV_PLN_PJU_GABUNG' ||
+                  providerId === 'PRV_PLN_DISTRIBUSI'
+                ) {
                   setProviderId('PRV_TELKOM');
                 }
                 setOwnershipStatus('SENDIRI');
@@ -602,7 +628,8 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
           </div>
 
           {/* PJU Special Technical Details (Visible if PJU Mandiri or Gabung PLN) */}
-          {(infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') && (
+          {(infrastructureCategory === 'PJU_MANDIRI' ||
+            infrastructureCategory === 'GABUNG_PLN_PJU') && (
             <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-black text-amber-900 flex items-center gap-1.5 uppercase tracking-wider">
@@ -710,9 +737,11 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
               <div className="pt-2 border-t border-amber-200/80">
                 <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
                   <span>Kabel Jaringan / Internet Menumpang</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                    hasNetworkCable ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
-                  }`}>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                      hasNetworkCable ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
                     {hasNetworkCable ? 'Ada Kabel FO' : 'PJU Murni'}
                   </span>
                 </label>
@@ -901,7 +930,8 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                   label: '↕️ Riser Transisi',
                   sub: 'Tiang Turun ke Tanah',
                   color: 'border-indigo-200 bg-indigo-50/50 text-indigo-900',
-                  activeColor: 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-500/20',
+                  activeColor:
+                    'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-500/20',
                 },
               ].map((item) => (
                 <button
@@ -914,9 +944,7 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
                       : `${item.color} hover:bg-slate-100 font-semibold opacity-90`
                   }`}
                 >
-                  <div className="text-[11px] font-bold truncate leading-tight">
-                    {item.label}
-                  </div>
+                  <div className="text-[11px] font-bold truncate leading-tight">{item.label}</div>
                   <div className="text-[9px] opacity-80 mt-0.5 truncate font-normal">
                     {item.sub}
                   </div>
@@ -1065,11 +1093,10 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
             </div>
 
             <div>
-              <h4 className="text-base font-black text-slate-900">
-                Hapus Tiang {pole.id}?
-              </h4>
+              <h4 className="text-base font-black text-slate-900">Hapus Tiang {pole.id}?</h4>
               <p className="text-xs text-slate-500 mt-1">
-                Tindakan ini akan menghapus data tiang ini dari peta dan database sistem secara permanen.
+                Tindakan ini akan menghapus data tiang ini dari peta dan database sistem secara
+                permanen.
               </p>
             </div>
 

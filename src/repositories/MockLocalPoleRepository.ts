@@ -4,7 +4,6 @@ import { generatePoleId } from '@/lib/utils/idGenerator';
 
 let MOCK_POLES: Pole[] = [];
 
-
 export class MockLocalPoleRepository implements IPoleRepository {
   async findAll(options?: PoleFilterOptions): Promise<Pole[]> {
     let result = [...MOCK_POLES];

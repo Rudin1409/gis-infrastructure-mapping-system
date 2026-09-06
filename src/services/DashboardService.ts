@@ -23,7 +23,9 @@ export class DashboardService {
     const segments = await getSegmentRepository().findAll();
 
     // Indonesian Timezone (WIB = UTC+7) for today's survey count
-    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(
+      new Date()
+    );
 
     let goodCount = 0;
     let needsRepairCount = 0;

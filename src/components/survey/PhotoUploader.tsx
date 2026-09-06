@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, Image as ImageIcon, Trash2, CheckCircle, UploadCloud, AlertCircle, X, RefreshCw } from 'lucide-react';
+import {
+  Camera,
+  Image as ImageIcon,
+  Trash2,
+  CheckCircle,
+  UploadCloud,
+  AlertCircle,
+  X,
+  RefreshCw,
+} from 'lucide-react';
 import { compressImage } from '@/lib/utils/imageCompress';
 
 interface PhotoUploaderProps {
@@ -20,7 +29,7 @@ export default function PhotoUploader({
   const fileInputCameraRef = useRef<HTMLInputElement>(null);
   const fileInputGalleryRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
+
   const [compressing, setCompressing] = useState(false);
   const [compressInfo, setCompressInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -208,11 +217,7 @@ export default function PhotoUploader({
           ) : (
             /* Standard Uploaded / Captured Image */
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={previewUrl}
-              alt="Survey Pole Preview"
-              className="w-full h-56 object-cover"
-            />
+            <img src={previewUrl} alt="Survey Pole Preview" className="w-full h-56 object-cover" />
           )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-3.5 z-10 pointer-events-auto">

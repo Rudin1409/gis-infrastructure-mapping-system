@@ -7,7 +7,9 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_JXBAQ-tsjCWcD7i
 const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 
 if (!DATABASE_URL) {
-  throw new Error('DATABASE_URL belum diisi. Set dulu koneksi PostgreSQL VPS sebelum menjalankan migrasi.');
+  throw new Error(
+    'DATABASE_URL belum diisi. Set dulu koneksi PostgreSQL VPS sebelum menjalankan migrasi.'
+  );
 }
 
 const pool = new Pool({

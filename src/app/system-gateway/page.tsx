@@ -187,9 +187,7 @@ export default function SystemGatewayPage() {
             <div className="flex items-center gap-3">
               <div
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white shadow-xl ${
-                  isLocked
-                    ? 'bg-red-600 shadow-red-600/30'
-                    : 'bg-emerald-600 shadow-emerald-600/30'
+                  isLocked ? 'bg-red-600 shadow-red-600/30' : 'bg-emerald-600 shadow-emerald-600/30'
                 }`}
               >
                 {isLocked ? <Lock className="w-6 h-6" /> : <Unlock className="w-6 h-6" />}
@@ -200,8 +198,12 @@ export default function SystemGatewayPage() {
                 </h1>
                 <p className="text-xs text-slate-400">
                   Status Saat Ini:{' '}
-                  <strong className={isLocked ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}>
-                    {isLocked ? '🔒 TERKUNCI (Mode Berbayar / Kuota API Habis)' : '🟢 AKTIF NORMAL (Peta Terbuka)'}
+                  <strong
+                    className={isLocked ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}
+                  >
+                    {isLocked
+                      ? '🔒 TERKUNCI (Mode Berbayar / Kuota API Habis)'
+                      : '🟢 AKTIF NORMAL (Peta Terbuka)'}
                   </strong>
                 </p>
               </div>
@@ -236,9 +238,7 @@ export default function SystemGatewayPage() {
                       isLocked ? 'bg-red-500 animate-ping' : 'bg-emerald-400 animate-pulse'
                     }`}
                   />
-                  <span>
-                    {isLocked ? 'Status: Layanan Terkunci' : 'Status: Layanan Aktif'}
-                  </span>
+                  <span>{isLocked ? 'Status: Layanan Terkunci' : 'Status: Layanan Aktif'}</span>
                 </div>
                 <h3 className="text-sm font-bold text-white leading-tight">
                   {isLocked
@@ -292,7 +292,9 @@ export default function SystemGatewayPage() {
               className="w-full p-3 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-slate-200 outline-none focus:border-blue-500 font-sans leading-relaxed"
             />
             <div className="flex items-center justify-between text-[10px] text-slate-400">
-              <span>* Pesan resmi API Gateway ini otomatis tampil di seluruh peta saat terkunci.</span>
+              <span>
+                * Pesan resmi API Gateway ini otomatis tampil di seluruh peta saat terkunci.
+              </span>
               <button
                 type="button"
                 onClick={() => handleToggleLock(isLocked)}

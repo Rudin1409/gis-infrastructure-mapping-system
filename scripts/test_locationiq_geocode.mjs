@@ -15,14 +15,14 @@ const env = Object.fromEntries(
 const locationIqKey = env.LOCATIONIQ_API_KEY || process.env.LOCATIONIQ_API_KEY;
 
 const testPoints = [
-  { name: 'Simpang Periuk', lat: -3.3282, lng: 102.8710 },
+  { name: 'Simpang Periuk', lat: -3.3282, lng: 102.871 },
   { name: 'Watervang', lat: -3.2847, lng: 102.8805 },
   { name: 'Taba Jemekeh', lat: -3.2964, lng: 102.8617 },
-  { name: 'Pasar Permiri / Mesat', lat: -3.2970, lng: 102.8550 },
-  { name: 'Sukajadi', lat: -3.3080, lng: 102.8420 },
-  { name: 'Petanang Ulu', lat: -3.2450, lng: 102.8900 },
-  { name: 'Kenanga', lat: -3.2750, lng: 102.8550 },
-  { name: 'Rahmah', lat: -3.3650, lng: 102.8350 },
+  { name: 'Pasar Permiri / Mesat', lat: -3.297, lng: 102.855 },
+  { name: 'Sukajadi', lat: -3.308, lng: 102.842 },
+  { name: 'Petanang Ulu', lat: -3.245, lng: 102.89 },
+  { name: 'Kenanga', lat: -3.275, lng: 102.855 },
+  { name: 'Rahmah', lat: -3.365, lng: 102.835 },
 ];
 
 function summarizeAddress(data) {
@@ -92,8 +92,18 @@ async function run() {
     ]);
 
     console.log(`\n${point.name} (${point.lat}, ${point.lng})`);
-    console.log('LocationIQ:', JSON.stringify(locationIqData?.error ? locationIqData : summarizeAddress(locationIqData), null, 2));
-    console.log('OSM:', JSON.stringify(osmData?.error ? osmData : summarizeAddress(osmData), null, 2));
+    console.log(
+      'LocationIQ:',
+      JSON.stringify(
+        locationIqData?.error ? locationIqData : summarizeAddress(locationIqData),
+        null,
+        2
+      )
+    );
+    console.log(
+      'OSM:',
+      JSON.stringify(osmData?.error ? osmData : summarizeAddress(osmData), null, 2)
+    );
 
     await new Promise((resolve) => setTimeout(resolve, 1100));
   }

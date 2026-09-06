@@ -10,10 +10,10 @@ export const LUBUKLINGGAU_CENTER = {
 };
 
 export const LUBUKLINGGAU_BOUNDS = {
-  minLat: -3.4000,
-  maxLat: -3.2000,
-  minLng: 102.7500,
-  maxLng: 102.9800,
+  minLat: -3.4,
+  maxLat: -3.2,
+  minLng: 102.75,
+  maxLng: 102.98,
 };
 
 export const KECAMATAN_LUBUKLINGGAU: KecamatanInfo[] = [

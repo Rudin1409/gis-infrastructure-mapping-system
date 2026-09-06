@@ -37,8 +37,10 @@ function resolveTeam(userId?: string, userName?: string): 'KOMINFO' | 'BAPENDA' 
     userId === 'USR-SURVEYOR-05' ||
     userId === 'USR-SURVEYOR-06' ||
     userId === 'USR-SURVEYOR-07'
-  ) return 'KOMINFO';
-  if (userId === 'USR-SURVEYOR-02' || userId === 'USR-SURVEYOR-03' || userId === 'USR-SURVEYOR-04') return 'BAPENDA';
+  )
+    return 'KOMINFO';
+  if (userId === 'USR-SURVEYOR-02' || userId === 'USR-SURVEYOR-03' || userId === 'USR-SURVEYOR-04')
+    return 'BAPENDA';
 
   const key = `${userId || ''} ${userName || ''}`.toLowerCase();
   if (
@@ -50,8 +52,15 @@ function resolveTeam(userId?: string, userName?: string): 'KOMINFO' | 'BAPENDA' 
     key.includes('zhaaif') ||
     key.includes('fadlil') ||
     key.includes('rifqi')
-  ) return 'KOMINFO';
-  if (key.includes('yodi') || key.includes('andika') || key.includes('pradigga') || key.includes('bapenda')) return 'BAPENDA';
+  )
+    return 'KOMINFO';
+  if (
+    key.includes('yodi') ||
+    key.includes('andika') ||
+    key.includes('pradigga') ||
+    key.includes('bapenda')
+  )
+    return 'BAPENDA';
   return 'LAINNYA';
 }
 
@@ -127,17 +136,16 @@ export async function GET(request: NextRequest) {
       ...item,
       distanceMeters: hasDistance
         ? Math.round(
-            calculateHaversineDistance(
-              { lat, lng },
-              { lat: item.latitude, lng: item.longitude }
-            )
+            calculateHaversineDistance({ lat, lng }, { lat: item.latitude, lng: item.longitude })
           )
         : undefined,
     }));
 
     return NextResponse.json({
       success: true,
-      data: hasDistance ? data.sort((a, b) => (a.distanceMeters || 0) - (b.distanceMeters || 0)) : data,
+      data: hasDistance
+        ? data.sort((a, b) => (a.distanceMeters || 0) - (b.distanceMeters || 0))
+        : data,
       count: data.length,
     });
   } catch (error: any) {

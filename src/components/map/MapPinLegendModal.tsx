@@ -2,7 +2,19 @@
 
 import React, { useState } from 'react';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
-import { X, MapPin, Layers, Info, CheckCircle2, AlertTriangle, ShieldAlert, Zap, Lightbulb, Compass, Search } from 'lucide-react';
+import {
+  X,
+  MapPin,
+  Layers,
+  Info,
+  CheckCircle2,
+  AlertTriangle,
+  ShieldAlert,
+  Zap,
+  Lightbulb,
+  Compass,
+  Search,
+} from 'lucide-react';
 
 interface MapPinLegendModalProps {
   isOpen: boolean;
@@ -17,10 +29,11 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
 
   if (!isOpen) return null;
 
-  const filteredProviders = DEFAULT_PROVIDERS.filter((p) =>
-    p.name.toLowerCase().includes(searchProvider.toLowerCase()) ||
-    p.code.toLowerCase().includes(searchProvider.toLowerCase()) ||
-    (p.markingDescription || '').toLowerCase().includes(searchProvider.toLowerCase())
+  const filteredProviders = DEFAULT_PROVIDERS.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchProvider.toLowerCase()) ||
+      p.code.toLowerCase().includes(searchProvider.toLowerCase()) ||
+      (p.markingDescription || '').toLowerCase().includes(searchProvider.toLowerCase())
   );
 
   return (
@@ -106,7 +119,8 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
               <div className="p-3 bg-blue-50/80 rounded-2xl border border-blue-200 text-blue-900 text-[11px] leading-relaxed flex items-start gap-2">
                 <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                 <span>
-                  Bentuk simbol dan warna dasar pin pada peta menggambarkan <strong>fungsi utama infrastruktur tiang</strong> di lapangan.
+                  Bentuk simbol dan warna dasar pin pada peta menggambarkan{' '}
+                  <strong>fungsi utama infrastruktur tiang</strong> di lapangan.
                 </span>
               </div>
 
@@ -123,7 +137,9 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                     <span>🌐 Tiang FO / WiFi (Provider Internet)</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                    Tiang jaringan fiber optik / telekomunikasi milik operator seluler dan ISP. <em>Warna pin berubah sesuai warna resmi tiap provider</em> (Telkom merah, Biznet oranye, dll).
+                    Tiang jaringan fiber optik / telekomunikasi milik operator seluler dan ISP.{' '}
+                    <em>Warna pin berubah sesuai warna resmi tiap provider</em> (Telkom merah,
+                    Biznet oranye, dll).
                   </p>
                 </div>
               </div>
@@ -139,10 +155,14 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 font-black text-amber-950 text-xs">
                     <span>💡 Tiang PJU Mandiri (Lampu Jalan Pemkot)</span>
-                    <span className="px-1.5 py-0.2 bg-amber-200 text-amber-900 text-[9px] rounded-md font-bold">Pemkot</span>
+                    <span className="px-1.5 py-0.2 bg-amber-200 text-amber-900 text-[9px] rounded-md font-bold">
+                      Pemkot
+                    </span>
                   </div>
                   <p className="text-[11px] text-amber-900/80 mt-0.5 leading-snug">
-                    Tiang khusus lampu Penerangan Jalan Umum (PJU) milik Pemerintah Kota Lubuklinggau. Ditandai dengan pin kuning emas dengan simbol lampu dan ring bercahaya.
+                    Tiang khusus lampu Penerangan Jalan Umum (PJU) milik Pemerintah Kota
+                    Lubuklinggau. Ditandai dengan pin kuning emas dengan simbol lampu dan ring
+                    bercahaya.
                   </p>
                 </div>
               </div>
@@ -158,10 +178,13 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 font-black text-sky-950 text-xs">
                     <span>⚡💡 Tiang Gabungan (PLN Distribusi + PJU)</span>
-                    <span className="px-1.5 py-0.2 bg-sky-200 text-sky-900 text-[9px] rounded-md font-bold">Joint</span>
+                    <span className="px-1.5 py-0.2 bg-sky-200 text-sky-900 text-[9px] rounded-md font-bold">
+                      Joint
+                    </span>
                   </div>
                   <p className="text-[11px] text-sky-900/80 mt-0.5 leading-snug">
-                    Tiang distribusi jaringan listrik PLN yang ditumpangi instalasi lampu jalan PJU oleh Pemkot Lubuklinggau.
+                    Tiang distribusi jaringan listrik PLN yang ditumpangi instalasi lampu jalan PJU
+                    oleh Pemkot Lubuklinggau.
                   </p>
                 </div>
               </div>
@@ -177,10 +200,13 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 font-black text-blue-950 text-xs">
                     <span>⚡ Tiang Distribusi Jaringan Listrik PLN</span>
-                    <span className="px-1.5 py-0.2 bg-blue-200 text-blue-900 text-[9px] rounded-md font-bold">PLN</span>
+                    <span className="px-1.5 py-0.2 bg-blue-200 text-blue-900 text-[9px] rounded-md font-bold">
+                      PLN
+                    </span>
                   </div>
                   <p className="text-[11px] text-blue-900/80 mt-0.5 leading-snug">
-                    Tiang beton distribusi listrik murni milik PT PLN (Persero) untuk transmisi dan distribusi daya pelanggan.
+                    Tiang beton distribusi listrik murni milik PT PLN (Persero) untuk transmisi dan
+                    distribusi daya pelanggan.
                   </p>
                 </div>
               </div>
@@ -192,7 +218,9 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
             <div className="space-y-3 animate-in fade-in">
               <div className="p-3 bg-slate-100 rounded-2xl border border-slate-200 text-slate-700 text-[11px] leading-relaxed">
                 <span>
-                  Setiap pin tiang dilengkapi <strong>titik indikator (dot) kecil di pojok kanan atas</strong> yang menunjukkan hasil audit kondisi fisik tiang di lapangan:
+                  Setiap pin tiang dilengkapi{' '}
+                  <strong>titik indikator (dot) kecil di pojok kanan atas</strong> yang menunjukkan
+                  hasil audit kondisi fisik tiang di lapangan:
                 </span>
               </div>
 
@@ -208,7 +236,8 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                     <span>🟢 Kondisi Baik (Good / Prima)</span>
                   </div>
                   <p className="text-[11px] text-emerald-900/80 mt-0.5">
-                    Tiang berdiri kokoh tegak lurus, tidak ada retak/karat, dan kabel tertata rapi tanpa risiko bahaya.
+                    Tiang berdiri kokoh tegak lurus, tidak ada retak/karat, dan kabel tertata rapi
+                    tanpa risiko bahaya.
                   </p>
                 </div>
               </div>
@@ -225,7 +254,8 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                     <span>🟡 Perlu Perbaikan (Needs Repair)</span>
                   </div>
                   <p className="text-[11px] text-amber-900/80 mt-0.5">
-                    Terdapat kabel kendur/semrawut atau lampu PJU redup yang memerlukan penataan dan perawatan berkala.
+                    Terdapat kabel kendur/semrawut atau lampu PJU redup yang memerlukan penataan dan
+                    perawatan berkala.
                   </p>
                 </div>
               </div>
@@ -242,7 +272,8 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                     <span>🔴 Rusak / Bahaya (Damaged / Hazardous)</span>
                   </div>
                   <p className="text-[11px] text-red-900/80 mt-0.5">
-                    Tiang miring tajam, retak struktural, berkarat parah, atau kabel melorot membahayakan lalu lintas jalan.
+                    Tiang miring tajam, retak struktural, berkarat parah, atau kabel melorot
+                    membahayakan lalu lintas jalan.
                   </p>
                 </div>
               </div>
@@ -314,7 +345,8 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                     🔵 Titik Biru Berkedip (Surveyor Live GPS)
                   </span>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                    Menunjukkan posisi GPS fisik smartphone / perangkat Anda saat ini di lapangan secara akurat dan realtime.
+                    Menunjukkan posisi GPS fisik smartphone / perangkat Anda saat ini di lapangan
+                    secara akurat dan realtime.
                   </p>
                 </div>
               </div>
@@ -332,7 +364,8 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                     📍 Pin Target Koordinat (Dapat Digeser / Drag)
                   </span>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                    Digunakan pada form survei untuk menentukan titik koordinat tiang secara presisi dengan menggeser peta.
+                    Digunakan pada form survei untuk menentukan titik koordinat tiang secara presisi
+                    dengan menggeser peta.
                   </p>
                 </div>
               </div>
@@ -348,7 +381,8 @@ export default function MapPinLegendModal({ isOpen, onClose }: MapPinLegendModal
                     ➖ Garis Bentangan Kabel (Cable Segment)
                   </span>
                   <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                    Garis yang menghubungkan tiang ke tiang, menandakan rute jalur kabel fiber optik / distribusi aktif.
+                    Garis yang menghubungkan tiang ke tiang, menandakan rute jalur kabel fiber optik
+                    / distribusi aktif.
                   </p>
                 </div>
               </div>

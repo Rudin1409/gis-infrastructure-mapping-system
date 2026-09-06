@@ -2,7 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://qdiswcejzxwrrbirzstv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
+const APPS_SCRIPT_URL =
+  'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -81,64 +82,64 @@ async function syncAllData() {
     console.log('ℹ️ Menggunakan dataset awal tiang Kota Lubuklinggau...');
     sheetPoles = [
       {
-        id: "LL-0001",
-        poleCode: "LLG-T1-TJ-463",
+        id: 'LL-0001',
+        poleCode: 'LLG-T1-TJ-463',
         poleLatitude: -3.2964,
         poleLongitude: 102.8617,
-        providerId: "TELKOM",
-        providerName: "PT Telkom Indonesia",
-        poleType: "BETON",
-        condition: "GOOD",
-        road: "Jl. Yos Sudarso",
-        kelurahan: "Taba Jemekeh",
-        kecamatan: "Lubuklinggau Timur I",
-        surveyDate: "2026-08-25",
-        validationStatus: "VERIFIED"
+        providerId: 'TELKOM',
+        providerName: 'PT Telkom Indonesia',
+        poleType: 'BETON',
+        condition: 'GOOD',
+        road: 'Jl. Yos Sudarso',
+        kelurahan: 'Taba Jemekeh',
+        kecamatan: 'Lubuklinggau Timur I',
+        surveyDate: '2026-08-25',
+        validationStatus: 'VERIFIED',
       },
       {
-        id: "LL-0002",
-        poleCode: "LLG-T2-CK-102",
-        poleLatitude: -3.2980,
-        poleLongitude: 102.8640,
-        providerId: "ICON_PLUS",
-        providerName: "PLN Icon Plus",
-        poleType: "BESI",
-        condition: "NEEDS_REPAIR",
-        road: "Jl. Ahmad Yani",
-        kelurahan: "Cereme Taba",
-        kecamatan: "Lubuklinggau Timur II",
+        id: 'LL-0002',
+        poleCode: 'LLG-T2-CK-102',
+        poleLatitude: -3.298,
+        poleLongitude: 102.864,
+        providerId: 'ICON_PLUS',
+        providerName: 'PLN Icon Plus',
+        poleType: 'BESI',
+        condition: 'NEEDS_REPAIR',
+        road: 'Jl. Ahmad Yani',
+        kelurahan: 'Cereme Taba',
+        kecamatan: 'Lubuklinggau Timur II',
         isMessyCable: true,
         isCorroded: true,
-        surveyDate: "2026-08-25",
-        validationStatus: "SUBMITTED"
+        surveyDate: '2026-08-25',
+        validationStatus: 'SUBMITTED',
       },
       {
-        id: "LL-0003",
-        poleCode: "LLG-B1-KP-088",
-        poleLatitude: -3.2930,
-        poleLongitude: 102.8550,
-        providerId: "INDOSAT",
-        providerName: "Indosat Ooredoo Hutchison",
-        poleType: "BETON",
-        condition: "DAMAGED",
-        road: "Jl. Garuda Hitam",
-        kelurahan: "Pasar Pemiri",
-        kecamatan: "Lubuklinggau Barat I",
+        id: 'LL-0003',
+        poleCode: 'LLG-B1-KP-088',
+        poleLatitude: -3.293,
+        poleLongitude: 102.855,
+        providerId: 'INDOSAT',
+        providerName: 'Indosat Ooredoo Hutchison',
+        poleType: 'BETON',
+        condition: 'DAMAGED',
+        road: 'Jl. Garuda Hitam',
+        kelurahan: 'Pasar Pemiri',
+        kecamatan: 'Lubuklinggau Barat I',
         isTilted: true,
         isMessyCable: true,
         isLowCable: true,
         isHazardous: true,
         isObstructing: true,
-        surveyDate: "2026-08-25",
-        validationStatus: "SUBMITTED"
-      }
+        surveyDate: '2026-08-25',
+        validationStatus: 'SUBMITTED',
+      },
     ];
   }
 
   // 2. Migrasikan Tiang ke Supabase
   console.log(`\n📤 [2/3] Memasukkan ${sheetPoles.length} data tiang ke Supabase PostgreSQL...`);
   const dbPoles = sheetPoles.map(mapSheetPoleToDb);
-  
+
   const { data: insertedPoles, error: poleError } = await supabase
     .from('poles')
     .upsert(dbPoles, { onConflict: 'id' })
@@ -147,7 +148,9 @@ async function syncAllData() {
   if (poleError) {
     console.error('❌ Gagal memasukkan data tiang ke Supabase:', poleError.message);
   } else {
-    console.log(`✅ BERHASIL! Sebanyak ${insertedPoles?.length || dbPoles.length} data tiang tersimpan di Supabase!`);
+    console.log(
+      `✅ BERHASIL! Sebanyak ${insertedPoles?.length || dbPoles.length} data tiang tersimpan di Supabase!`
+    );
   }
 
   // 3. Migrasikan Akun Pengguna / Surveyor ke Supabase
@@ -161,7 +164,7 @@ async function syncAllData() {
       role: 'ADMIN_KOMINFO',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '0812-7890-1234',
-      status: 'AKTIF'
+      status: 'AKTIF',
     },
     {
       id: 'USR-SURVEYOR-01',
@@ -171,7 +174,7 @@ async function syncAllData() {
       role: 'SURVEYOR',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '083196589665',
-      status: 'AKTIF'
+      status: 'AKTIF',
     },
     {
       id: 'USR-SURVEYOR-02',
@@ -181,7 +184,7 @@ async function syncAllData() {
       role: 'SURVEYOR',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '081373193335',
-      status: 'AKTIF'
+      status: 'AKTIF',
     },
     {
       id: 'USR-SURVEYOR-03',
@@ -191,7 +194,7 @@ async function syncAllData() {
       role: 'SURVEYOR',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '081373249228',
-      status: 'AKTIF'
+      status: 'AKTIF',
     },
     {
       id: 'USR-SURVEYOR-04',
@@ -201,8 +204,8 @@ async function syncAllData() {
       role: 'SURVEYOR',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '082251654742',
-      status: 'AKTIF'
-    }
+      status: 'AKTIF',
+    },
   ];
 
   const { data: insertedUsers, error: userError } = await supabase
@@ -213,7 +216,9 @@ async function syncAllData() {
   if (userError) {
     console.error('❌ Gagal memasukkan akun ke Supabase:', userError.message);
   } else {
-    console.log(`✅ BERHASIL! Sebanyak ${insertedUsers?.length || users.length} akun dinas tersimpan di Supabase!`);
+    console.log(
+      `✅ BERHASIL! Sebanyak ${insertedUsers?.length || users.length} akun dinas tersimpan di Supabase!`
+    );
   }
 
   console.log('\n====================================================');

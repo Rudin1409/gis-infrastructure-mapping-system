@@ -29,10 +29,10 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Verify dependencies and types
+      - name: Verify dependencies, formatting, and types
         run: |
           npm ci --no-audit --no-fund
-          npx tsc --noEmit
+          npm run check
 
       - name: Package committed source
         run: git archive --format=tar.gz --output=release.tar.gz "$GITHUB_SHA"

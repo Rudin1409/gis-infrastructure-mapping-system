@@ -60,7 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isLoaded, isAuthenticated, pathname, router]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',

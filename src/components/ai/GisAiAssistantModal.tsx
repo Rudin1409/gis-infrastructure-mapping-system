@@ -118,12 +118,16 @@ export default function GisAiAssistantModal() {
       // 2. If user is currently not on /map, navigate to /map
       if (pathname !== '/map') {
         const params = new URLSearchParams();
-        if (action.providerId && action.providerId !== 'ALL') params.set('provider', action.providerId);
-        if (action.condition && action.condition !== 'ALL') params.set('condition', action.condition);
+        if (action.providerId && action.providerId !== 'ALL')
+          params.set('provider', action.providerId);
+        if (action.condition && action.condition !== 'ALL')
+          params.set('condition', action.condition);
         if (action.category && action.category !== 'ALL') params.set('category', action.category);
         if (action.surveyor && action.surveyor !== 'ALL') params.set('surveyor', action.surveyor);
-        if (action.kecamatan && action.kecamatan !== 'ALL') params.set('kecamatan', action.kecamatan);
-        if (action.kelurahan && action.kelurahan !== 'ALL') params.set('kelurahan', action.kelurahan);
+        if (action.kecamatan && action.kecamatan !== 'ALL')
+          params.set('kecamatan', action.kecamatan);
+        if (action.kelurahan && action.kelurahan !== 'ALL')
+          params.set('kelurahan', action.kelurahan);
         if (action.date && action.date !== 'ALL') params.set('date', action.date);
         if (action.surveyDate && action.surveyDate !== 'ALL') params.set('date', action.surveyDate);
         if (action.typeFilter && action.typeFilter !== 'ALL') params.set('type', action.typeFilter);
@@ -297,8 +301,8 @@ export default function GisAiAssistantModal() {
             viewState === 'MINIMIZED'
               ? 'bottom-24 sm:bottom-8 right-3 sm:right-8 w-[calc(100vw-24px)] sm:w-[390px] h-[54px] rounded-2xl overflow-hidden'
               : viewState === 'EXPANDED'
-              ? 'inset-3 sm:inset-6 rounded-3xl'
-              : 'bottom-24 sm:bottom-8 right-3 sm:right-8 w-[calc(100vw-24px)] sm:w-[390px] h-[370px] sm:h-[480px] max-h-[60vh] sm:max-h-[calc(100vh-60px)] rounded-3xl'
+                ? 'inset-3 sm:inset-6 rounded-3xl'
+                : 'bottom-24 sm:bottom-8 right-3 sm:right-8 w-[calc(100vw-24px)] sm:w-[390px] h-[370px] sm:h-[480px] max-h-[60vh] sm:max-h-[calc(100vh-60px)] rounded-3xl'
           }`}
         >
           {/* Header */}
@@ -384,7 +388,9 @@ export default function GisAiAssistantModal() {
             >
               <div className="flex items-center gap-1.5 truncate">
                 <Sparkles className="w-3.5 h-3.5 text-blue-600 flex-shrink-0 animate-pulse" />
-                <span className="truncate">Klik untuk membuka asisten / ketik perintah peta...</span>
+                <span className="truncate">
+                  Klik untuk membuka asisten / ketik perintah peta...
+                </span>
               </div>
               <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
             </div>

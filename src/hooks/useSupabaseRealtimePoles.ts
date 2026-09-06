@@ -24,6 +24,8 @@ function buildPoleSnapshotSignature(poles: Pole[]): string {
     .join('|');
 }
 
+// Nama hook dipertahankan untuk kompatibilitas. Pembaruan menggunakan polling
+// API aplikasi setiap 20 detik, sehingga tidak bergantung pada Supabase Realtime.
 export function useSupabaseRealtimePoles(
   initialPoles: Pole[] = [],
   onPolesChange?: (poles: Pole[]) => void

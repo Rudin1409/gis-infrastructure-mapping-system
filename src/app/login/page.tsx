@@ -192,7 +192,8 @@ export default function LoginPage() {
           {/* Official Credentials Info Notice */}
           <div className="pt-3 border-t border-slate-100 text-center text-[10px] text-slate-500">
             <p className="leading-relaxed">
-              🔐 Masuk menggunakan akun dinas resmi <strong>DISKOMINFOTIKSAN Kota Lubuklinggau</strong>.
+              🔐 Masuk menggunakan akun dinas resmi{' '}
+              <strong>DISKOMINFOTIKSAN Kota Lubuklinggau</strong>.
             </p>
           </div>
         </div>
@@ -203,9 +204,7 @@ export default function LoginPage() {
         <div className="flex items-center justify-center gap-1.5 text-slate-600 font-bold text-[11px]">
           <span>Dinas Komunikasi, Informatika, Statistik dan Persandian (DISKOMINFOTIKSAN)</span>
         </div>
-        <p className="text-slate-400">
-          Hak Cipta &copy; 2026 Pemerintah Kota Lubuklinggau.
-        </p>
+        <p className="text-slate-400">Hak Cipta &copy; 2026 Pemerintah Kota Lubuklinggau.</p>
       </div>
     </div>
   );

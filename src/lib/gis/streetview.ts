@@ -34,7 +34,12 @@ export function getStreetViewDirectUrl(coord: Coordinates, heading = 0): string 
  * @param pitch - camera pitch (positive = up, negative = down). Default 10 (slightly up for poles)
  * @param fov - field of view in degrees. Default 75 for tighter zoom
  */
-export function getStreetViewEmbedUrl(coord: Coordinates, heading = 0, pitch = 10, fov = 75): string {
+export function getStreetViewEmbedUrl(
+  coord: Coordinates,
+  heading = 0,
+  pitch = 10,
+  fov = 75
+): string {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   if (apiKey) {
     return `https://www.google.com/maps/embed/v1/streetview?key=${apiKey}&location=${coord.lat},${coord.lng}&heading=${Math.round(heading)}&pitch=${pitch}&fov=${fov}`;
@@ -47,7 +52,7 @@ export function getStreetViewEmbedUrl(coord: Coordinates, heading = 0, pitch = 1
 /**
  * Projects a coordinate forward from a camera position along a heading direction.
  * Used to calculate where the red reticle target is pointing in the real world.
- * 
+ *
  * @param cameraCoord - the Street View camera position (on the road)
  * @param headingDeg - compass heading 0-360 the user is looking towards
  * @param distanceMeters - estimated distance to the target pole (default ~8m for roadside)
@@ -65,8 +70,7 @@ export function projectCoordinateAlongHeading(
   const dByR = distanceMeters / R;
 
   const newLatRad = Math.asin(
-    Math.sin(latRad) * Math.cos(dByR) +
-    Math.cos(latRad) * Math.sin(dByR) * Math.cos(bearingRad)
+    Math.sin(latRad) * Math.cos(dByR) + Math.cos(latRad) * Math.sin(dByR) * Math.cos(bearingRad)
   );
 
   const newLngRad =

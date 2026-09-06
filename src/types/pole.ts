@@ -69,7 +69,7 @@ export interface Pole {
   pjuLampCondition?: LampuPjuCondition;
   hasKwhMeter?: boolean; // Ada KWh Meter atau Non-Meter (Abonemen)
   hasNetworkCable?: boolean; // Apakah ada kabel jaringan/FO yang menumpang di tiang PJU
-  
+
   // Quick Safety & Condition Hazards (Yes/No flags)
   isTilted?: boolean; // Tiang Miring
   isMessyCable?: boolean; // Kabel Semrawut

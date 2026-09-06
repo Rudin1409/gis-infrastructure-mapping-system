@@ -304,7 +304,9 @@ export function resolveProviderInfo(params: {
 
   // 1. Kategori PLN Murni
   if (infrastructureCategory === 'PLN_MURNI' || providerId === 'PRV_PLN_DISTRIBUSI') {
-    const pln = getProviderById('PRV_PLN_DISTRIBUSI') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PLN_DISTRIBUSI');
+    const pln =
+      getProviderById('PRV_PLN_DISTRIBUSI') ||
+      DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PLN_DISTRIBUSI');
     return {
       providerId: 'PRV_PLN_DISTRIBUSI',
       providerName: 'PT PLN (PERSERO) DISTRIBUSI',
@@ -315,7 +317,9 @@ export function resolveProviderInfo(params: {
 
   // 2. Kategori Gabungan PLN + PJU
   if (infrastructureCategory === 'GABUNG_PLN_PJU' || providerId === 'PRV_PLN_PJU_GABUNG') {
-    const gabung = getProviderById('PRV_PLN_PJU_GABUNG') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PLN_PJU_GABUNG');
+    const gabung =
+      getProviderById('PRV_PLN_PJU_GABUNG') ||
+      DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PLN_PJU_GABUNG');
     return {
       providerId: 'PRV_PLN_PJU_GABUNG',
       providerName: 'PLN + PJU (TIANG GABUNGAN)',
@@ -326,7 +330,8 @@ export function resolveProviderInfo(params: {
 
   // 3. Kategori PJU Mandiri Pemkot
   if (infrastructureCategory === 'PJU_MANDIRI' || providerId === 'PRV_PJU_PEMKOT') {
-    const pju = getProviderById('PRV_PJU_PEMKOT') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PJU_PEMKOT');
+    const pju =
+      getProviderById('PRV_PJU_PEMKOT') || DEFAULT_PROVIDERS.find((p) => p.id === 'PRV_PJU_PEMKOT');
     return {
       providerId: 'PRV_PJU_PEMKOT',
       providerName: 'PJU PEMERINTAH KOTA LUBUKLINGGAU',
@@ -350,12 +355,23 @@ export function resolveProviderInfo(params: {
 
   // 5. Pencocokan jika providerName valid (bukan 'Unknown')
   if (providerName && providerName.trim() !== '' && providerName.toLowerCase() !== 'unknown') {
-    const cleanName = providerName.toLowerCase().replace(/^\d+\.\s*/, '').trim();
+    const cleanName = providerName
+      .toLowerCase()
+      .replace(/^\d+\.\s*/, '')
+      .trim();
     const nameMatch = DEFAULT_PROVIDERS.find(
       (p) =>
         p.name.toLowerCase() === providerName.toLowerCase() ||
-        p.name.toLowerCase().replace(/^\d+\.\s*/, '').trim() === cleanName ||
-        cleanName.includes(p.name.toLowerCase().replace(/^\d+\.\s*/, '').trim())
+        p.name
+          .toLowerCase()
+          .replace(/^\d+\.\s*/, '')
+          .trim() === cleanName ||
+        cleanName.includes(
+          p.name
+            .toLowerCase()
+            .replace(/^\d+\.\s*/, '')
+            .trim()
+        )
     );
     return {
       providerId: providerId || nameMatch?.id || 'PRV_LOCAL',

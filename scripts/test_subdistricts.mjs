@@ -1,7 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qdiswcejzxwrrbirzstv.supabase.co';
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qdiswcejzxwrrbirzstv.supabase.co';
+const SUPABASE_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -20,16 +24,19 @@ async function test() {
     name: 'Kelurahan Uji Coba',
     kecamatan: 'Lubuklinggau Timur I',
     code: 'UC',
-    order_index: 99
+    order_index: 99,
   });
   if (insErr) throw insErr;
   console.log('✅ 2. Berhasil menambahkan kelurahan uji coba.');
 
   // 3. Edit test kelurahan
-  const { error: updErr } = await supabase.from('subdistricts').update({
-    name: 'Kelurahan Uji Coba (Edited)',
-    code: 'UCE'
-  }).eq('id', testId);
+  const { error: updErr } = await supabase
+    .from('subdistricts')
+    .update({
+      name: 'Kelurahan Uji Coba (Edited)',
+      code: 'UCE',
+    })
+    .eq('id', testId);
   if (updErr) throw updErr;
   console.log('✅ 3. Berhasil mengedit nama kelurahan uji coba.');
 
@@ -41,7 +48,7 @@ async function test() {
   console.log('\n🎉 SEMUA PENGUJIAN DATABASE CRUD KELURAHAN BERHASIL 100%!');
 }
 
-test().catch(err => {
+test().catch((err) => {
   console.error('❌ Error test:', err);
   process.exit(1);
 });

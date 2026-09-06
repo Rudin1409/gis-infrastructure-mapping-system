@@ -27,10 +27,14 @@ async function testCRUD() {
     kelurahan: 'Majapahit',
     kecamatan: 'Lubuklinggau Timur I',
     height: '7m',
-    survey_date: '2026-08-27'
+    survey_date: '2026-08-27',
   };
 
-  const { data: created, error: cErr } = await supabase.from('poles').insert(newRow).select().single();
+  const { data: created, error: cErr } = await supabase
+    .from('poles')
+    .insert(newRow)
+    .select()
+    .single();
   if (cErr) {
     console.error('❌ CREATE GAGAL:', cErr);
     return;
@@ -39,12 +43,20 @@ async function testCRUD() {
 
   // 2. READ (FIND BY ID)
   console.log(`\n2️⃣ [READ] Mengambil detail tiang ${testId}...`);
-  const { data: readPole, error: rErr } = await supabase.from('poles').select('*').eq('id', testId).single();
+  const { data: readPole, error: rErr } = await supabase
+    .from('poles')
+    .select('*')
+    .eq('id', testId)
+    .single();
   if (rErr || !readPole) {
     console.error('❌ READ GAGAL:', rErr);
     return;
   }
-  console.log('✅ READ BERHASIL:', readPole.id, `(Kondisi: ${readPole.condition}, Tinggi: ${readPole.height})`);
+  console.log(
+    '✅ READ BERHASIL:',
+    readPole.id,
+    `(Kondisi: ${readPole.condition}, Tinggi: ${readPole.height})`
+  );
 
   // 3. UPDATE (EDIT)
   console.log(`\n3️⃣ [UPDATE / EDIT] Memperbarui kondisi menjadi NEEDS_REPAIR dan tinggi 9m...`);
@@ -55,7 +67,7 @@ async function testCRUD() {
       height: '9m',
       road: 'Jl. Uji Coba CRUD (SUDAH DIEDIT)',
       is_tilted: true,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq('id', testId)
     .select()
@@ -65,7 +77,11 @@ async function testCRUD() {
     console.error('❌ UPDATE GAGAL:', uErr);
     return;
   }
-  console.log('✅ UPDATE BERHASIL:', updated.id, `(Kondisi baru: ${updated.condition}, Tinggi baru: ${updated.height}, Jalan: ${updated.road})`);
+  console.log(
+    '✅ UPDATE BERHASIL:',
+    updated.id,
+    `(Kondisi baru: ${updated.condition}, Tinggi baru: ${updated.height}, Jalan: ${updated.road})`
+  );
 
   // 4. DELETE (HAPUS)
   console.log(`\n4️⃣ [DELETE / HAPUS] Menghapus tiang uji coba ${testId}...`);

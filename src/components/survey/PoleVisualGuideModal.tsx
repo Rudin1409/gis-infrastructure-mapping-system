@@ -3,7 +3,16 @@
 import React, { useState } from 'react';
 import { Provider } from '@/types/provider';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
-import { X, Search, Check, Palette, Image as ImageIcon, ListFilter, PlusCircle, ZoomIn } from 'lucide-react';
+import {
+  X,
+  Search,
+  Check,
+  Palette,
+  Image as ImageIcon,
+  ListFilter,
+  PlusCircle,
+  ZoomIn,
+} from 'lucide-react';
 
 interface PoleVisualGuideModalProps {
   isOpen: boolean;
@@ -347,7 +356,8 @@ export default function PoleVisualGuideModal({
             </div>
             <h4 className="text-sm font-black text-slate-900">Input Nama Provider / ISP Lokal</h4>
             <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
-              Jika tiang milik operator lokal Lubuklinggau yang belum ada di daftar resmi, ketikkan nama ISP di bawah:
+              Jika tiang milik operator lokal Lubuklinggau yang belum ada di daftar resmi, ketikkan
+              nama ISP di bawah:
             </p>
             <input
               type="text"

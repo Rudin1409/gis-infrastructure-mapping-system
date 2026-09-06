@@ -90,8 +90,10 @@ function mapPoleToDb(pole: Partial<Pole>): Record<string, any> {
   if (pole.sisiJalan !== undefined) db.sisi_jalan = pole.sisiJalan;
   if (pole.height !== undefined) db.height = pole.height;
   if (pole.ownershipStatus !== undefined) db.ownership_status = pole.ownershipStatus;
-  if (pole.cableInstallationType !== undefined) db.cable_installation_type = pole.cableInstallationType;
-  if (pole.infrastructureCategory !== undefined) db.infrastructure_category = pole.infrastructureCategory;
+  if (pole.cableInstallationType !== undefined)
+    db.cable_installation_type = pole.cableInstallationType;
+  if (pole.infrastructureCategory !== undefined)
+    db.infrastructure_category = pole.infrastructureCategory;
   if (pole.pjuLampType !== undefined) db.pju_lamp_type = pole.pjuLampType;
   if (pole.pjuLampPower !== undefined) db.pju_lamp_power = pole.pjuLampPower;
   if (pole.pjuLampCondition !== undefined) db.pju_lamp_condition = pole.pjuLampCondition;
@@ -106,7 +108,8 @@ function mapPoleToDb(pole: Partial<Pole>): Record<string, any> {
   if (pole.description !== undefined) db.description = pole.description;
   if (pole.photoFileId !== undefined) db.photo_file_id = pole.photoFileId;
   if (pole.photoUrl !== undefined) db.photo_url = pole.photoUrl;
-  if (pole.additionalPhotoFileId !== undefined) db.additional_photo_file_id = pole.additionalPhotoFileId;
+  if (pole.additionalPhotoFileId !== undefined)
+    db.additional_photo_file_id = pole.additionalPhotoFileId;
   if (pole.additionalPhotoUrl !== undefined) db.additional_photo_url = pole.additionalPhotoUrl;
   if (pole.surveyorId !== undefined) db.surveyor_id = pole.surveyorId;
   if (pole.surveyorName !== undefined) db.surveyor_name = pole.surveyorName;
@@ -175,7 +178,10 @@ export class SupabasePoleRepository implements IPoleRepository {
           return applyPoleFilters(rows.map(mapDbToPole), filters);
         }
       } catch (pgError: any) {
-        console.warn('[DB Cascade Fallback] VPS PostgreSQL findAll notice:', pgError?.message || pgError);
+        console.warn(
+          '[DB Cascade Fallback] VPS PostgreSQL findAll notice:',
+          pgError?.message || pgError
+        );
       }
     }
 
@@ -193,7 +199,10 @@ export class SupabasePoleRepository implements IPoleRepository {
         console.warn('[DB Cascade Fallback] Supabase findAll notice:', error.message);
       }
     } catch (sbError: any) {
-      console.warn('[DB Cascade Fallback] Supabase connection notice:', sbError?.message || sbError);
+      console.warn(
+        '[DB Cascade Fallback] Supabase connection notice:',
+        sbError?.message || sbError
+      );
     }
 
     // --- TIER 3: Google Sheets Fallback ---
@@ -213,7 +222,10 @@ export class SupabasePoleRepository implements IPoleRepository {
         }
       }
     } catch (gsError: any) {
-      console.warn('[DB Cascade Fallback] Google Sheets fallback notice:', gsError?.message || gsError);
+      console.warn(
+        '[DB Cascade Fallback] Google Sheets fallback notice:',
+        gsError?.message || gsError
+      );
     }
 
     return [];
@@ -226,7 +238,10 @@ export class SupabasePoleRepository implements IPoleRepository {
         const { rows } = await dbQuery('SELECT * FROM poles WHERE id = $1 LIMIT 1', [id]);
         if (rows && rows[0]) return mapDbToPole(rows[0]);
       } catch (pgError: any) {
-        console.warn('[DB Cascade Fallback] VPS PostgreSQL findById notice:', pgError?.message || pgError);
+        console.warn(
+          '[DB Cascade Fallback] VPS PostgreSQL findById notice:',
+          pgError?.message || pgError
+        );
       }
     }
 
@@ -251,7 +266,10 @@ export class SupabasePoleRepository implements IPoleRepository {
         if (pole) return pole;
       }
     } catch (gsError: any) {
-      console.warn('[DB Cascade Fallback] Google Sheets findById notice:', gsError?.message || gsError);
+      console.warn(
+        '[DB Cascade Fallback] Google Sheets findById notice:',
+        gsError?.message || gsError
+      );
     }
 
     return null;
@@ -275,7 +293,9 @@ export class SupabasePoleRepository implements IPoleRepository {
     }
 
     const now = new Date().toISOString();
-    const id = input.id || `LLG-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
+    const id =
+      input.id ||
+      `LLG-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
     const newPole: Pole = {
       ...input,
@@ -313,7 +333,10 @@ export class SupabasePoleRepository implements IPoleRepository {
     try {
       const { data, error } = await supabase.from('poles').insert(row).select().maybeSingle();
       if (error) {
-        console.warn('[Supabase Sync Notice] Supabase insert notice (quota or restricted):', error.message);
+        console.warn(
+          '[Supabase Sync Notice] Supabase insert notice (quota or restricted):',
+          error.message
+        );
       } else if (!createdPole && data) {
         createdPole = mapDbToPole(data);
       }
@@ -355,14 +378,22 @@ export class SupabasePoleRepository implements IPoleRepository {
 
     // 2. SECONDARY / BEST-EFFORT SYNC: Supabase
     try {
-      const { data, error } = await supabase.from('poles').update(row).eq('id', id).select().maybeSingle();
+      const { data, error } = await supabase
+        .from('poles')
+        .update(row)
+        .eq('id', id)
+        .select()
+        .maybeSingle();
       if (error) {
         console.warn(`[Supabase Sync Notice] Update pole ${id} notice:`, error.message);
       } else if (!updatedPole && data) {
         updatedPole = mapDbToPole(data);
       }
     } catch (sbErr: any) {
-      console.warn(`[Supabase Sync Notice] Failed updating pole ${id} on Supabase:`, sbErr?.message || sbErr);
+      console.warn(
+        `[Supabase Sync Notice] Failed updating pole ${id} on Supabase:`,
+        sbErr?.message || sbErr
+      );
     }
 
     if (!updatedPole) {
@@ -398,7 +429,10 @@ export class SupabasePoleRepository implements IPoleRepository {
         console.warn(`[Supabase Sync Notice] Delete pole ${id} notice:`, error.message);
       }
     } catch (sbErr: any) {
-      console.warn(`[Supabase Sync Notice] Failed deleting pole ${id} on Supabase:`, sbErr?.message || sbErr);
+      console.warn(
+        `[Supabase Sync Notice] Failed deleting pole ${id} on Supabase:`,
+        sbErr?.message || sbErr
+      );
     }
 
     return deletedFromPg || true;

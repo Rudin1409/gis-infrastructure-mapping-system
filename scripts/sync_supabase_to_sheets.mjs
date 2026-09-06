@@ -2,16 +2,16 @@
  * ============================================================
  * FULL SYNC: SUPABASE → GOOGLE SHEETS (BACKUP CADANGAN)
  * ============================================================
- * 
+ *
  * Script ini mengambil SEMUA data dari Supabase (poles, providers, segments)
  * dan menulisnya ke Google Sheets sebagai backup cadangan.
- * 
+ *
  * Google Sheets akan di-clear dulu (kecuali header), lalu diisi ulang
  * dengan data terbaru dari Supabase.
- * 
+ *
  * Cara pakai:
  *   node scripts/sync_supabase_to_sheets.mjs
- * 
+ *
  * ============================================================
  */
 
@@ -19,7 +19,8 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://qdiswcejzxwrrbirzstv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
+const APPS_SCRIPT_URL =
+  'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -178,7 +179,9 @@ async function syncProvidersFromSupabaseToSheets() {
 
   const mappedProviders = providers.map(mapDbProviderToAppScript);
 
-  console.log(`   📤 Mengirim ${mappedProviders.length} provider ke Google Sheets (clearAndWrite)...`);
+  console.log(
+    `   📤 Mengirim ${mappedProviders.length} provider ke Google Sheets (clearAndWrite)...`
+  );
 
   try {
     const res = await fetch(APPS_SCRIPT_URL, {
@@ -192,7 +195,9 @@ async function syncProvidersFromSupabaseToSheets() {
 
     const json = await res.json();
     if (json.success) {
-      console.log(`   ✅ BERHASIL! ${mappedProviders.length} data provider di-sync ke Google Sheets`);
+      console.log(
+        `   ✅ BERHASIL! ${mappedProviders.length} data provider di-sync ke Google Sheets`
+      );
       return true;
     } else {
       console.error('   ❌ Gagal sync providers:', json.error);

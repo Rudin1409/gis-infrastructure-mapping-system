@@ -19,7 +19,10 @@ export async function POST(req: NextRequest) {
     // 1. Delete associated segments and poles in primary database
     if (isPostgresConfigured()) {
       try {
-        await dbQuery('DELETE FROM segments WHERE from_node_id = ANY($1::text[]) OR to_node_id = ANY($1::text[])', [ids]);
+        await dbQuery(
+          'DELETE FROM segments WHERE from_node_id = ANY($1::text[]) OR to_node_id = ANY($1::text[])',
+          [ids]
+        );
       } catch (segErr) {
         console.warn('Warning deleting connected segments:', segErr);
       }
@@ -48,9 +51,7 @@ export async function POST(req: NextRequest) {
 
     // 1. Delete associated segments in Supabase
     try {
-      const orConditions = ids
-        .map((id) => `from_node_id.eq.${id},to_node_id.eq.${id}`)
-        .join(',');
+      const orConditions = ids.map((id) => `from_node_id.eq.${id},to_node_id.eq.${id}`).join(',');
       await supabase.from('segments').delete().or(orConditions);
     } catch (segErr) {
       console.warn('Warning deleting connected segments:', segErr);

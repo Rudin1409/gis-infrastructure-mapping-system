@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-function parseBoundedNumber(
-  value: string | null,
-  min: number,
-  max: number
-): number | null {
+function parseBoundedNumber(value: string | null, min: number, max: number): number | null {
   if (value === null || value.trim() === '') return null;
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < min || parsed > max) return null;
@@ -15,8 +11,7 @@ function parseBoundedNumber(
 
 export async function GET(request: NextRequest) {
   const apiKey =
-    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
+    process.env.GOOGLE_MAPS_API_KEY?.trim() || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
 
   if (!apiKey) {
     return NextResponse.json(

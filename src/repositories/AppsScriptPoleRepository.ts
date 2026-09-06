@@ -1,5 +1,13 @@
 import { IPoleRepository, PoleFilterOptions } from './interfaces/IPoleRepository';
-import { Pole, CreatePoleInput, UpdatePoleInput, PoleCondition, PoleType, SisiJalan, OwnershipStatus } from '@/types/pole';
+import {
+  Pole,
+  CreatePoleInput,
+  UpdatePoleInput,
+  PoleCondition,
+  PoleType,
+  SisiJalan,
+  OwnershipStatus,
+} from '@/types/pole';
 import { generatePoleId } from '@/lib/utils/idGenerator';
 import { APPS_SCRIPT_URL } from '@/lib/google/appsScriptClient';
 
@@ -29,7 +37,13 @@ function parseBoolean(val: any): boolean {
 function parseCondition(val: any): PoleCondition {
   const str = String(val || '').toUpperCase();
   if (str.includes('RUSAK') || str.includes('DAMAGED')) return 'DAMAGED';
-  if (str.includes('SERVIS') || str.includes('MIRING') || str.includes('NEEDS_REPAIR') || str.includes('CEK')) return 'NEEDS_REPAIR';
+  if (
+    str.includes('SERVIS') ||
+    str.includes('MIRING') ||
+    str.includes('NEEDS_REPAIR') ||
+    str.includes('CEK')
+  )
+    return 'NEEDS_REPAIR';
   return 'GOOD';
 }
 
@@ -62,7 +76,10 @@ export class AppsScriptPoleRepository implements IPoleRepository {
       const json = await res.json();
       let poles: Pole[] = (json.data || []).map((row: any) => ({
         id: String(row.id || row.ID_Tiang || ''),
-        poleCode: row.poleCode || row.Kode_Fisik_Tiang ? String(row.poleCode || row.Kode_Fisik_Tiang) : undefined,
+        poleCode:
+          row.poleCode || row.Kode_Fisik_Tiang
+            ? String(row.poleCode || row.Kode_Fisik_Tiang)
+            : undefined,
         poleLatitude: parseNumber(row.poleLatitude ?? row.Latitude_GIS),
         poleLongitude: parseNumber(row.poleLongitude ?? row.Longitude_GIS),
         deviceLatitude: parseOptionalNumber(row.deviceLatitude ?? row.Latitude_GPS_Device),
@@ -71,37 +88,67 @@ export class AppsScriptPoleRepository implements IPoleRepository {
         distanceFromDevice: parseOptionalNumber(row.distanceFromDevice ?? row.Jarak_Deviasi_Meter),
         locationMethod: row.locationMethod || row.Metode_Penentuan_Lokasi || 'MANUAL_MAP_PIN',
         providerId: String(row.providerId || row.ID_Provider || 'UNKNOWN'),
-        providerName: row.providerName || row.Nama_Provider_Operator ? String(row.providerName || row.Nama_Provider_Operator) : undefined,
+        providerName:
+          row.providerName || row.Nama_Provider_Operator
+            ? String(row.providerName || row.Nama_Provider_Operator)
+            : undefined,
         poleType: parsePoleType(row.poleType || row.Jenis_Tiang),
         condition: parseCondition(row.condition || row.Kondisi_Tiang),
         road: String(row.road || row.Nama_Jalan_Lokasi || ''),
         kelurahan: String(row.kelurahan || row.Kelurahan || ''),
         kecamatan: String(row.kecamatan || row.Kecamatan || ''),
         kota: String(row.kota || row.Kota_Kabupaten || 'Kota Lubuklinggau'),
-        patokanLokasi: row.patokanLokasi || row.Patokan_Lokasi ? String(row.patokanLokasi || row.Patokan_Lokasi) : undefined,
+        patokanLokasi:
+          row.patokanLokasi || row.Patokan_Lokasi
+            ? String(row.patokanLokasi || row.Patokan_Lokasi)
+            : undefined,
         sisiJalan: (row.sisiJalan || row.Sisi_Jalan || 'KIRI') as SisiJalan,
         height: row.height || row.Tinggi_Tiang ? String(row.height || row.Tinggi_Tiang) : '7m',
-        ownershipStatus: (row.ownershipStatus || row.Status_Kepemilikan || 'SENDIRI') as OwnershipStatus,
+        ownershipStatus: (row.ownershipStatus ||
+          row.Status_Kepemilikan ||
+          'SENDIRI') as OwnershipStatus,
         isTilted: parseBoolean(row.isTilted ?? row.Bahaya_Tiang_Miring),
         isMessyCable: parseBoolean(row.isMessyCable ?? row.Bahaya_Kabel_Semrawut),
         isLowCable: parseBoolean(row.isLowCable ?? row.Bahaya_Kabel_Rendah),
         isCorroded: parseBoolean(row.isCorroded ?? row.Bahaya_Karat_Retak),
         isObstructing: parseBoolean(row.isObstructing ?? row.Mengganggu_Jalan_Trotoar),
         isHazardous: parseBoolean(row.isHazardous ?? row.Potensi_Bahaya_Lain),
-        description: row.description || row.Catatan_Keterangan_Lapangan ? String(row.description || row.Catatan_Keterangan_Lapangan) : undefined,
-        photoFileId: row.photoFileId || row.ID_File_Google_Drive ? String(row.photoFileId || row.ID_File_Google_Drive) : undefined,
-        photoUrl: row.photoUrl || row.Link_Foto_Google_Drive ? String(row.photoUrl || row.Link_Foto_Google_Drive) : undefined,
-        surveyorId: row.surveyorId || row.ID_Surveyor ? String(row.surveyorId || row.ID_Surveyor) : 'USR-KOMINFO-ADMIN',
-        surveyorName: (row.surveyorName && !String(row.surveyorName).includes('Surveyor 1'))
-          ? String(row.surveyorName)
-          : 'Admin DISKOMINFO (Admin Teknis & Jaringan)',
-        surveyDate: String(row.surveyDate || row.Tanggal_Survey || new Date().toISOString().split('T')[0]),
-        surveyTime: row.surveyTime || row.Waktu_Survey ? String(row.surveyTime || row.Waktu_Survey) : undefined,
+        description:
+          row.description || row.Catatan_Keterangan_Lapangan
+            ? String(row.description || row.Catatan_Keterangan_Lapangan)
+            : undefined,
+        photoFileId:
+          row.photoFileId || row.ID_File_Google_Drive
+            ? String(row.photoFileId || row.ID_File_Google_Drive)
+            : undefined,
+        photoUrl:
+          row.photoUrl || row.Link_Foto_Google_Drive
+            ? String(row.photoUrl || row.Link_Foto_Google_Drive)
+            : undefined,
+        surveyorId:
+          row.surveyorId || row.ID_Surveyor
+            ? String(row.surveyorId || row.ID_Surveyor)
+            : 'USR-KOMINFO-ADMIN',
+        surveyorName:
+          row.surveyorName && !String(row.surveyorName).includes('Surveyor 1')
+            ? String(row.surveyorName)
+            : 'Admin DISKOMINFO (Admin Teknis & Jaringan)',
+        surveyDate: String(
+          row.surveyDate || row.Tanggal_Survey || new Date().toISOString().split('T')[0]
+        ),
+        surveyTime:
+          row.surveyTime || row.Waktu_Survey
+            ? String(row.surveyTime || row.Waktu_Survey)
+            : undefined,
         validationStatus: row.validationStatus || row.Status_Validasi || 'SUBMITTED',
-        validationNote: row.validationNote || row.Catatan_Validasi ? String(row.validationNote || row.Catatan_Validasi) : undefined,
+        validationNote:
+          row.validationNote || row.Catatan_Validasi
+            ? String(row.validationNote || row.Catatan_Validasi)
+            : undefined,
         createdAt: String(row.createdAt || row.Waktu_Dibuat || new Date().toISOString()),
         updatedAt: String(row.updatedAt || row.Waktu_Diperbarui || new Date().toISOString()),
-        infrastructureCategory: row.infrastructureCategory || row.Kategori_Infrastruktur || 'FO_WIFI',
+        infrastructureCategory:
+          row.infrastructureCategory || row.Kategori_Infrastruktur || 'FO_WIFI',
         pjuLampType: row.pjuLampType || row.Tipe_Lampu_PJU || undefined,
         pjuLampPower: row.pjuLampPower || row.Daya_Lampu_Watt || undefined,
         pjuLampCondition: row.pjuLampCondition || row.Kondisi_Lampu_PJU || undefined,

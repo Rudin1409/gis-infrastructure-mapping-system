@@ -49,9 +49,7 @@ export class GoogleSheetsPoleRepository implements IPoleRepository {
     });
 
     const rows = response.data.values || [];
-    let poles: Pole[] = rows
-      .map(sheetRowToPole)
-      .filter((p): p is Pole => p !== null);
+    let poles: Pole[] = rows.map(sheetRowToPole).filter((p): p is Pole => p !== null);
 
     if (filters) {
       if (filters.providerId && filters.providerId !== 'ALL') {

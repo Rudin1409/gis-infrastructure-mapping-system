@@ -61,7 +61,10 @@ function getProviderStyleId(providerId?: string): string {
  * - Beautiful HTML popup balloon with full technical attributes and photo
  * - Grouped by Provider or Kecamatan into KML Folders
  */
-export function generateKml(poles: Pole[], title: string = 'Pemetaan Tiang Infrastruktur Kota Lubuklinggau'): string {
+export function generateKml(
+  poles: Pole[],
+  title: string = 'Pemetaan Tiang Infrastruktur Kota Lubuklinggau'
+): string {
   // Group poles by Provider for organized Google Earth folder layers
   const folderMap = new Map<string, Pole[]>();
 
@@ -188,7 +191,9 @@ export function generateKml(poles: Pole[], title: string = 'Pemetaan Tiang Infra
       });
 
       const styleId = getProviderStyleId(pole.providerId);
-      const poleTitle = pole.poleCode ? `${pole.poleCode} - ${pole.road}` : `Tiang ${resolved.providerName} - ${pole.road}`;
+      const poleTitle = pole.poleCode
+        ? `${pole.poleCode} - ${pole.road}`
+        : `Tiang ${resolved.providerName} - ${pole.road}`;
 
       // Build rich HTML balloon description
       const photoHtml = pole.photoUrl

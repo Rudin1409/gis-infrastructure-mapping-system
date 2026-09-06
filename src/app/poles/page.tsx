@@ -21,10 +21,7 @@ export default async function PolesListPage({
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 
-  const [allPoles, providers] = await Promise.all([
-    poleRepo.findAll(),
-    providerRepo.findAll(),
-  ]);
+  const [allPoles, providers] = await Promise.all([poleRepo.findAll(), providerRepo.findAll()]);
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 font-sans pb-24 animate-in fade-in duration-150">
@@ -41,7 +38,8 @@ export default async function PolesListPage({
               Katalog Data Tiang
             </h1>
             <p className="mt-1.5 text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Daftar inventaris tiang lengkap dengan provider, lokasi, kondisi fisik, dan koordinat lapangan.
+              Daftar inventaris tiang lengkap dengan provider, lokasi, kondisi fisik, dan koordinat
+              lapangan.
             </p>
           </div>
 

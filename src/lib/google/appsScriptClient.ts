@@ -1,9 +1,7 @@
 import { Pole, CreatePoleInput } from '@/types/pole';
 
 export const APPS_SCRIPT_URL =
-  process.env.NEXT_PUBLIC_APPS_SCRIPT_URL ||
-  process.env.APPS_SCRIPT_URL ||
-  '';
+  process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || process.env.APPS_SCRIPT_URL || '';
 
 export function isAppsScriptConfigured(): boolean {
   return !!APPS_SCRIPT_URL && APPS_SCRIPT_URL.startsWith('https://script.google.com');

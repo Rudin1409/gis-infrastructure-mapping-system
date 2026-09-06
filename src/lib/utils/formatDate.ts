@@ -22,8 +22,18 @@ export function formatIndonesianDate(
     if (dateObj) {
       const day = String(dateObj.getDate()).padStart(2, '0');
       const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Agu',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
       ];
       const monthStr = months[dateObj.getMonth()];
       const year = dateObj.getFullYear();

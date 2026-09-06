@@ -45,7 +45,16 @@ export default function ProfilePage() {
   const { user, loginAs, logout } = useAuth();
   const { viewMode, toggleViewMode } = useViewMode();
   const isDesktop = viewMode === 'DESKTOP';
-  const currentUser = user || DEFAULT_ACCOUNTS[0] || { name: 'Admin', role: 'ADMIN', roleLabel: 'Administrator', id: 'SRV-001', email: 'admin@lubuklinggaukota.go.id', phone: '0812-7890-1234', avatar: '🏢' };
+  const currentUser = user ||
+    DEFAULT_ACCOUNTS[0] || {
+      name: 'Admin',
+      role: 'ADMIN',
+      roleLabel: 'Administrator',
+      id: 'SRV-001',
+      email: 'admin@lubuklinggaukota.go.id',
+      phone: '0812-7890-1234',
+      avatar: '🏢',
+    };
 
   // Edit Profile States
   const [isEditing, setIsEditing] = useState(false);
@@ -301,11 +310,10 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <p className="text-xs text-blue-200 font-bold mt-1">
-                {currentUser.roleLabel}
-              </p>
+              <p className="text-xs text-blue-200 font-bold mt-1">{currentUser.roleLabel}</p>
               <p className="text-[11px] text-slate-300 font-normal leading-snug mt-0.5">
-                Dinas Komunikasi, Informatika, Statistik dan Persandian (DISKOMINFOTIKSAN) Kota Lubuklinggau
+                Dinas Komunikasi, Informatika, Statistik dan Persandian (DISKOMINFOTIKSAN) Kota
+                Lubuklinggau
               </p>
 
               <div className="flex items-center gap-2 mt-2.5 flex-wrap text-[10px] font-mono">
@@ -373,7 +381,8 @@ export default function ProfilePage() {
                 Kalibrasi Akurasi Geospasial Perangkat
               </span>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Pastikan sinyal GPS handphone/tablet memiliki radius akurasi tinggi sebelum mengambil data tiang.
+                Pastikan sinyal GPS handphone/tablet memiliki radius akurasi tinggi sebelum
+                mengambil data tiang.
               </p>
             </div>
 
@@ -405,7 +414,8 @@ export default function ProfilePage() {
                   <span>Sinyal GPS Terkunci ({gpsResult.timestamp})</span>
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono text-[10.5px]">
-                  ± {gpsResult.accuracy} meter {gpsResult.accuracy <= 10 ? '• Akurasi Tinggi' : '• Akurasi Cukup'}
+                  ± {gpsResult.accuracy} meter{' '}
+                  {gpsResult.accuracy <= 10 ? '• Akurasi Tinggi' : '• Akurasi Cukup'}
                 </span>
               </div>
               <div className="text-[11px] font-mono text-emerald-800/80 flex items-center gap-3 pt-1">
@@ -423,7 +433,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Database & Mode Tampilan Row */}
-        <div className={`grid gap-2.5 text-xs ${isDesktop ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+        <div
+          className={`grid gap-2.5 text-xs ${isDesktop ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}
+        >
           <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -482,7 +494,9 @@ export default function ProfilePage() {
           <span>Pusat Panduan &amp; Modul Lapangan</span>
         </h3>
 
-        <div className={`grid gap-2 text-xs ${isDesktop ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+        <div
+          className={`grid gap-2 text-xs ${isDesktop ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}
+        >
           {/* Katalog Ciri Warna Tiang */}
           <Link
             href="/providers"

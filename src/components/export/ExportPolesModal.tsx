@@ -76,11 +76,7 @@ export default function ExportPolesModal({
         setSuccessMessage(`Berhasil mengekspor ${count} tiang ke format KML (Google Earth)!`);
       } else if (selectedFormat === 'CSV') {
         const csvContent = generateCsv(polesToExport);
-        triggerFileDownload(
-          csvContent,
-          `${baseFilename}.csv`,
-          'text/csv;charset=utf-8'
-        );
+        triggerFileDownload(csvContent, `${baseFilename}.csv`, 'text/csv;charset=utf-8');
         setSuccessMessage(`Berhasil mengekspor ${count} tiang ke format CSV (Excel)!`);
       } else if (selectedFormat === 'GEOJSON') {
         const geojsonObj = generateGeoJson(polesToExport);
@@ -244,9 +240,7 @@ export default function ExportPolesModal({
                         : 'border-slate-200 bg-slate-50 text-slate-700'
                     }`}
                   >
-                    <span className="block text-xs font-black">
-                      Sesuai Filter Aktif
-                    </span>
+                    <span className="block text-xs font-black">Sesuai Filter Aktif</span>
                     <span className="block text-[11px] text-slate-500 mt-0.5">
                       {currentPoles.length} tiang terpilih
                     </span>
@@ -261,9 +255,7 @@ export default function ExportPolesModal({
                         : 'border-slate-200 bg-slate-50 text-slate-700'
                     }`}
                   >
-                    <span className="block text-xs font-black">
-                      Seluruh Database
-                    </span>
+                    <span className="block text-xs font-black">Seluruh Database</span>
                     <span className="block text-[11px] text-slate-500 mt-0.5">
                       Semua tiang Kota Lubuklinggau
                     </span>
@@ -279,10 +271,14 @@ export default function ExportPolesModal({
                 </div>
                 <ul className="list-disc list-inside space-y-0.5 pl-1 text-[10.5px]">
                   <li>
-                    <strong>Google Earth:</strong> Cukup klik 2x file <code>.kml</code> yang terunduh, Google Earth akan langsung terbang ke Lubuklinggau dan menampilkan seluruh pin tiang.
+                    <strong>Google Earth:</strong> Cukup klik 2x file <code>.kml</code> yang
+                    terunduh, Google Earth akan langsung terbang ke Lubuklinggau dan menampilkan
+                    seluruh pin tiang.
                   </li>
                   <li>
-                    <strong>Google Maps (My Maps):</strong> Buka <em>mymaps.google.com</em>, klik <em>Buat Peta Baru</em> &gt; <em>Impor</em> &gt; pilih file <code>.kml</code> atau <code>.csv</code>.
+                    <strong>Google Maps (My Maps):</strong> Buka <em>mymaps.google.com</em>, klik{' '}
+                    <em>Buat Peta Baru</em> &gt; <em>Impor</em> &gt; pilih file <code>.kml</code>{' '}
+                    atau <code>.csv</code>.
                   </li>
                 </ul>
               </div>

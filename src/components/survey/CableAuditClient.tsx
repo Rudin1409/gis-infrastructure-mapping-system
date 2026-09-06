@@ -200,7 +200,15 @@ export default function CableAuditClient({
         const matchDesc = (pole.description || '').toLowerCase().includes(q);
         const matchPatokan = (pole.patokanLokasi || '').toLowerCase().includes(q);
 
-        if (!matchCode && !matchRoad && !matchKel && !matchKec && !matchProv && !matchDesc && !matchPatokan) {
+        if (
+          !matchCode &&
+          !matchRoad &&
+          !matchKel &&
+          !matchKec &&
+          !matchProv &&
+          !matchDesc &&
+          !matchPatokan
+        ) {
           return false;
         }
       }
@@ -447,8 +455,12 @@ export default function CableAuditClient({
         </div>
 
         <div className="flex items-center justify-between text-[10px] text-slate-300 font-medium">
-          <span>🕳️ Bawah Tanah / Riser: <strong>{metrics.ductingTotal}</strong> tiang</span>
-          <span>⚡ Kabel Udara: <strong>{metrics.aerialCount}</strong> tiang</span>
+          <span>
+            🕳️ Bawah Tanah / Riser: <strong>{metrics.ductingTotal}</strong> tiang
+          </span>
+          <span>
+            ⚡ Kabel Udara: <strong>{metrics.aerialCount}</strong> tiang
+          </span>
         </div>
       </div>
 
@@ -690,7 +702,8 @@ export default function CableAuditClient({
                       )}
                     </div>
                     <p className="text-[11px] font-semibold text-slate-700 leading-tight">
-                      {pole.road || (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}
+                      {pole.road ||
+                        (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}
                     </p>
                   </div>
 
@@ -699,15 +712,15 @@ export default function CableAuditClient({
                       pole.condition === 'DAMAGED'
                         ? 'bg-rose-100 text-rose-800 border border-rose-200'
                         : pole.condition === 'NEEDS_REPAIR'
-                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                        : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                     }`}
                   >
                     {pole.condition === 'DAMAGED'
                       ? 'RUSAK'
                       : pole.condition === 'NEEDS_REPAIR'
-                      ? 'PERLU REPARASI'
-                      : 'BAIK'}
+                        ? 'PERLU REPARASI'
+                        : 'BAIK'}
                   </span>
                 </div>
 
@@ -740,7 +753,9 @@ export default function CableAuditClient({
                       <span>•</span>
                       <span>Jenis: {pole.poleType || 'BETON'}</span>
                       <span>•</span>
-                      <span>Kordinat: {pole.poleLatitude.toFixed(5)}, {pole.poleLongitude.toFixed(5)}</span>
+                      <span>
+                        Kordinat: {pole.poleLatitude.toFixed(5)}, {pole.poleLongitude.toFixed(5)}
+                      </span>
                     </div>
                   </div>
                 </div>

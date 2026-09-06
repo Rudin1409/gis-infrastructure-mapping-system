@@ -1,0 +1,15 @@
+{
+  "singleQuote": true,
+  "semi": true,
+  "tabWidth": 2,
+  "printWidth": 100,
+  "trailingComma": "es5",
+  "endOfLine": "lf",
+  "embeddedLanguageFormatting": "off",
+  "overrides": [
+    {
+      "files": "*.gs",
+      "options": { "parser": "babel" }
+    }
+  ]
+}

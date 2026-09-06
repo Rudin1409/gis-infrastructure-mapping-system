@@ -34,13 +34,19 @@ export class SupabaseProviderRepository implements IProviderRepository {
           }));
         }
       } catch (pgError: any) {
-        console.warn('[DB Cascade Fallback] VPS PostgreSQL providers notice:', pgError?.message || pgError);
+        console.warn(
+          '[DB Cascade Fallback] VPS PostgreSQL providers notice:',
+          pgError?.message || pgError
+        );
       }
     }
 
     // --- TIER 2: Supabase Fallback ---
     try {
-      const { data, error } = await supabase.from('providers').select('*').order('name', { ascending: true });
+      const { data, error } = await supabase
+        .from('providers')
+        .select('*')
+        .order('name', { ascending: true });
       if (!error && data && data.length > 0) {
         return data.map((d: any) => ({
           id: d.id,
@@ -64,7 +70,10 @@ export class SupabaseProviderRepository implements IProviderRepository {
         }
       }
     } catch (gsError: any) {
-      console.warn('[DB Cascade Fallback] Google Sheets providers notice:', gsError?.message || gsError);
+      console.warn(
+        '[DB Cascade Fallback] Google Sheets providers notice:',
+        gsError?.message || gsError
+      );
     }
 
     return DEFAULT_PROVIDERS;
@@ -89,7 +98,11 @@ export class SupabaseProviderRepository implements IProviderRepository {
     }
 
     try {
-      const { data, error } = await supabase.from('providers').select('*').eq('id', id).maybeSingle();
+      const { data, error } = await supabase
+        .from('providers')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
       if (!error && data) {
         return {
           id: data.id,
@@ -173,9 +186,7 @@ export class GoogleSheetsProviderRepository implements IProviderRepository {
         return DEFAULT_PROVIDERS;
       }
 
-      const providers = rows
-        .map(sheetRowToProvider)
-        .filter((p): p is Provider => p !== null);
+      const providers = rows.map(sheetRowToProvider).filter((p): p is Provider => p !== null);
 
       return providers.length > 0 ? providers : DEFAULT_PROVIDERS;
     } catch (e) {
@@ -228,5 +239,7 @@ export class GoogleSheetsProviderRepository implements IProviderRepository {
 }
 
 export function getProviderRepository(): IProviderRepository {
+  // Jalur aktif memakai PostgreSQL/Supabase. Adapter Sheets di file ini
+  // dipertahankan untuk kompatibilitas integrasi lama.
   return new SupabaseProviderRepository();
 }

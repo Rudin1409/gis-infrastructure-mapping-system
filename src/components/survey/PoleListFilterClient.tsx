@@ -57,7 +57,9 @@ export default function PoleListFilterClient({
   const [selectedKelurahan, setSelectedKelurahan] = useState(initialKelurahan || 'ALL');
   const [selectedCondition, setSelectedCondition] = useState(initialCondition || 'ALL');
   const [selectedType, setSelectedType] = useState('ALL');
-  const [hazardFilter, setHazardFilter] = useState<'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'>('ALL');
+  const [hazardFilter, setHazardFilter] = useState<
+    'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'
+  >('ALL');
 
   // --- Pagination States ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -171,9 +173,15 @@ export default function PoleListFilterClient({
           // Special fallback matching
           if (selectedCategory === 'PLN_MURNI' && effectiveProviderId === 'PRV_PLN_DISTRIBUSI') {
             // match
-          } else if (selectedCategory === 'GABUNG_PLN_PJU' && effectiveProviderId === 'PRV_PLN_PJU_GABUNG') {
+          } else if (
+            selectedCategory === 'GABUNG_PLN_PJU' &&
+            effectiveProviderId === 'PRV_PLN_PJU_GABUNG'
+          ) {
             // match
-          } else if (selectedCategory === 'PJU_MANDIRI' && effectiveProviderId === 'PRV_PJU_PEMKOT') {
+          } else if (
+            selectedCategory === 'PJU_MANDIRI' &&
+            effectiveProviderId === 'PRV_PJU_PEMKOT'
+          ) {
             // match
           } else {
             return false;
@@ -211,10 +219,7 @@ export default function PoleListFilterClient({
       if (selectedKecamatan !== 'ALL') {
         const cleanPoleKec = (pole.kecamatan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         const cleanTargetKec = selectedKecamatan.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (
-          !cleanPoleKec.includes(cleanTargetKec) &&
-          !cleanTargetKec.includes(cleanPoleKec)
-        ) {
+        if (!cleanPoleKec.includes(cleanTargetKec) && !cleanTargetKec.includes(cleanPoleKec)) {
           return false;
         }
       }
@@ -223,10 +228,7 @@ export default function PoleListFilterClient({
       if (selectedKelurahan !== 'ALL') {
         const cleanPoleKel = (pole.kelurahan || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         const cleanTargetKel = selectedKelurahan.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (
-          !cleanPoleKel.includes(cleanTargetKel) &&
-          !cleanTargetKel.includes(cleanPoleKel)
-        ) {
+        if (!cleanPoleKel.includes(cleanTargetKel) && !cleanTargetKel.includes(cleanPoleKel)) {
           return false;
         }
       }
@@ -450,9 +452,7 @@ export default function PoleListFilterClient({
 
         <button
           type="button"
-          onClick={() =>
-            setSelectedCondition(selectedCondition === 'DAMAGED' ? 'ALL' : 'DAMAGED')
-          }
+          onClick={() => setSelectedCondition(selectedCondition === 'DAMAGED' ? 'ALL' : 'DAMAGED')}
           className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
             selectedCondition === 'DAMAGED'
               ? 'bg-rose-600 text-white shadow-xs'
@@ -465,9 +465,7 @@ export default function PoleListFilterClient({
         {/* Quick Danger/Hazard Chip */}
         <button
           type="button"
-          onClick={() =>
-            setHazardFilter(hazardFilter === 'HAZARD_ONLY' ? 'ALL' : 'HAZARD_ONLY')
-          }
+          onClick={() => setHazardFilter(hazardFilter === 'HAZARD_ONLY' ? 'ALL' : 'HAZARD_ONLY')}
           className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer ${
             hazardFilter === 'HAZARD_ONLY'
               ? 'bg-rose-600 text-white shadow-xs'
@@ -488,17 +486,19 @@ export default function PoleListFilterClient({
           {selectedCategory !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>
-                Kategori: {
-                  selectedCategory === 'PJU_MANDIRI'
-                    ? '💡 PJU Mandiri'
-                    : selectedCategory === 'GABUNG_PLN_PJU'
+                Kategori:{' '}
+                {selectedCategory === 'PJU_MANDIRI'
+                  ? '💡 PJU Mandiri'
+                  : selectedCategory === 'GABUNG_PLN_PJU'
                     ? '⚡💡 PLN+PJU'
                     : selectedCategory === 'PLN_MURNI'
-                    ? '⚡ PLN Listrik'
-                    : '🌐 FO/WiFi'
-                }
+                      ? '⚡ PLN Listrik'
+                      : '🌐 FO/WiFi'}
               </span>
-              <button onClick={() => setSelectedCategory('ALL')} className="hover:text-rose-600 cursor-pointer">
+              <button
+                onClick={() => setSelectedCategory('ALL')}
+                className="hover:text-rose-600 cursor-pointer"
+              >
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -507,9 +507,15 @@ export default function PoleListFilterClient({
           {selectedProvider !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>
-                Provider: {allCombinedProviders.find((p) => p.id === selectedProvider)?.name.replace(/^\d+\.\s*/, '') || selectedProvider}
+                Provider:{' '}
+                {allCombinedProviders
+                  .find((p) => p.id === selectedProvider)
+                  ?.name.replace(/^\d+\.\s*/, '') || selectedProvider}
               </span>
-              <button onClick={() => setSelectedProvider('ALL')} className="hover:text-rose-600 cursor-pointer">
+              <button
+                onClick={() => setSelectedProvider('ALL')}
+                className="hover:text-rose-600 cursor-pointer"
+              >
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -518,7 +524,10 @@ export default function PoleListFilterClient({
           {selectedKecamatan !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>Kec: {selectedKecamatan.replace('Lubuklinggau', '')}</span>
-              <button onClick={() => setSelectedKecamatan('ALL')} className="hover:text-rose-600 cursor-pointer">
+              <button
+                onClick={() => setSelectedKecamatan('ALL')}
+                className="hover:text-rose-600 cursor-pointer"
+              >
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -527,7 +536,10 @@ export default function PoleListFilterClient({
           {selectedKelurahan !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>Kel: {selectedKelurahan}</span>
-              <button onClick={() => setSelectedKelurahan('ALL')} className="hover:text-rose-600 cursor-pointer">
+              <button
+                onClick={() => setSelectedKelurahan('ALL')}
+                className="hover:text-rose-600 cursor-pointer"
+              >
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -536,7 +548,10 @@ export default function PoleListFilterClient({
           {selectedType !== 'ALL' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-800 rounded-lg border border-blue-200 text-[11px] font-bold shadow-2xs">
               <span>Jenis: {selectedType}</span>
-              <button onClick={() => setSelectedType('ALL')} className="hover:text-rose-600 cursor-pointer">
+              <button
+                onClick={() => setSelectedType('ALL')}
+                className="hover:text-rose-600 cursor-pointer"
+              >
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -569,8 +584,8 @@ export default function PoleListFilterClient({
             selectedKecamatan !== 'ALL'
               ? `Kec. ${selectedKecamatan}`
               : selectedProvider !== 'ALL'
-              ? `Provider ${selectedProvider}`
-              : undefined
+                ? `Provider ${selectedProvider}`
+                : undefined
           }
         />
       </div>
@@ -603,9 +618,7 @@ export default function PoleListFilterClient({
         ) : filteredPoles.length === 0 ? (
           <div className="bg-white rounded-3xl p-8 border border-slate-100 text-center space-y-2 shadow-xs xl:col-span-2">
             <span className="text-3xl block">🔍</span>
-            <h3 className="text-sm font-black text-slate-800">
-              Tidak Ada Data Tiang yang Cocok
-            </h3>
+            <h3 className="text-sm font-black text-slate-800">Tidak Ada Data Tiang yang Cocok</h3>
             <p className="text-xs text-slate-500">
               Coba sesuaikan kata kunci pencarian atau ubah pilihan filter Anda.
             </p>
@@ -677,8 +690,8 @@ export default function PoleListFilterClient({
                       pole.condition === 'GOOD'
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         : pole.condition === 'NEEDS_REPAIR'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
                     }`}
                   >
                     <span
@@ -686,15 +699,15 @@ export default function PoleListFilterClient({
                         pole.condition === 'GOOD'
                           ? 'bg-emerald-500'
                           : pole.condition === 'NEEDS_REPAIR'
-                          ? 'bg-amber-500'
-                          : 'bg-rose-500'
+                            ? 'bg-amber-500'
+                            : 'bg-rose-500'
                       }`}
                     />
                     {pole.condition === 'GOOD'
                       ? 'Kondisi Baik'
                       : pole.condition === 'NEEDS_REPAIR'
-                      ? 'Perlu Servis'
-                      : 'Rusak Parah'}
+                        ? 'Perlu Servis'
+                        : 'Rusak Parah'}
                   </span>
                 </div>
 
@@ -706,7 +719,10 @@ export default function PoleListFilterClient({
                   </div>
                   <div className="text-xs text-slate-600 flex items-start gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="line-clamp-1">{pole.road || (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}</span>
+                    <span className="line-clamp-1">
+                      {pole.road ||
+                        (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}
+                    </span>
                   </div>
                   {pole.road && (
                     <div className="text-[10px] text-slate-400 pl-5">
@@ -748,7 +764,9 @@ export default function PoleListFilterClient({
 
                 {/* GPS Coordinates Bar */}
                 <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 text-[10px] font-mono text-slate-600 flex items-center justify-between">
-                  <span>{pole.poleLatitude.toFixed(5)}, {pole.poleLongitude.toFixed(5)}</span>
+                  <span>
+                    {pole.poleLatitude.toFixed(5)}, {pole.poleLongitude.toFixed(5)}
+                  </span>
                   <span className="text-slate-500 font-sans">
                     {pole.gpsAccuracy ? `±${pole.gpsAccuracy.toFixed(1)}m` : 'GPS OK'}
                   </span>
@@ -758,7 +776,9 @@ export default function PoleListFilterClient({
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3 h-3 text-slate-400" />
-                    <span>{formatIndonesianDate(pole.createdAt || pole.surveyDate, pole.surveyTime)}</span>
+                    <span>
+                      {formatIndonesianDate(pole.createdAt || pole.surveyDate, pole.surveyTime)}
+                    </span>
                   </span>
 
                   <span className="text-blue-600 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
@@ -776,7 +796,12 @@ export default function PoleListFilterClient({
       {filteredPoles.length > 0 && (
         <div className="bg-white rounded-3xl p-3.5 border border-slate-100 shadow-[0_2px_12px_rgba(15,23,42,0.04)] flex items-center justify-between gap-2 flex-wrap text-xs">
           <div className="text-[11px] text-slate-500 font-medium">
-            Menampilkan <strong className="text-slate-900 font-mono">{(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredPoles.length)}</strong> dari <strong className="text-blue-600 font-mono">{filteredPoles.length}</strong> tiang
+            Menampilkan{' '}
+            <strong className="text-slate-900 font-mono">
+              {(currentPage - 1) * itemsPerPage + 1}-
+              {Math.min(currentPage * itemsPerPage, filteredPoles.length)}
+            </strong>{' '}
+            dari <strong className="text-blue-600 font-mono">{filteredPoles.length}</strong> tiang
           </div>
 
           <div className="flex items-center gap-1.5 ml-auto flex-wrap">
@@ -895,7 +920,9 @@ export default function PoleListFilterClient({
                   onChange={(e) => setSelectedProvider(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-900 font-semibold outline-none focus:border-blue-500 focus:bg-white transition-all"
                 >
-                  <option value="ALL">Semua Provider ({allCombinedProviders.length} Operator)</option>
+                  <option value="ALL">
+                    Semua Provider ({allCombinedProviders.length} Operator)
+                  </option>
                   {allCombinedProviders.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}

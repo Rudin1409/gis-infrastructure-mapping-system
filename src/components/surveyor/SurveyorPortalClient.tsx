@@ -201,9 +201,7 @@ export default function SurveyorPortalClient({ initialPoles }: SurveyorPortalCli
               <span className="text-base font-black tracking-tight block">
                 Mulai Survey Tiang Baru
               </span>
-              <span className="text-xs text-blue-100">
-                Kunci Koordinat GPS &amp; Foto Lapangan
-              </span>
+              <span className="text-xs text-blue-100">Kunci Koordinat GPS &amp; Foto Lapangan</span>
             </div>
           </div>
 
@@ -216,7 +214,10 @@ export default function SurveyorPortalClient({ initialPoles }: SurveyorPortalCli
         {isLoading ? (
           <div className="bg-slate-900/95 backdrop-blur-xl rounded-3xl p-4 border border-slate-800 shadow-xl grid grid-cols-3 gap-2 text-center animate-pulse">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="p-2 bg-slate-800/50 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center space-y-2">
+              <div
+                key={i}
+                className="p-2 bg-slate-800/50 rounded-2xl border border-slate-700/50 flex flex-col items-center justify-center space-y-2"
+              >
                 <div className="h-2.5 w-12 bg-slate-700 rounded-full" />
                 <div className="h-5 w-8 bg-slate-600 rounded-md" />
               </div>
@@ -224,19 +225,33 @@ export default function SurveyorPortalClient({ initialPoles }: SurveyorPortalCli
           </div>
         ) : (
           <div className="bg-slate-900/95 backdrop-blur-xl rounded-3xl p-4 border border-slate-800 shadow-xl grid grid-cols-3 gap-2 text-center">
-            <Link href="/poles" className="p-2 bg-slate-800/50 hover:bg-slate-800 rounded-2xl border border-slate-700/50 transition-colors">
-              <span className="text-[10px] text-slate-400 font-semibold uppercase block">Total Tiang</span>
+            <Link
+              href="/poles"
+              className="p-2 bg-slate-800/50 hover:bg-slate-800 rounded-2xl border border-slate-700/50 transition-colors"
+            >
+              <span className="text-[10px] text-slate-400 font-semibold uppercase block">
+                Total Tiang
+              </span>
               <span className="text-lg font-black text-white font-mono">{livePoles.length}</span>
             </Link>
 
             <div className="p-2 bg-slate-800/50 rounded-2xl border border-slate-700/50">
-              <span className="text-[10px] text-emerald-400 font-semibold uppercase block">Hari Ini</span>
+              <span className="text-[10px] text-emerald-400 font-semibold uppercase block">
+                Hari Ini
+              </span>
               <span className="text-lg font-black text-emerald-400 font-mono">+{todayCount}</span>
             </div>
 
-            <Link href="/segments" className="p-2 bg-slate-800/50 hover:bg-slate-800 rounded-2xl border border-slate-700/50 transition-colors">
-              <span className="text-[10px] text-amber-400 font-semibold uppercase block">Perlu Cek</span>
-              <span className="text-lg font-black text-amber-400 font-mono">{hazardPolesCount}</span>
+            <Link
+              href="/segments"
+              className="p-2 bg-slate-800/50 hover:bg-slate-800 rounded-2xl border border-slate-700/50 transition-colors"
+            >
+              <span className="text-[10px] text-amber-400 font-semibold uppercase block">
+                Perlu Cek
+              </span>
+              <span className="text-lg font-black text-amber-400 font-mono">
+                {hazardPolesCount}
+              </span>
             </Link>
           </div>
         )}
@@ -292,9 +307,7 @@ export default function SurveyorPortalClient({ initialPoles }: SurveyorPortalCli
                   <span className="text-[11px] font-bold text-slate-200 group-hover:text-white line-clamp-1 leading-tight">
                     {menu.label}
                   </span>
-                  <span className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">
-                    {menu.desc}
-                  </span>
+                  <span className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">{menu.desc}</span>
                 </Link>
               );
             })}
@@ -342,7 +355,10 @@ export default function SurveyorPortalClient({ initialPoles }: SurveyorPortalCli
           {isLoading ? (
             <div className="space-y-2.5 py-1">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-2xl bg-slate-800/40 animate-pulse">
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-2 rounded-2xl bg-slate-800/40 animate-pulse"
+                >
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-slate-700" />
                     <div className="space-y-1.5">
@@ -387,15 +403,15 @@ export default function SurveyorPortalClient({ initialPoles }: SurveyorPortalCli
                         pole.condition === 'GOOD'
                           ? 'bg-emerald-500/20 text-emerald-400'
                           : pole.condition === 'NEEDS_REPAIR'
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-rose-500/20 text-rose-400'
+                            ? 'bg-amber-500/20 text-amber-400'
+                            : 'bg-rose-500/20 text-rose-400'
                       }`}
                     >
                       {pole.condition === 'GOOD'
                         ? 'Baik'
                         : pole.condition === 'NEEDS_REPAIR'
-                        ? 'Miring'
-                        : 'Rusak'}
+                          ? 'Miring'
+                          : 'Rusak'}
                     </span>
                     <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
                   </div>

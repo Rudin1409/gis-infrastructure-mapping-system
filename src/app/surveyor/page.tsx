@@ -10,4 +10,3 @@ export default async function SurveyorPortalPage() {
 
   return <SurveyorPortalClient initialPoles={allPoles} />;
 }
-

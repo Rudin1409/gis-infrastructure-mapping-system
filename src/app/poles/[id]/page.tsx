@@ -36,11 +36,7 @@ export const dynamic = 'force-dynamic';
 
 import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 
-export default async function PoleDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function PoleDetailPage({ params }: { params: { id: string } }) {
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 
@@ -74,7 +70,11 @@ export default async function PoleDetailPage({
 
   // Format Direct Google Drive Image CDN URL for 100% reliable in-app browser rendering
   const displayPhotoUrl = formatGoogleDriveImageUrl(pole.photoUrl, pole.photoFileId, 1000);
-  const rawHdUrl = pole.photoUrl || (pole.photoFileId ? `https://drive.google.com/uc?id=${pole.photoFileId}&export=view` : undefined);
+  const rawHdUrl =
+    pole.photoUrl ||
+    (pole.photoFileId
+      ? `https://drive.google.com/uc?id=${pole.photoFileId}&export=view`
+      : undefined);
 
   return (
     <div className="p-4 space-y-3.5 text-slate-800 font-sans pb-24 animate-in fade-in duration-150">
@@ -108,15 +108,15 @@ export default async function PoleDetailPage({
               pole.condition === 'GOOD'
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 : pole.condition === 'NEEDS_REPAIR'
-                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                  : 'bg-rose-50 text-rose-700 border border-rose-200'
             }`}
           >
             {pole.condition === 'GOOD'
               ? '🟢 Baik'
               : pole.condition === 'NEEDS_REPAIR'
-              ? '🟡 Perlu Cek'
-              : '🔴 Rusak'}
+                ? '🟡 Perlu Cek'
+                : '🔴 Rusak'}
           </span>
         </div>
 
@@ -148,15 +148,17 @@ export default async function PoleDetailPage({
         <div className="grid grid-cols-2 gap-2 text-[11px]">
           {/* Category Card */}
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
-            <span className="text-slate-400 block text-[9px] uppercase font-bold">Kategori Infrastruktur</span>
+            <span className="text-slate-400 block text-[9px] uppercase font-bold">
+              Kategori Infrastruktur
+            </span>
             <span className="font-bold text-slate-900 block mt-0.5 text-xs">
               {pole.infrastructureCategory === 'PJU_MANDIRI'
                 ? '💡 Tiang Penerangan Jalan Umum (PJU Mandiri Pemkot)'
                 : pole.infrastructureCategory === 'GABUNG_PLN_PJU'
-                ? '⚡💡 Tiang Gabungan (PLN Distribusi + Lampu PJU)'
-                : pole.infrastructureCategory === 'PLN_MURNI'
-                ? '⚡ Tiang Distribusi Jaringan Listrik PLN'
-                : '🌐 Tiang Fiber Optik / Provider WiFi Internet'}
+                  ? '⚡💡 Tiang Gabungan (PLN Distribusi + Lampu PJU)'
+                  : pole.infrastructureCategory === 'PLN_MURNI'
+                    ? '⚡ Tiang Distribusi Jaringan Listrik PLN'
+                    : '🌐 Tiang Fiber Optik / Provider WiFi Internet'}
             </span>
           </div>
 
@@ -168,7 +170,9 @@ export default async function PoleDetailPage({
               </div>
             )}
             <div className="min-w-0">
-              <span className="text-slate-400 block text-[9px] uppercase font-bold">Instansi / Pemilik</span>
+              <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                Instansi / Pemilik
+              </span>
               <span className="font-bold text-slate-800 truncate block mt-0.5">
                 {resolvedProvider.providerName}
               </span>
@@ -177,7 +181,9 @@ export default async function PoleDetailPage({
 
           {/* Material & Tinggi */}
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-            <span className="text-slate-400 block text-[9px] uppercase font-bold">Material &amp; Tinggi</span>
+            <span className="text-slate-400 block text-[9px] uppercase font-bold">
+              Material &amp; Tinggi
+            </span>
             <span className="font-bold text-slate-800 block mt-0.5 capitalize">
               {pole.poleType} • {pole.height || '5m'}
             </span>
@@ -190,10 +196,10 @@ export default async function PoleDetailPage({
               {pole.sisiJalan === 'MEDIAN'
                 ? 'Median Tengah'
                 : pole.sisiJalan === 'KANAN'
-                ? 'Kanan Jalan'
-                : pole.sisiJalan === 'KIRI'
-                ? 'Kiri Jalan'
-                : 'Tidak Ditentukan'}
+                  ? 'Kanan Jalan'
+                  : pole.sisiJalan === 'KIRI'
+                    ? 'Kiri Jalan'
+                    : 'Tidak Ditentukan'}
             </span>
           </div>
 
@@ -203,34 +209,38 @@ export default async function PoleDetailPage({
               {pole.infrastructureCategory === 'PLN_MURNI'
                 ? 'Milik PT PLN'
                 : pole.infrastructureCategory === 'GABUNG_PLN_PJU'
-                ? 'Joint PLN & Pemkot'
-                : pole.infrastructureCategory === 'PJU_MANDIRI'
-                ? 'Milik Pemkot Lubuklinggau'
-                : pole.ownershipStatus === 'BERSAMA_PLN'
-                ? 'Joint PLN'
-                : pole.ownershipStatus === 'SEWA'
-                ? 'Sewa'
-                : pole.ownershipStatus === 'SENDIRI'
-                ? 'Sendiri'
-                : 'Tidak Tahu'}
+                  ? 'Joint PLN & Pemkot'
+                  : pole.infrastructureCategory === 'PJU_MANDIRI'
+                    ? 'Milik Pemkot Lubuklinggau'
+                    : pole.ownershipStatus === 'BERSAMA_PLN'
+                      ? 'Joint PLN'
+                      : pole.ownershipStatus === 'SEWA'
+                        ? 'Sewa'
+                        : pole.ownershipStatus === 'SENDIRI'
+                          ? 'Sendiri'
+                          : 'Tidak Tahu'}
             </span>
           </div>
 
           {/* Tipe Jalur Kabel */}
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
-            <span className="text-slate-400 block text-[9px] uppercase font-bold">Tipe Pemasangan Jalur Kabel</span>
+            <span className="text-slate-400 block text-[9px] uppercase font-bold">
+              Tipe Pemasangan Jalur Kabel
+            </span>
             <span className="font-bold text-slate-800 block mt-0.5 text-xs">
               {pole.cableInstallationType === 'BAWAH_TANAH'
                 ? '🕳️ Kabel Bawah Tanah / Tanam (Underground / Ducting)'
                 : pole.cableInstallationType === 'TRANSISI_RISER'
-                ? '↕️ Riser Pole (Transisi Naik/Turun Bawah Tanah)'
-                : '🌐 Kabel Udara (Di Atas Tiang / Aerial)'}
+                  ? '↕️ Riser Pole (Transisi Naik/Turun Bawah Tanah)'
+                  : '🌐 Kabel Udara (Di Atas Tiang / Aerial)'}
             </span>
           </div>
 
           {/* Alamat Spasial */}
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
-            <span className="text-slate-400 block text-[9px] uppercase font-bold">Alamat Spasial</span>
+            <span className="text-slate-400 block text-[9px] uppercase font-bold">
+              Alamat Spasial
+            </span>
             <span className="font-bold text-slate-900 block mt-0.5 text-xs">
               {pole.road || (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}
             </span>
@@ -240,18 +250,20 @@ export default async function PoleDetailPage({
               </span>
             )}
             <span className="text-[10px] text-slate-500 block mt-0.5">
-              {pole.road ? (
-                `Kel. ${pole.kelurahan}, Kec. ${pole.kecamatan}`
-              ) : (
-                pole.kelurahan ? `Kel. ${pole.kelurahan}, Kota Lubuklinggau` : 'Kota Lubuklinggau'
-              )}
+              {pole.road
+                ? `Kel. ${pole.kelurahan}, Kec. ${pole.kecamatan}`
+                : pole.kelurahan
+                  ? `Kel. ${pole.kelurahan}, Kota Lubuklinggau`
+                  : 'Kota Lubuklinggau'}
             </span>
           </div>
 
           {/* Koordinat & Akurasi */}
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400 block text-[9px] uppercase font-bold">Koordinat Presisi GIS</span>
+              <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                Koordinat Presisi GIS
+              </span>
               <span className="text-[9px] font-bold text-blue-600">WGS84</span>
             </div>
             <span className="font-mono text-emerald-600 font-bold block mt-0.5 text-xs">
@@ -259,7 +271,8 @@ export default async function PoleDetailPage({
             </span>
             <div className="mt-2 pt-2 border-t border-slate-200/60 flex flex-wrap items-center justify-between gap-1.5">
               <span className="text-[10px] text-slate-500">
-                Akurasi: {pole.gpsAccuracy ? `±${pole.gpsAccuracy.toFixed(1)}m` : 'Presisi'} • Deviasi: {formatDistance(pole.distanceFromDevice || 0)}
+                Akurasi: {pole.gpsAccuracy ? `±${pole.gpsAccuracy.toFixed(1)}m` : 'Presisi'} •
+                Deviasi: {formatDistance(pole.distanceFromDevice || 0)}
               </span>
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${pole.poleLatitude},${pole.poleLongitude}`}
@@ -275,7 +288,9 @@ export default async function PoleDetailPage({
         </div>
 
         {/* PJU Technical Card (If PJU) */}
-        {(pole.infrastructureCategory === 'PJU_MANDIRI' || pole.infrastructureCategory === 'GABUNG_PLN_PJU' || pole.pjuLampType) && (
+        {(pole.infrastructureCategory === 'PJU_MANDIRI' ||
+          pole.infrastructureCategory === 'GABUNG_PLN_PJU' ||
+          pole.pjuLampType) && (
           <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
@@ -286,35 +301,45 @@ export default async function PoleDetailPage({
                 {pole.pjuLampCondition === 'MENYALA_NORMAL'
                   ? '🟢 Menyala'
                   : pole.pjuLampCondition === 'REDUP'
-                  ? '🟡 Redup'
-                  : pole.pjuLampCondition === 'MATI_TOTAL'
-                  ? '🔴 Mati'
-                  : '💥 Pecah/Rusak'}
+                    ? '🟡 Redup'
+                    : pole.pjuLampCondition === 'MATI_TOTAL'
+                      ? '🔴 Mati'
+                      : '💥 Pecah/Rusak'}
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
               <div className="bg-white p-2 rounded-xl border border-amber-200">
-                <span className="text-slate-400 block text-[8px] font-bold uppercase">Tipe Lampu</span>
+                <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                  Tipe Lampu
+                </span>
                 <span className="font-bold text-slate-800 block mt-0.5">
                   {pole.pjuLampType || 'LED'}
                 </span>
               </div>
               <div className="bg-white p-2 rounded-xl border border-amber-200">
-                <span className="text-slate-400 block text-[8px] font-bold uppercase">Daya Lampu</span>
+                <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                  Daya Lampu
+                </span>
                 <span className="font-bold text-slate-800 block mt-0.5">
                   {pole.pjuLampPower || '90 Watt'}
                 </span>
               </div>
               <div className="bg-white p-2 rounded-xl border border-amber-200">
-                <span className="text-slate-400 block text-[8px] font-bold uppercase">KWh Meter</span>
+                <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                  KWh Meter
+                </span>
                 <span className="font-bold text-slate-800 block mt-0.5">
                   {pole.hasKwhMeter ? 'Ada Meter' : 'Non-Meter'}
                 </span>
               </div>
               <div className="bg-white p-2 rounded-xl border border-amber-200">
-                <span className="text-slate-400 block text-[8px] font-bold uppercase">Kabel Jaringan</span>
-                <span className={`font-bold block mt-0.5 ${pole.hasNetworkCable ? 'text-blue-700 font-black' : 'text-slate-700'}`}>
+                <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                  Kabel Jaringan
+                </span>
+                <span
+                  className={`font-bold block mt-0.5 ${pole.hasNetworkCable ? 'text-blue-700 font-black' : 'text-slate-700'}`}
+                >
                   {pole.hasNetworkCable ? '🌐 Ada Kabel FO' : '🚫 PJU Murni'}
                 </span>
               </div>
@@ -374,9 +399,7 @@ export default async function PoleDetailPage({
             <span className="text-[9px] font-bold text-slate-400 uppercase block">
               Catatan Lapangan:
             </span>
-            <p className="text-slate-700 italic">
-              &ldquo;{pole.description}&rdquo;
-            </p>
+            <p className="text-slate-700 italic">&ldquo;{pole.description}&rdquo;</p>
           </div>
         )}
       </div>
@@ -416,8 +439,13 @@ export default async function PoleDetailPage({
 
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-            <span className="text-slate-400 text-[9px] block uppercase font-bold">Petugas Surveyor</span>
-            <span className="font-bold text-blue-600 truncate block mt-0.5" title={pole.surveyorName}>
+            <span className="text-slate-400 text-[9px] block uppercase font-bold">
+              Petugas Surveyor
+            </span>
+            <span
+              className="font-bold text-blue-600 truncate block mt-0.5"
+              title={pole.surveyorName}
+            >
               {pole.surveyorName || 'Admin DISKOMINFO'}
             </span>
           </div>

@@ -138,8 +138,8 @@ export default function OfflineQueueWidget() {
             !isOnline
               ? 'bg-amber-600/95 text-white border-amber-400/50 shadow-amber-900/30 ring-2 ring-amber-400/40'
               : count > 0
-              ? 'bg-blue-600/95 text-white border-blue-400/50 shadow-blue-900/30 ring-2 ring-blue-400/40'
-              : 'bg-slate-900/90 text-white border-slate-700/60'
+                ? 'bg-blue-600/95 text-white border-blue-400/50 shadow-blue-900/30 ring-2 ring-blue-400/40'
+                : 'bg-slate-900/90 text-white border-slate-700/60'
           }`}
         >
           {!isOnline ? (
@@ -193,15 +193,11 @@ export default function OfflineQueueWidget() {
                   {!isOnline ? <WifiOff className="w-4 h-4" /> : <Database className="w-4 h-4" />}
                 </div>
                 <div>
-                  <h3 className="text-sm font-black tracking-tight">
-                    Brankas Antrean Offline
-                  </h3>
+                  <h3 className="text-sm font-black tracking-tight">Brankas Antrean Offline</h3>
                   <p className="text-[11px] text-slate-300">
                     Status Sinyal:{' '}
                     <span
-                      className={`font-bold ${
-                        isOnline ? 'text-emerald-300' : 'text-amber-300'
-                      }`}
+                      className={`font-bold ${isOnline ? 'text-emerald-300' : 'text-amber-300'}`}
                     >
                       {isOnline ? 'Online (Terhubung)' : 'Offline (Tanpa Sinyal)'}
                     </span>
@@ -264,7 +260,9 @@ export default function OfflineQueueWidget() {
                   Jaminan Keamanan Data di Daerah Lemah Sinyal:
                 </div>
                 <p className="text-slate-600 leading-relaxed text-[10.5px]">
-                  Data tiang & foto yang Anda input saat sinyal putus tersimpan utuh di memori HP (IndexedDB). Data <strong>tidak akan pernah hilang</strong> dan tidak akan ganda saat dikirim ke server.
+                  Data tiang & foto yang Anda input saat sinyal putus tersimpan utuh di memori HP
+                  (IndexedDB). Data <strong>tidak akan pernah hilang</strong> dan tidak akan ganda
+                  saat dikirim ke server.
                 </p>
               </div>
 

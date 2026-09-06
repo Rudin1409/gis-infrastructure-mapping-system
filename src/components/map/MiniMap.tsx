@@ -30,7 +30,9 @@ export default function MiniMap({
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
-  const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
+  const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>(
+    'clean_satellite'
+  );
   const [isLoadingLicense, setIsLoadingLicense] = useState(true);
   const [isLicenseLocked, setIsLicenseLocked] = useState(false);
 
@@ -117,8 +119,8 @@ export default function MiniMap({
       tileMode === 'clean_satellite'
         ? 'hybrid_survey'
         : tileMode === 'hybrid_survey'
-        ? 'street'
-        : 'clean_satellite';
+          ? 'street'
+          : 'clean_satellite';
     setTileMode(nextMode);
 
     if (tileLayerRef.current) {
@@ -126,11 +128,13 @@ export default function MiniMap({
     }
 
     const tileConfig = MAP_TILE_LAYERS[nextMode];
-    const newLayer = leafletLib.tileLayer(tileConfig.url, {
-      attribution: tileConfig.attribution,
-      maxZoom: tileConfig.maxZoom,
-      subdomains: tileConfig.subdomains || ['0', '1', '2', '3'],
-    }).addTo(mapRef.current);
+    const newLayer = leafletLib
+      .tileLayer(tileConfig.url, {
+        attribution: tileConfig.attribution,
+        maxZoom: tileConfig.maxZoom,
+        subdomains: tileConfig.subdomains || ['0', '1', '2', '3'],
+      })
+      .addTo(mapRef.current);
 
     tileLayerRef.current = newLayer;
   };

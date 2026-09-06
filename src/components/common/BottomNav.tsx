@@ -3,10 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Map, Plus, Database, User } from 'lucide-react';
+import { LayoutDashboard, Map, Plus, Database, Settings, User } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN_KOMINFO' || user?.role === 'SUPER_ADMIN';
 
   // Hide BottomNav on Survey Wizard (/poles/new) and Pole Detail / Edit (/poles/[id])
   // so the action buttons and map have 100% unobstructed screen space with TopHeader back button
@@ -22,7 +25,11 @@ export default function BottomNav() {
     { href: '/map', label: 'Peta GIS', icon: Map },
     { href: '/poles/new', label: 'Survey', icon: Plus, isPrimary: true },
     { href: '/poles', label: 'Katalog', icon: Database },
-    { href: '/profile', label: 'Profil', icon: User },
+    {
+      href: isAdmin ? '/admin' : '/profile',
+      label: isAdmin ? 'Admin' : 'Profil',
+      icon: isAdmin ? Settings : User,
+    },
   ];
 
   return (
@@ -30,7 +37,8 @@ export default function BottomNav() {
       <div className="flex items-center justify-around relative">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const isActive =
+            pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
 
           if (item.isPrimary) {
             return (
@@ -68,7 +76,9 @@ export default function BottomNav() {
               }`}
             >
               <div className="relative">
-                <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5] text-blue-600' : 'stroke-2 text-slate-400'}`} />
+                <Icon
+                  className={`w-5 h-5 ${isActive ? 'stroke-[2.5] text-blue-600' : 'stroke-2 text-slate-400'}`}
+                />
                 {isActive && (
                   <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_#3b82f6] animate-in zoom-in-75" />
                 )}

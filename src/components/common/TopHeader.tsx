@@ -15,6 +15,7 @@ import {
   RotateCw,
   User,
   ShieldAlert,
+  Settings,
   Monitor,
   Smartphone,
   Maximize2,
@@ -87,6 +88,14 @@ export default function TopHeader() {
         showBack: false,
       };
     }
+    if (pathname === '/admin') {
+      return {
+        title: 'Panel Admin GIS',
+        subtitle: 'Pengaturan Sistem & Kustomisasi',
+        icon: Settings,
+        showBack: false,
+      };
+    }
     return {
       title: 'INFRA-MAP GIS',
       subtitle: 'Kota Lubuklinggau',
@@ -130,7 +139,9 @@ export default function TopHeader() {
 
   return (
     <header className="sticky top-0 w-full z-30 bg-slate-950/95 backdrop-blur-xl text-white shadow-[0_4px_20px_rgba(0,0,0,0.35)] border-b border-slate-800/80 select-none flex-shrink-0">
-      <div className={`py-2 flex items-center justify-between gap-2 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto px-4' : 'w-full max-w-[430px] mx-auto px-3'}`}>
+      <div
+        className={`py-2 flex items-center justify-between gap-2 transition-all duration-300 ${viewMode === 'DESKTOP' ? 'w-full max-w-7xl mx-auto px-4' : 'w-full max-w-[430px] mx-auto px-3'}`}
+      >
         {/* Left Side: Back Button OR Brand Emblem + Title */}
         <div className="flex items-center gap-2 min-w-0">
           {meta.showBack ? (

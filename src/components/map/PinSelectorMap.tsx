@@ -191,7 +191,9 @@ export default function PinSelectorMap({
   }, []);
 
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
-  const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('hybrid_survey');
+  const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>(
+    'hybrid_survey'
+  );
   const [showBoundaries, setShowBoundaries] = useState(true);
   const [gpsReading, setGpsReading] = useState<GpsReading | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -284,7 +286,14 @@ export default function PinSelectorMap({
 
   // Initialize Map
   useEffect(() => {
-    if (isLoadingLicense || isLicenseLocked || !leafletLib || !mapContainerRef.current || mapInstanceRef.current) return;
+    if (
+      isLoadingLicense ||
+      isLicenseLocked ||
+      !leafletLib ||
+      !mapContainerRef.current ||
+      mapInstanceRef.current
+    )
+      return;
     isMountedRef.current = true;
 
     const L = leafletLib;
@@ -322,7 +331,8 @@ export default function PinSelectorMap({
       }).bindTooltip(district.name, {
         permanent: true,
         direction: 'center',
-        className: 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/90 shadow-sm border border-slate-200/90 text-slate-800 pointer-events-none',
+        className:
+          'text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/90 shadow-sm border border-slate-200/90 text-slate-800 pointer-events-none',
       });
       boundaryGroup.addLayer(polygon);
     });
@@ -390,10 +400,7 @@ export default function PinSelectorMap({
         radiusCircleRef.current.setLatLng(latLng);
       }
       if (originalCoord && shiftLineRef.current) {
-        shiftLineRef.current.setLatLngs([
-          [originalCoord.lat, originalCoord.lng],
-          latLng,
-        ]);
+        shiftLineRef.current.setLatLngs([[originalCoord.lat, originalCoord.lng], latLng]);
       }
       if (distanceLineRef.current && gpsReadingRef.current) {
         distanceLineRef.current.setLatLngs([
@@ -633,7 +640,7 @@ export default function PinSelectorMap({
         <div style="min-width:170px">
           <strong>${escapeHtml(pole.poleCode || pole.id)}</strong><br/>
           <span>${escapeHtml(pole.providerName || 'Data tiang')}</span><br/>
-          <small>${escapeHtml(pole.road ? `${pole.road}, Kel. ${pole.kelurahan || '-'}` : (pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau'))}</small><br/>
+          <small>${escapeHtml(pole.road ? `${pole.road}, Kel. ${pole.kelurahan || '-'}` : pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}</small><br/>
           <b>Jarak: ${escapeHtml(formatDistance(pole.distanceMeters || 0))}</b>
         </div>
       `);
@@ -672,8 +679,8 @@ export default function PinSelectorMap({
       tileMode === 'hybrid_survey'
         ? 'clean_satellite'
         : tileMode === 'clean_satellite'
-        ? 'street'
-        : 'hybrid_survey';
+          ? 'street'
+          : 'hybrid_survey';
     setTileMode(nextMode);
 
     if (currentTileLayerRef.current) {
@@ -681,11 +688,13 @@ export default function PinSelectorMap({
     }
 
     const tileConfig = MAP_TILE_LAYERS[nextMode];
-    const newLayer = leafletLib.tileLayer(tileConfig.url, {
-      attribution: tileConfig.attribution,
-      maxZoom: tileConfig.maxZoom,
-      subdomains: tileConfig.subdomains || ['0', '1', '2', '3'],
-    }).addTo(mapInstanceRef.current);
+    const newLayer = leafletLib
+      .tileLayer(tileConfig.url, {
+        attribution: tileConfig.attribution,
+        maxZoom: tileConfig.maxZoom,
+        subdomains: tileConfig.subdomains || ['0', '1', '2', '3'],
+      })
+      .addTo(mapInstanceRef.current);
 
     currentTileLayerRef.current = newLayer;
   };
@@ -918,9 +927,7 @@ export default function PinSelectorMap({
     mapInstanceRef.current.panTo([latitude, longitude]);
   };
 
-  const shiftFromOriginal = originalCoord
-    ? calculateHaversineDistance(originalCoord, pinCoord)
-    : 0;
+  const shiftFromOriginal = originalCoord ? calculateHaversineDistance(originalCoord, pinCoord) : 0;
 
   const resetToOriginal = () => {
     if (!originalCoord || !pinMarkerRef.current || !mapInstanceRef.current) return;
@@ -946,13 +953,9 @@ export default function PinSelectorMap({
   };
 
   // Quality Control evaluation
-  const deviceCoord = gpsReading
-    ? { lat: gpsReading.latitude, lng: gpsReading.longitude }
-    : null;
+  const deviceCoord = gpsReading ? { lat: gpsReading.latitude, lng: gpsReading.longitude } : null;
 
-  const distance = deviceCoord
-    ? calculateHaversineDistance(deviceCoord, pinCoord)
-    : 0;
+  const distance = deviceCoord ? calculateHaversineDistance(deviceCoord, pinCoord) : 0;
 
   const locationQC = evaluateLocationQC(pinCoord, deviceCoord);
   const gpsQuality = getGpsQuality(gpsReading?.accuracy);
@@ -962,8 +965,8 @@ export default function PinSelectorMap({
     typeof nearestDistance === 'number' && nearestDistance <= 25
       ? 'danger'
       : typeof nearestDistance === 'number' && nearestDistance <= 75
-      ? 'warning'
-      : 'clear';
+        ? 'warning'
+        : 'clear';
 
   // Handle confirmation: read coordinates accurately directly from pinMarker if active
   const handleConfirm = () => {
@@ -1116,14 +1119,25 @@ export default function PinSelectorMap({
           </div>
 
           <div className="font-mono text-[10px] text-slate-100 font-bold leading-tight">
-            <div>Lat: <span className="text-emerald-300">{pinCoord.lat.toFixed(6)}</span></div>
-            <div>Lng: <span className="text-emerald-300">{pinCoord.lng.toFixed(6)}</span></div>
+            <div>
+              Lat: <span className="text-emerald-300">{pinCoord.lat.toFixed(6)}</span>
+            </div>
+            <div>
+              Lng: <span className="text-emerald-300">{pinCoord.lng.toFixed(6)}</span>
+            </div>
           </div>
 
           <div className="text-[9px] text-slate-400 border-t border-white/10 pt-1 flex items-center justify-between">
-            <span>Akurasi: <strong className="text-slate-200">{gpsReading ? `±${gpsReading.accuracy.toFixed(0)}m` : '-'}</strong></span>
+            <span>
+              Akurasi:{' '}
+              <strong className="text-slate-200">
+                {gpsReading ? `±${gpsReading.accuracy.toFixed(0)}m` : '-'}
+              </strong>
+            </span>
             {distance > 0 && (
-              <span className={`font-bold ${locationQC.isWarningDistance ? 'text-amber-400' : 'text-emerald-400'}`}>
+              <span
+                className={`font-bold ${locationQC.isWarningDistance ? 'text-amber-400' : 'text-emerald-400'}`}
+              >
                 {formatDistance(distance)}
               </span>
             )}
@@ -1165,17 +1179,17 @@ export default function PinSelectorMap({
                   duplicateLevel === 'danger'
                     ? 'text-red-600'
                     : duplicateLevel === 'warning'
-                    ? 'text-amber-600'
-                    : 'text-emerald-600'
+                      ? 'text-amber-600'
+                      : 'text-emerald-600'
                 }`}
               >
                 {isCheckingNearby
                   ? 'Memindai lokasi...'
                   : duplicateLevel === 'danger'
-                  ? 'Ada titik sangat dekat'
-                  : duplicateLevel === 'warning'
-                  ? 'Ada titik di sekitar'
-                  : 'Belum ada titik dekat'}
+                    ? 'Ada titik sangat dekat'
+                    : duplicateLevel === 'warning'
+                      ? 'Ada titik di sekitar'
+                      : 'Belum ada titik dekat'}
               </p>
             </div>
             {isCheckingNearby ? (
@@ -1203,7 +1217,11 @@ export default function PinSelectorMap({
                 <br />
                 {nearbyPoles.length} tiang
               </span>
-              {showNearbyLayer ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+              {showNearbyLayer ? (
+                <Eye className="h-3.5 w-3.5" />
+              ) : (
+                <EyeOff className="h-3.5 w-3.5" />
+              )}
             </button>
 
             {isKominfoUser && (
@@ -1232,8 +1250,10 @@ export default function PinSelectorMap({
               <span className="text-amber-700">{nearbyError}</span>
             ) : nearestPole ? (
               <span>
-                Terdekat <strong className="text-slate-950">{formatDistance(nearestDistance || 0)}</strong>
-                {' '}dari <strong className="text-slate-950">{nearestPole.poleCode || nearestPole.id}</strong>
+                Terdekat{' '}
+                <strong className="text-slate-950">{formatDistance(nearestDistance || 0)}</strong>{' '}
+                dari{' '}
+                <strong className="text-slate-950">{nearestPole.poleCode || nearestPole.id}</strong>
               </span>
             ) : (
               <span>Geser pin untuk cek titik yang sudah ditandai.</span>
@@ -1331,7 +1351,9 @@ export default function PinSelectorMap({
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 title="Muat ulang tampilan Street View"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isStreetViewLoading ? 'animate-spin text-sky-300' : ''}`} />
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${isStreetViewLoading ? 'animate-spin text-sky-300' : ''}`}
+                />
                 <span className="hidden sm:inline">Segarkan</span>
               </button>
 
@@ -1362,7 +1384,9 @@ export default function PinSelectorMap({
               <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-xs text-white pointer-events-none">
                 <Loader2 className="w-8 h-8 text-sky-300 animate-spin mb-2" />
                 <p className="text-xs font-bold text-slate-300">Memuat Street View...</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Tahan &amp; geser layar atau gunakan tombol putar</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">
+                  Tahan &amp; geser layar atau gunakan tombol putar
+                </p>
               </div>
             )}
 
@@ -1429,7 +1453,9 @@ export default function PinSelectorMap({
             {showStreetViewLockHint && (
               <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-red-600 text-white border border-red-400/80 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in duration-150 pointer-events-none">
                 <Lock className="w-3.5 h-3.5 fill-white text-white" />
-                <span className="text-[10.5px] font-black tracking-tight">Posisi Terkunci (Ganti lewat Peta 2D)</span>
+                <span className="text-[10.5px] font-black tracking-tight">
+                  Posisi Terkunci (Ganti lewat Peta 2D)
+                </span>
               </div>
             )}
           </div>
@@ -1442,7 +1468,8 @@ export default function PinSelectorMap({
                 <span>Verifikasi Posisi Tiang</span>
               </p>
               <p className="mt-0.5 text-[10px] leading-relaxed text-slate-300">
-                Putar 360° untuk cek lingkungan sekitar tiang. Geser titik dari peta 2D jika belum pas.
+                Putar 360° untuk cek lingkungan sekitar tiang. Geser titik dari peta 2D jika belum
+                pas.
               </p>
             </div>
 

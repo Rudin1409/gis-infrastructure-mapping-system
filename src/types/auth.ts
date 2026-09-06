@@ -37,7 +37,11 @@ export const DEFAULT_ACCOUNTS: (AuthUser & { password: string; alternativeEmails
     team: 'KOMINFO',
     phone: '083196589665',
     avatar: '👨‍💼',
-    alternativeEmails: ['trisaputra@lubuklinggaukota.go.id', '083196589665', 'surveyor1@lubuklinggaukota.go.id'],
+    alternativeEmails: [
+      'trisaputra@lubuklinggaukota.go.id',
+      '083196589665',
+      'surveyor1@lubuklinggaukota.go.id',
+    ],
   },
   {
     id: 'USR-SURVEYOR-02',
@@ -50,7 +54,11 @@ export const DEFAULT_ACCOUNTS: (AuthUser & { password: string; alternativeEmails
     team: 'BAPENDA',
     phone: '081373193335',
     avatar: '👷‍♂️',
-    alternativeEmails: ['yodi@lubuklinggaukota.go.id', '081373193335', 'surveyor2@lubuklinggaukota.go.id'],
+    alternativeEmails: [
+      'yodi@lubuklinggaukota.go.id',
+      '081373193335',
+      'surveyor2@lubuklinggaukota.go.id',
+    ],
   },
   {
     id: 'USR-SURVEYOR-03',
@@ -63,7 +71,11 @@ export const DEFAULT_ACCOUNTS: (AuthUser & { password: string; alternativeEmails
     team: 'BAPENDA',
     phone: '081373249228',
     avatar: '🧑‍💼',
-    alternativeEmails: ['andika@lubuklinggaukota.go.id', '081373249228', 'surveyor3@lubuklinggaukota.go.id'],
+    alternativeEmails: [
+      'andika@lubuklinggaukota.go.id',
+      '081373249228',
+      'surveyor3@lubuklinggaukota.go.id',
+    ],
   },
   {
     id: 'USR-SURVEYOR-04',
@@ -76,7 +88,11 @@ export const DEFAULT_ACCOUNTS: (AuthUser & { password: string; alternativeEmails
     team: 'BAPENDA',
     phone: '082251654742',
     avatar: '🧭',
-    alternativeEmails: ['pradigga@lubuklinggaukota.go.id', '082251654742', 'surveyor4@lubuklinggaukota.go.id'],
+    alternativeEmails: [
+      'pradigga@lubuklinggaukota.go.id',
+      '082251654742',
+      'surveyor4@lubuklinggaukota.go.id',
+    ],
   },
   {
     id: 'USR-SURVEYOR-05',

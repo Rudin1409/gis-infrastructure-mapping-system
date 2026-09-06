@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
       search,
     });
 
-    const hasNearbyFilter = lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng);
+    const hasNearbyFilter =
+      lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng);
     const data = hasNearbyFilter
       ? poles
           .map((pole) => ({
@@ -78,7 +79,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Penambahan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
+          error:
+            'Penambahan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
         },
         { status: 403 }
       );

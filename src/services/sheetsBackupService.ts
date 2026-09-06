@@ -1,13 +1,13 @@
 /**
  * Sheets Backup Service
- * 
- * Fire-and-forget service untuk mirror data dari Supabase ke Google Sheets
+ *
+ * Service untuk mirror data dari database utama ke Google Sheets
  * via Apps Script Web App sebagai cadangan/backup.
- * 
+ *
  * PRINSIP:
- * - Tidak memblok response API (async, non-blocking)
- * - Jika gagal, hanya log warning — data utama di Supabase tetap aman
- * - Tidak mempengaruhi kecepatan aplikasi
+ * - CRUD tiang memanggil backup tanpa menunggu hasilnya (fire-and-forget).
+ * - Sinkronisasi penuh menunggu hasil agar admin dapat melihat status per sheet.
+ * - Kegagalan backup dilaporkan sebagai false dan tidak membatalkan data utama.
  */
 
 import { Pole } from '@/types/pole';
@@ -123,11 +123,11 @@ class SheetsBackupService {
   }
 
   /**
-   * Full sync: Ambil semua data dari Supabase dan tulis ulang ke Google Sheets
+   * Full sync: Tulis ulang data tiang yang diberikan pemanggil ke Google Sheets
    * Digunakan untuk sinkronisasi awal atau recovery
-   * 
+   *
    * FLOW:
-   * 1. Fetch semua poles dari Supabase
+   * 1. Pemanggil mengambil poles dari repository aktif
    * 2. Kirim ke Apps Script action clearAndWritePoles untuk replace semua data di sheet
    */
   async fullSyncPolesToSheets(poles: Pole[]): Promise<boolean> {
@@ -150,7 +150,9 @@ class SheetsBackupService {
 
       const json = await res.json();
       if (json.success) {
-        console.log(`[Sheets Backup] ✅ Full sync berhasil! ${poles.length} poles ditulis ke Sheets`);
+        console.log(
+          `[Sheets Backup] ✅ Full sync berhasil! ${poles.length} poles ditulis ke Sheets`
+        );
         return true;
       } else {
         console.warn('[Sheets Backup] ⚠️ Full sync gagal:', json.error);

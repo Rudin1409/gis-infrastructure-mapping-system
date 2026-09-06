@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * One-time migration: Renumber all poles that have duplicate poleCode endings (e.g., all ending with -001).
  * Groups poles by their kecamatan+kelurahan prefix, then assigns sequential numbers
  * based on their surveyDate/created_at order.
- * 
+ *
  * IMPORTANT: Only updates poleCode field - does NOT touch any other data.
  */
 export async function POST() {

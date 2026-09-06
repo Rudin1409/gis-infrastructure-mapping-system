@@ -1,13 +1,11 @@
 /**
  * Offline Outbox Queue using native browser IndexedDB.
- * 
- * Guarantees:
- * 1. Zero Data Loss: Survey records and photos are stored in browser IndexedDB before deletion.
- *    A record is ONLY deleted after the server returns HTTP 200/201 JSON success.
- * 2. Flaky Connection Resilience: All requests have a strict 15-second timeout (AbortController).
- *    If connection drops mid-flight, state gracefully reverts to PENDING without crash or data loss.
- * 3. Idempotency: Each record carries a persistent unique ID (`LLG-OFF-...`). Retries will never
- *    create duplicate records on the server.
+ *
+ * Survey payloads and photos remain in IndexedDB until the server confirms success.
+ * Requests use timeouts, and persistent IDs (`LLG-OFF-...`) let retries reuse the
+ * same record identity. Server-side handling must preserve that identity too.
+ * This is a browser outbox, not a backup: clearing site data or losing the device
+ * can remove surveys that have not reached the server.
  */
 
 export interface OfflineQueueItem {
@@ -242,7 +240,12 @@ export async function syncOfflineQueue(
   onProgress?: (progress: SyncProgress) => void
 ): Promise<{ success: boolean; syncedCount: number; remainingCount: number; error?: string }> {
   if (isSyncing) {
-    return { success: false, syncedCount: 0, remainingCount: await getOfflineQueueCount(), error: 'Sinkronisasi sedang berjalan' };
+    return {
+      success: false,
+      syncedCount: 0,
+      remainingCount: await getOfflineQueueCount(),
+      error: 'Sinkronisasi sedang berjalan',
+    };
   }
 
   isSyncing = true;
@@ -310,7 +313,9 @@ export async function syncOfflineQueue(
             } catch (upErr: any) {
               clearTimeout(timeoutId);
               console.warn(`[Offline Sync] Upload foto gagal untuk ${item.id}:`, upErr);
-              throw new Error(`Gagal mengunggah foto tiang: ${upErr.message || 'Koneksi terputus'}`);
+              throw new Error(
+                `Gagal mengunggah foto tiang: ${upErr.message || 'Koneksi terputus'}`
+              );
             }
           }
         }
@@ -354,7 +359,9 @@ export async function syncOfflineQueue(
 
         // Notify app to refresh map and statistics
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('inframap-pole-synced', { detail: { id: item.id } }));
+          window.dispatchEvent(
+            new CustomEvent('inframap-pole-synced', { detail: { id: item.id } })
+          );
         }
       } catch (itemErr: any) {
         console.warn(`[Offline Sync] Failed syncing item ${item.id}:`, itemErr);
@@ -380,7 +387,8 @@ export async function syncOfflineQueue(
               current: i + 1,
               total,
               isSyncing: false,
-              lastError: 'Sinyal terputus. Sinkronisasi dijeda dan akan dilanjutkan saat sinyal stabil.',
+              lastError:
+                'Sinyal terputus. Sinkronisasi dijeda dan akan dilanjutkan saat sinyal stabil.',
             });
           }
           return {

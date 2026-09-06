@@ -1,10 +1,10 @@
 /**
  * Helper deteksi lingkungan & isolasi data Vercel vs VPS.
- * 
+ *
  * - VERCEL (*.vercel.app):
  *   1. Data terkunci pada baseline snapshot (648 tiang terdata).
  *   2. Penambahan data baru & fitur AI dinonaktifkan.
- * 
+ *
  * - VPS PRODUKSI (https://inframap.my.id/) & LOCAL DEV:
  *   1. Data live real-time tanpa batas (semua penambahan tiang baru masuk & tampil).
  *   2. Fitur AI & survei berjalan 100% penuh.

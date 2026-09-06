@@ -32,7 +32,9 @@ export default function Sidebar() {
     { href: '/', label: 'Overview Data', icon: LayoutDashboard },
     { href: '/poles', label: 'Inventaris Tiang', icon: Database },
     { href: '/map', label: 'Peta GIS Spasial', icon: Map },
-    ...(isAiEnabled ? [{ href: '/ai', label: 'Asisten INFRA-AI', icon: Sparkles, isAi: true }] : []),
+    ...(isAiEnabled
+      ? [{ href: '/ai', label: 'Asisten INFRA-AI', icon: Sparkles, isAi: true }]
+      : []),
     { href: '/segments', label: 'Penataan Kabel', icon: ShieldAlert },
     { href: '/surveyor', label: 'Portal Surveyor HP', icon: Smartphone, isMobilePortal: true },
     { href: '/poles/new', label: 'Input Tiang Baru', icon: PlusCircle, isHighlight: true },
@@ -49,9 +51,7 @@ export default function Sidebar() {
           <span className="text-xs font-black tracking-tight uppercase block leading-tight">
             INFRA-MAP GIS
           </span>
-          <span className="text-[10px] text-teal-200 font-medium">
-            Kota Lubuklinggau
-          </span>
+          <span className="text-[10px] text-teal-200 font-medium">Kota Lubuklinggau</span>
         </div>
       </div>
 

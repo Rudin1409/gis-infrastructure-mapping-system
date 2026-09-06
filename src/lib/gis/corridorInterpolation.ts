@@ -22,11 +22,11 @@ export interface CorridorInterpolationResult {
 /**
  * Generates intermediate pole coordinates along a straight line or polyline
  * between endpoints based on desired distance interval (e.g. every 30m, 35m, 40m, 50m).
- * 
+ *
  * Supports:
  * - Equal Spacing Mode (default): Automatically balances intermediate points so every single span is 100% equal.
  * - Fixed Step Mode: Steps by exact meters, with the remainder on the last pole.
- * 
+ *
  * @param points Array of waypoints (at least 2 points: Start and End)
  * @param intervalMeters Distance between poles in meters (default 35m)
  * @param equalSpacing Whether to distribute intermediate poles equally (default true)

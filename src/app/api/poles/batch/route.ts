@@ -148,16 +148,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      message: `Berhasil generate ${createdPoles.length} tiang dan ${createdSegments.length} segmen kabel secara otomatis!`,
-      data: {
-        poles: createdPoles,
-        segments: createdSegments,
-        countPoles: createdPoles.length,
-        countSegments: createdSegments.length,
+    return NextResponse.json(
+      {
+        success: true,
+        message: `Berhasil generate ${createdPoles.length} tiang dan ${createdSegments.length} segmen kabel secara otomatis!`,
+        data: {
+          poles: createdPoles,
+          segments: createdSegments,
+          countPoles: createdPoles.length,
+          countSegments: createdSegments.length,
+        },
       },
-    }, { status: 201 });
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error('API POST /api/poles/batch error:', error);
     return NextResponse.json(

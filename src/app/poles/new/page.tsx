@@ -74,9 +74,7 @@ export default function NewPoleSurveyPage() {
                   </h2>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-slate-400">
-                Geser Pin / GPS
-              </span>
+              <span className="text-[10px] font-bold text-slate-400">Geser Pin / GPS</span>
             </div>
           ) : (
             <div className="flex items-center justify-between w-full">

@@ -7,7 +7,10 @@ export interface TileLayerConfig {
   subdomains?: string[];
 }
 
-export const MAP_TILE_LAYERS: Record<'clean_satellite' | 'hybrid_survey' | 'street', TileLayerConfig> = {
+export const MAP_TILE_LAYERS: Record<
+  'clean_satellite' | 'hybrid_survey' | 'street',
+  TileLayerConfig
+> = {
   // 1. Pristine Clean High-Resolution Satellite (Zero POI / Restaurant clutter - Best for GIS Overview & Pole Pins)
   clean_satellite: {
     id: 'clean_satellite',

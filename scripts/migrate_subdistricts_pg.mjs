@@ -13,7 +13,7 @@ const connectionConfigs = [
     user: `postgres.${PROJECT_REF}`,
     password: DB_PASSWORD,
     database: 'postgres',
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   },
   // 2. Direct Connection
   {
@@ -22,7 +22,7 @@ const connectionConfigs = [
     user: 'postgres',
     password: DB_PASSWORD,
     database: 'postgres',
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   },
   // 3. Session Pooler Port 5432
   {
@@ -31,8 +31,8 @@ const connectionConfigs = [
     user: `postgres.${PROJECT_REF}`,
     password: DB_PASSWORD,
     database: 'postgres',
-    ssl: { rejectUnauthorized: false }
-  }
+    ssl: { rejectUnauthorized: false },
+  },
 ];
 
 const SCHEMA_SQL = fs.readFileSync('supabase/subdistricts_migration.sql', 'utf8');
@@ -48,7 +48,9 @@ async function getClient() {
       return client;
     } catch (err) {
       console.log(`⚠️ Gagal ke ${config.host}:${config.port} (${err.message})`);
-      try { await client.end(); } catch (_) {}
+      try {
+        await client.end();
+      } catch (_) {}
     }
   }
   throw new Error('Semua opsi koneksi database gagal terhubung.');
@@ -65,8 +67,12 @@ async function run() {
   await client.query(SCHEMA_SQL);
   console.log('✅ Skema tabel subdistricts berhasil dibuat dan 72 kelurahan di-seed!\n');
 
-  const { rows } = await client.query('SELECT count(*) as total, count(DISTINCT kecamatan) as total_kec FROM subdistricts');
-  console.log(`📊 Status Database: Total ${rows[0].total} Kelurahan di ${rows[0].total_kec} Kecamatan terdaftar!`);
+  const { rows } = await client.query(
+    'SELECT count(*) as total, count(DISTINCT kecamatan) as total_kec FROM subdistricts'
+  );
+  console.log(
+    `📊 Status Database: Total ${rows[0].total} Kelurahan di ${rows[0].total_kec} Kecamatan terdaftar!`
+  );
 
   await client.end();
   console.log('🎉 SELESAI!');

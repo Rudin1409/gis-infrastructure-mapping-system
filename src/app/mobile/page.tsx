@@ -25,11 +25,21 @@ export default function MobileSimulatorPage() {
   const [deviceScale, setDeviceScale] = useState<number>(100);
 
   const tabs = [
-    { label: 'Portal Surveyor', href: '/surveyor', icon: LayoutDashboard, desc: 'UNPIX Royal Blue Style' },
+    {
+      label: 'Portal Surveyor',
+      href: '/surveyor',
+      icon: LayoutDashboard,
+      desc: 'UNPIX Royal Blue Style',
+    },
     { label: 'Survey Baru', href: '/poles/new', icon: PlusCircle, desc: 'GPS & Kamera HP' },
     { label: 'Peta GIS', href: '/map', icon: Map, desc: 'Peta Interaktif Lapangan' },
     { label: 'Data Tiang', href: '/poles', icon: Database, desc: 'Daftar Inventaris' },
-    { label: 'Penataan Kabel', href: '/segments', icon: ShieldAlert, desc: 'Audit & Kabel Semrawut' },
+    {
+      label: 'Penataan Kabel',
+      href: '/segments',
+      icon: ShieldAlert,
+      desc: 'Audit & Kabel Semrawut',
+    },
   ];
 
   return (
@@ -133,7 +143,9 @@ export default function MobileSimulatorPage() {
             <span>Responsif 100% Layar HP Asli</span>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Anda juga dapat membuka aplikasi ini langsung di HP Anda dengan mengakses alamat server lokal di browser smartphone (atau tekan tombol <strong>F12 ➔ Toggle Device Toolbar</strong> di browser PC Anda).
+            Anda juga dapat membuka aplikasi ini langsung di HP Anda dengan mengakses alamat server
+            lokal di browser smartphone (atau tekan tombol{' '}
+            <strong>F12 ➔ Toggle Device Toolbar</strong> di browser PC Anda).
           </p>
         </div>
       </div>

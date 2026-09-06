@@ -3,10 +3,10 @@ import { Coordinates } from '@/types/gis';
 /**
  * Fetches the exact road geometry (polyline coordinates) between two or more points
  * using OpenStreetMap / OSRM routing service.
- * 
+ *
  * If the road is curved, OSRM returns all intermediate road bend points,
  * ensuring poles are placed strictly along the asphalt line and never cross diagonally.
- * 
+ *
  * Falls back to straight line if offline or OSRM unreachable.
  */
 export async function fetchRoadGeometry(
@@ -69,8 +69,7 @@ export function offsetCoordinatePerpendicular(
   const dByR = offsetMeters / R;
 
   const newLatRad = Math.asin(
-    Math.sin(latRad) * Math.cos(dByR) +
-      Math.cos(latRad) * Math.sin(dByR) * Math.cos(perpBearingRad)
+    Math.sin(latRad) * Math.cos(dByR) + Math.cos(latRad) * Math.sin(dByR) * Math.cos(perpBearingRad)
   );
 
   const newLngRad =

@@ -1,11 +1,5 @@
 const CACHE_NAME = 'inframap-static-v1';
-const OFFLINE_URLS = [
-  '/',
-  '/poles/new',
-  '/manifest.json',
-  '/images/app-logo.png',
-  '/icon.svg',
-];
+const OFFLINE_URLS = ['/', '/poles/new', '/manifest.json', '/images/app-logo.png', '/icon.svg'];
 
 // Install: Cache app shell
 self.addEventListener('install', (event) => {
@@ -91,7 +85,7 @@ self.addEventListener('fetch', (event) => {
             return cachedResponse;
           }
           // Fallback to /poles/new or root shell if available
-          const fallback = await caches.match('/poles/new') || await caches.match('/');
+          const fallback = (await caches.match('/poles/new')) || (await caches.match('/'));
           if (fallback) {
             return fallback;
           }

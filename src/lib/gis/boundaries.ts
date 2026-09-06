@@ -17,11 +17,11 @@ export interface AdministrativeBoundary {
  */
 export const LUBUKLINGGAU_KECAMATAN_BOUNDARIES: AdministrativeBoundary[] = [
   {
-    id: "KEC_LUBUKLINGGAU_BARAT_I",
-    name: "Kec. Lubuklinggau Barat I",
+    id: 'KEC_LUBUKLINGGAU_BARAT_I',
+    name: 'Kec. Lubuklinggau Barat I',
     type: 'KECAMATAN',
-    kecamatanName: "Lubuklinggau Barat I",
-    color: "#7c3aed",
+    kecamatanName: 'Lubuklinggau Barat I',
+    color: '#7c3aed',
     center: { lat: -3.305806, lng: 102.809418 },
     polygon: [
       [-3.291017, 102.767704],
@@ -438,11 +438,11 @@ export const LUBUKLINGGAU_KECAMATAN_BOUNDARIES: AdministrativeBoundary[] = [
     ],
   },
   {
-    id: "KEC_LUBUKLINGGAU_BARAT_II",
-    name: "Kec. Lubuklinggau Barat II",
+    id: 'KEC_LUBUKLINGGAU_BARAT_II',
+    name: 'Kec. Lubuklinggau Barat II',
     type: 'KECAMATAN',
-    kecamatanName: "Lubuklinggau Barat II",
-    color: "#ec4899",
+    kecamatanName: 'Lubuklinggau Barat II',
+    color: '#ec4899',
     center: { lat: -3.282125, lng: 102.814337 },
     polygon: [
       [-3.26319, 102.795952],
@@ -618,11 +618,11 @@ export const LUBUKLINGGAU_KECAMATAN_BOUNDARIES: AdministrativeBoundary[] = [
     ],
   },
   {
-    id: "KEC_LUBUKLINGGAU_TIMUR_I",
-    name: "Kec. Lubuklinggau Timur I",
+    id: 'KEC_LUBUKLINGGAU_TIMUR_I',
+    name: 'Kec. Lubuklinggau Timur I',
     type: 'KECAMATAN',
-    kecamatanName: "Lubuklinggau Timur I",
-    color: "#2563eb",
+    kecamatanName: 'Lubuklinggau Timur I',
+    color: '#2563eb',
     center: { lat: -3.288552, lng: 102.900855 },
     polygon: [
       [-3.287648, 102.87185],
@@ -835,11 +835,11 @@ export const LUBUKLINGGAU_KECAMATAN_BOUNDARIES: AdministrativeBoundary[] = [
     ],
   },
   {
-    id: "KEC_LUBUKLINGGAU_TIMUR_II",
-    name: "Kec. Lubuklinggau Timur II",
+    id: 'KEC_LUBUKLINGGAU_TIMUR_II',
+    name: 'Kec. Lubuklinggau Timur II',
     type: 'KECAMATAN',
-    kecamatanName: "Lubuklinggau Timur II",
-    color: "#06b6d4",
+    kecamatanName: 'Lubuklinggau Timur II',
+    color: '#06b6d4',
     center: { lat: -3.309616, lng: 102.876928 },
     polygon: [
       [-3.296543, 102.862877],
@@ -899,11 +899,11 @@ export const LUBUKLINGGAU_KECAMATAN_BOUNDARIES: AdministrativeBoundary[] = [
     ],
   },
   {
-    id: "KEC_LUBUKLINGGAU_UTARA_I",
-    name: "Kec. Lubuklinggau Utara I",
+    id: 'KEC_LUBUKLINGGAU_UTARA_I',
+    name: 'Kec. Lubuklinggau Utara I',
     type: 'KECAMATAN',
-    kecamatanName: "Lubuklinggau Utara I",
-    color: "#14b8a6",
+    kecamatanName: 'Lubuklinggau Utara I',
+    color: '#14b8a6',
     center: { lat: -3.204838, lng: 102.85538 },
     polygon: [
       [-3.275416, 102.770335],
@@ -1181,11 +1181,11 @@ export const LUBUKLINGGAU_KECAMATAN_BOUNDARIES: AdministrativeBoundary[] = [
     ],
   },
   {
-    id: "KEC_LUBUKLINGGAU_UTARA_II",
-    name: "Kec. Lubuklinggau Utara II",
+    id: 'KEC_LUBUKLINGGAU_UTARA_II',
+    name: 'Kec. Lubuklinggau Utara II',
     type: 'KECAMATAN',
-    kecamatanName: "Lubuklinggau Utara II",
-    color: "#10b981",
+    kecamatanName: 'Lubuklinggau Utara II',
+    color: '#10b981',
     center: { lat: -3.251358, lng: 102.888325 },
     polygon: [
       [-3.26037, 102.804739],
@@ -1438,11 +1438,11 @@ export const LUBUKLINGGAU_KECAMATAN_BOUNDARIES: AdministrativeBoundary[] = [
     ],
   },
   {
-    id: "KEC_LUBUKLINGGAU_SELATAN_I",
-    name: "Kec. Lubuklinggau Selatan I",
+    id: 'KEC_LUBUKLINGGAU_SELATAN_I',
+    name: 'Kec. Lubuklinggau Selatan I',
     type: 'KECAMATAN',
-    kecamatanName: "Lubuklinggau Selatan I",
-    color: "#f59e0b",
+    kecamatanName: 'Lubuklinggau Selatan I',
+    color: '#f59e0b',
     center: { lat: -3.320904, lng: 102.931048 },
     polygon: [
       [-3.308817, 102.886709],
@@ -2037,11 +2037,11 @@ export const LUBUKLINGGAU_KECAMATAN_BOUNDARIES: AdministrativeBoundary[] = [
     ],
   },
   {
-    id: "KEC_LUBUKLINGGAU_SELATAN_II",
-    name: "Kec. Lubuklinggau Selatan II",
+    id: 'KEC_LUBUKLINGGAU_SELATAN_II',
+    name: 'Kec. Lubuklinggau Selatan II',
     type: 'KECAMATAN',
-    kecamatanName: "Lubuklinggau Selatan II",
-    color: "#f97316",
+    kecamatanName: 'Lubuklinggau Selatan II',
+    color: '#f97316',
     center: { lat: -3.243505, lng: 102.927674 },
     polygon: [
       [-3.269876, 102.900796],

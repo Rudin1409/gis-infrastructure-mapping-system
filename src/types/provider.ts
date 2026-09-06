@@ -6,7 +6,7 @@ export interface Provider {
   status: 'ACTIVE' | 'INACTIVE';
   contactPerson?: string;
   phone?: string;
-  
+
   // Physical Pole Color Marking Metadata
   markingDescription?: string; // e.g. "Gelang Merah & Abu-abu di bagian tengah tiang"
   bodyColor?: string; // Tiang Hitam ('#1e293b') atau Galvanis Abu-abu ('#94a3b8')

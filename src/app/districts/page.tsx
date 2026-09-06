@@ -14,10 +14,5 @@ export default async function DistrictsPage() {
     districtRepo.getGroupedDistricts(),
   ]);
 
-  return (
-    <DistrictsManagerClient
-      initialDistricts={districtGroups}
-      allPoles={allPoles}
-    />
-  );
+  return <DistrictsManagerClient initialDistricts={districtGroups} allPoles={allPoles} />;
 }

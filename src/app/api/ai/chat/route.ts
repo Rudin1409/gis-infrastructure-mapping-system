@@ -27,8 +27,18 @@ function formatIndonesianDate(dateStr: string): string {
     const d = new Date(dateStr.length === 10 ? `${dateStr}T00:00:00Z` : dateStr);
     if (isNaN(d.getTime())) return dateStr;
     const months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ];
     return `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   } catch {
@@ -80,7 +90,9 @@ function resolveDateFromMessage(message: string, dateCounts: Record<string, numb
   const isoMatch = message.match(/\b(\d{4}-\d{2}-\d{2})\b/);
   if (isoMatch) return isoMatch[1];
 
-  const monthMatch = message.match(/\b(\d{1,2})\s*(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)(?:\s*(\d{4}))?/i);
+  const monthMatch = message.match(
+    /\b(\d{1,2})\s*(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)(?:\s*(\d{4}))?/i
+  );
   if (monthMatch) {
     const day = monthMatch[1].padStart(2, '0');
     const month = INDONESIAN_MONTHS[monthMatch[2].toLowerCase()];
@@ -157,14 +169,17 @@ function percent(count: number, total: number): string {
 
 // 26 Master Provider Knowledge Base for Instant Physical Pole Identification
 const PROVIDER_PHYSICAL_MARKINGS: Record<string, string> = {
-  telkom: 'Telkom Indonesia (TLKM): Tiang hitam dengan sabuk warna Merah dan Abu-abu di bagian tengah.',
-  myrepublic: 'MyRepublic: Tiang hitam dengan sabuk warna Ungu / Pink Violet di bagian tengah dan pucuk.',
+  telkom:
+    'Telkom Indonesia (TLKM): Tiang hitam dengan sabuk warna Merah dan Abu-abu di bagian tengah.',
+  myrepublic:
+    'MyRepublic: Tiang hitam dengan sabuk warna Ungu / Pink Violet di bagian tengah dan pucuk.',
   biznet: 'Biznet Networks (BIZ): Tiang hitam dengan gelang Kuning & Hitam di pucuk.',
   pln: 'PLN Distribusi: Tiang beton bulat besar (tegangan menengah/rendah) atau tiang besi dengan cat standar PLN.',
   iconplus: 'PLN Icon+ (Icon Plus): Tiang utilitas dengan pucuk Hijau Toska & Biru PLN.',
   firstmedia: 'First Media: Tiang galvanis abu-abu polos dengan pucuk Hijau cerah.',
   mnc: 'MNC Play: Tiang hitam berundak dengan 2 garis strip putih di bagian bawah.',
-  moratel: 'Moratelindo / Oxygen: Tiang hitam berundak dengan blok Kuning atau strip Orange di bagian bawah.',
+  moratel:
+    'Moratelindo / Oxygen: Tiang hitam berundak dengan blok Kuning atau strip Orange di bagian bawah.',
   iforte: 'iForte: Tiang hitam dengan gelang kombinasi Biru - Putih - Biru di pucuk.',
   lintasarta: 'Lintasarta (LA): Tiang hitam dengan blok Biru Muda di tengah & label teks LA.',
   msa: 'Megasurya Angkasa (MSA): Tiang hitam strip Biru di pucuk & label teks MSA.',
@@ -190,7 +205,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Fitur Asisten INFRA-AI hanya aktif pada server VPS resmi (https://inframap.my.id).',
+          error:
+            'Fitur Asisten INFRA-AI hanya aktif pada server VPS resmi (https://inframap.my.id).',
         },
         { status: 403 }
       );
@@ -316,7 +332,8 @@ export async function POST(request: NextRequest) {
 
         // Cable Type
         if (p.cableInstallationType) {
-          cableTypeCounts[p.cableInstallationType] = (cableTypeCounts[p.cableInstallationType] || 0) + 1;
+          cableTypeCounts[p.cableInstallationType] =
+            (cableTypeCounts[p.cableInstallationType] || 0) + 1;
         }
 
         // Photo
@@ -386,7 +403,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Database VPS belum bisa dibaca, jadi INFRA-AI tidak membuat jawaban angka agar tidak salah. Coba lagi setelah koneksi database normal.',
+          error:
+            'Database VPS belum bisa dibaca, jadi INFRA-AI tidak membuat jawaban angka agar tidak salah. Coba lagi setelah koneksi database normal.',
         },
         { status: 503 }
       );
@@ -397,7 +415,10 @@ export async function POST(request: NextRequest) {
 
     const surveyorSummary = Object.entries(surveyorCounts)
       .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => `* ${name}: ${count} tiang (${((count / (totalPoles || 1)) * 100).toFixed(1)}%)`)
+      .map(
+        ([name, count]) =>
+          `* ${name}: ${count} tiang (${((count / (totalPoles || 1)) * 100).toFixed(1)}%)`
+      )
       .join('\n');
 
     const topDatesSummary = Object.entries(dateCounts)
@@ -492,7 +513,10 @@ PANDUAN JAWABAN:
 - Jika pengguna bertanya tentang data tanggal, surveyor, segmen kabel, PJU, provider, atau aturan teknis, berikan jawaban komprehensif dan akurat berdasarkan data di atas.`;
 
     // 3. Panggil OpenRouter API dengan Multi-Model Fallback
-    const candidateModels = [primaryModel, ...FALLBACK_FREE_MODELS.filter((m) => m !== primaryModel)];
+    const candidateModels = [
+      primaryModel,
+      ...FALLBACK_FREE_MODELS.filter((m) => m !== primaryModel),
+    ];
     let finalReply = '';
     let usedModel = '';
 
@@ -501,10 +525,7 @@ PANDUAN JAWABAN:
         try {
           const openRouterPayload = {
             model: modelToTry,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...messages.slice(-6),
-            ],
+            messages: [{ role: 'system', content: systemPrompt }, ...messages.slice(-6)],
             temperature: 0.1,
             max_tokens: 850,
           };
@@ -512,7 +533,7 @@ PANDUAN JAWABAN:
           const aiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${apiKey}`,
+              Authorization: `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
               'HTTP-Referer': 'https://inframap.my.id',
               'X-Title': 'INFRA-MAP GIS Assistant',
@@ -540,9 +561,18 @@ PANDUAN JAWABAN:
       // 4a. Query Filter Tanggal Spesifik (e.g. "tanggal 29", "tanggal 30", "2026-08-30", "kemarin", "hari ini")
       const matchedDateKey = resolveDateFromMessage(lastUserMsg, dateCounts);
 
-      if (lastUserMsg.includes('tanggal') || lastUserMsg.includes('harian') || lastUserMsg.includes('hari ini') || lastUserMsg.includes('kemarin') || lastUserMsg.includes('input') || matchedDateKey) {
+      if (
+        lastUserMsg.includes('tanggal') ||
+        lastUserMsg.includes('harian') ||
+        lastUserMsg.includes('hari ini') ||
+        lastUserMsg.includes('kemarin') ||
+        lastUserMsg.includes('input') ||
+        matchedDateKey
+      ) {
         if (matchedDateKey) {
-          const polesOnDate = allPoles.filter(p => (p.surveyDate || p.createdAt || '').startsWith(matchedDateKey));
+          const polesOnDate = allPoles.filter((p) =>
+            (p.surveyDate || p.createdAt || '').startsWith(matchedDateKey)
+          );
           const count = polesOnDate.length;
           const surveyorOnDate = surveyorByDate[matchedDateKey] || {};
           const sLines = Object.entries(surveyorOnDate)
@@ -550,9 +580,11 @@ PANDUAN JAWABAN:
             .map(([sName, sCount]) => `* 👤 **${sName}**: **${sCount} titik tiang**`)
             .join('\n');
 
-          const goodOnDate = polesOnDate.filter(p => p.condition === 'GOOD').length;
-          const needsRepairOnDate = polesOnDate.filter(p => p.condition === 'NEEDS_REPAIR').length;
-          const damagedOnDate = polesOnDate.filter(p => p.condition === 'DAMAGED').length;
+          const goodOnDate = polesOnDate.filter((p) => p.condition === 'GOOD').length;
+          const needsRepairOnDate = polesOnDate.filter(
+            (p) => p.condition === 'NEEDS_REPAIR'
+          ).length;
+          const damagedOnDate = polesOnDate.filter((p) => p.condition === 'DAMAGED').length;
 
           finalReply =
             `📅 **Data Survei Tiang pada Tanggal ${formatIndonesianDate(matchedDateKey)}** (${matchedDateKey}):\n\n` +
@@ -615,7 +647,9 @@ PANDUAN JAWABAN:
         const requestedProvider = providerAliases.find((item) => lastUserMsg.includes(item.key));
 
         if (requestedProvider) {
-          const polesByProvider = allPoles.filter((p) => requestedProvider.ids.includes(p.providerId));
+          const polesByProvider = allPoles.filter((p) =>
+            requestedProvider.ids.includes(p.providerId)
+          );
           const conditionLines = [
             `* 🟢 **Baik**: **${polesByProvider.filter((p) => p.condition === 'GOOD').length} tiang**`,
             `* 🟡 **Perlu Cek**: **${polesByProvider.filter((p) => p.condition === 'NEEDS_REPAIR').length} tiang**`,
@@ -641,7 +675,10 @@ PANDUAN JAWABAN:
         } else {
           const providerLines = Object.entries(providerCounts)
             .sort((a, b) => b[1] - a[1])
-            .map(([name, count]) => `* **${name}**: **${count} tiang** (${percent(count, totalPoles)}%)`)
+            .map(
+              ([name, count]) =>
+                `* **${name}**: **${count} tiang** (${percent(count, totalPoles)}%)`
+            )
             .join('\n');
 
           finalReply =
@@ -721,7 +758,10 @@ PANDUAN JAWABAN:
       ) {
         const sLines = Object.entries(surveyorCounts)
           .sort((a, b) => b[1] - a[1])
-          .map(([name, count]) => `* 👤 **${name}**: **${count} titik tiang** (${percent(count, totalPoles)}%)`)
+          .map(
+            ([name, count]) =>
+              `* 👤 **${name}**: **${count} titik tiang** (${percent(count, totalPoles)}%)`
+          )
           .join('\n');
 
         finalReply =
@@ -813,7 +853,14 @@ PANDUAN JAWABAN:
     // Check for date filter
     const matchedDateForMap = resolveDateFromMessage(lastUserMsg, dateCounts);
 
-    if (matchedDateForMap && (lastUserMsg.includes('tampil') || lastUserMsg.includes('filter') || lastUserMsg.includes('peta') || lastUserMsg.includes('titik') || lastUserMsg.includes('lihat'))) {
+    if (
+      matchedDateForMap &&
+      (lastUserMsg.includes('tampil') ||
+        lastUserMsg.includes('filter') ||
+        lastUserMsg.includes('peta') ||
+        lastUserMsg.includes('titik') ||
+        lastUserMsg.includes('lihat'))
+    ) {
       mapAction = {
         type: 'FILTER_MAP',
         date: matchedDateForMap,
@@ -822,9 +869,7 @@ PANDUAN JAWABAN:
     } else {
       // Check if user wants to filter by Surveyor
       const surveyorNames = Object.keys(surveyorCounts);
-      let matchedSurveyor = surveyorNames.find((name) =>
-        lastUserMsg.includes(name.toLowerCase())
-      );
+      let matchedSurveyor = surveyorNames.find((name) => lastUserMsg.includes(name.toLowerCase()));
 
       if (!matchedSurveyor) {
         if (lastUserMsg.includes('admin')) matchedSurveyor = 'Admin';
@@ -832,7 +877,14 @@ PANDUAN JAWABAN:
         else if (lastUserMsg.includes('rudin')) matchedSurveyor = 'Rudin';
       }
 
-      if (matchedSurveyor && (lastUserMsg.includes('tampil') || lastUserMsg.includes('filter') || lastUserMsg.includes('titik') || lastUserMsg.includes('data') || lastUserMsg.includes('lihat'))) {
+      if (
+        matchedSurveyor &&
+        (lastUserMsg.includes('tampil') ||
+          lastUserMsg.includes('filter') ||
+          lastUserMsg.includes('titik') ||
+          lastUserMsg.includes('data') ||
+          lastUserMsg.includes('lihat'))
+      ) {
         mapAction = {
           type: 'FILTER_MAP',
           surveyor: matchedSurveyor,
@@ -929,7 +981,11 @@ PANDUAN JAWABAN:
           search: 'Pelita Jaya',
           label: '🗺️ Filter Kelurahan Pelita Jaya',
         };
-      } else if (lastUserMsg.includes('semua') || lastUserMsg.includes('reset filter') || lastUserMsg.includes('hapus filter')) {
+      } else if (
+        lastUserMsg.includes('semua') ||
+        lastUserMsg.includes('reset filter') ||
+        lastUserMsg.includes('hapus filter')
+      ) {
         mapAction = {
           type: 'FILTER_MAP',
           reset: true,

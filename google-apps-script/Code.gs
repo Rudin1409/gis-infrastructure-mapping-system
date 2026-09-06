@@ -51,7 +51,7 @@ var POLE_HEADERS = [
   'Daya_Lampu_Watt',
   'Kondisi_Lampu_PJU',
   'Ada_Kwh_Meter',
-  'Tipe_Pemasangan_Kabel'
+  'Tipe_Pemasangan_Kabel',
 ];
 
 // 2. Sheet DATA_PROVIDER (Master 20+ Operator Provider)
@@ -61,7 +61,7 @@ var PROVIDER_HEADERS = [
   'Nama_Provider',
   'Kode_Singkatan',
   'Kode_Warna_Hex',
-  'Status_Aktif'
+  'Status_Aktif',
 ];
 
 // 3. Sheet JALUR_KABEL_FO (Master Segmen Topologi Jaringan Kabel FO)
@@ -79,7 +79,7 @@ var SEGMENT_HEADERS = [
   'Status_Jalur',
   'Keterangan_Jalur',
   'Waktu_Dibuat',
-  'Waktu_Diperbarui'
+  'Waktu_Diperbarui',
 ];
 
 // 4. Sheet DATA_SURVEYOR (Data Akun Petugas & Surveyor)
@@ -93,7 +93,7 @@ var USER_HEADERS = [
   'Instansi_Dinas',
   'No_Handphone',
   'Status_Akun',
-  'Waktu_Terdaftar'
+  'Waktu_Terdaftar',
 ];
 
 // ==============================================================================
@@ -123,7 +123,10 @@ function initialSetup() {
   }
   provSheet.getRange(1, 1, 1, PROVIDER_HEADERS.length).setValues([PROVIDER_HEADERS]);
   provSheet.setFrozenRows(1);
-  provSheet.getRange(1, 1, 1, PROVIDER_HEADERS.length).setFontWeight('bold').setBackground('#dbeafe');
+  provSheet
+    .getRange(1, 1, 1, PROVIDER_HEADERS.length)
+    .setFontWeight('bold')
+    .setBackground('#dbeafe');
 
   // Isi data 20 master provider jika masih kosong
   if (provSheet.getLastRow() <= 1) {
@@ -150,9 +153,11 @@ function initialSetup() {
       ['PRV_MYREPUBLIC', '20. MYREPUBLIC INDONESIA', 'MYREP', '#9333ea', 'ACTIVE'],
       ['PRV_PJU_PEMKOT', 'PJU PEMERINTAH KOTA LUBUKLINGGAU', 'PJU', '#f59e0b', 'ACTIVE'],
       ['PRV_PLN_PJU_GABUNG', 'PLN + PJU (TIANG GABUNGAN)', 'PLN+PJU', '#0ea5e9', 'ACTIVE'],
-      ['PRV_PLN_DISTRIBUSI', 'PT PLN (PERSERO) DISTRIBUSI', 'PLN', '#0284c7', 'ACTIVE']
+      ['PRV_PLN_DISTRIBUSI', 'PT PLN (PERSERO) DISTRIBUSI', 'PLN', '#0284c7', 'ACTIVE'],
     ];
-    provSheet.getRange(2, 1, masterProviders.length, PROVIDER_HEADERS.length).setValues(masterProviders);
+    provSheet
+      .getRange(2, 1, masterProviders.length, PROVIDER_HEADERS.length)
+      .setValues(masterProviders);
   }
 
   // 3. Rename NETWORK_SEGMENTS -> JALUR_KABEL_FO
@@ -180,11 +185,61 @@ function initialSetup() {
   // Isi data awal akun jika masih kosong (Akun resmi DISKOMINFOTIKSAN)
   if (userSheet.getLastRow() <= 1) {
     var defaultUsers = [
-      ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFOTIKSAN', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF', '2026-08-25'],
-      ['USR-SURVEYOR-01', 'M. Tri Saputra', 'tri.saputra@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '083196589665', 'AKTIF', '2026-08-25'],
-      ['USR-SURVEYOR-02', 'Yodi Heropralaga', 'yodi.heropralaga@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '081373193335', 'AKTIF', '2026-08-25'],
-      ['USR-SURVEYOR-03', 'Andika Yulian Putra', 'andika.yulian@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '081373249228', 'AKTIF', '2026-08-25'],
-      ['USR-SURVEYOR-04', 'Pradigga Navigasi', 'pradigga.navigasi@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '082251654742', 'AKTIF', '2026-08-25']
+      [
+        'USR-KOMINFO-ADMIN',
+        'Admin DISKOMINFOTIKSAN',
+        'admin.kominfo@lubuklinggaukota.go.id',
+        'kominfo123',
+        'ADMIN_KOMINFO',
+        'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+        '0812-7890-1234',
+        'AKTIF',
+        '2026-08-25',
+      ],
+      [
+        'USR-SURVEYOR-01',
+        'M. Tri Saputra',
+        'tri.saputra@lubuklinggaukota.go.id',
+        'surveyor123',
+        'SURVEYOR',
+        'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+        '083196589665',
+        'AKTIF',
+        '2026-08-25',
+      ],
+      [
+        'USR-SURVEYOR-02',
+        'Yodi Heropralaga',
+        'yodi.heropralaga@lubuklinggaukota.go.id',
+        'surveyor123',
+        'SURVEYOR',
+        'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+        '081373193335',
+        'AKTIF',
+        '2026-08-25',
+      ],
+      [
+        'USR-SURVEYOR-03',
+        'Andika Yulian Putra',
+        'andika.yulian@lubuklinggaukota.go.id',
+        'surveyor123',
+        'SURVEYOR',
+        'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+        '081373249228',
+        'AKTIF',
+        '2026-08-25',
+      ],
+      [
+        'USR-SURVEYOR-04',
+        'Pradigga Navigasi',
+        'pradigga.navigasi@lubuklinggaukota.go.id',
+        'surveyor123',
+        'SURVEYOR',
+        'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+        '082251654742',
+        'AKTIF',
+        '2026-08-25',
+      ],
     ];
     userSheet.getRange(2, 1, defaultUsers.length, USER_HEADERS.length).setValues(defaultUsers);
   }
@@ -203,13 +258,15 @@ function initialSetup() {
   if (sheet1 && ss.getSheets().length > 1) {
     try {
       ss.deleteSheet(sheet1);
-    } catch(e) {}
+    } catch (e) {}
   }
 
   // 7. Buat folder Drive jika belum ada
   getOrCreatePhotoFolder();
 
-  Logger.log('SUKSES: Seluruh Data Master 20 Provider dan 4 Akun Dinas berhasil masuk ke Google Spreadsheet!');
+  Logger.log(
+    'SUKSES: Seluruh Data Master 20 Provider dan 4 Akun Dinas berhasil masuk ke Google Spreadsheet!'
+  );
 }
 
 function getOrCreatePhotoFolder() {
@@ -267,7 +324,7 @@ function poleToRowArray(p) {
     p.pjuLampPower || '',
     p.pjuLampCondition || '',
     p.hasKwhMeter ? 'YA' : 'TIDAK',
-    p.cableInstallationType || 'UDARA'
+    p.cableInstallationType || 'UDARA',
   ];
 }
 
@@ -332,7 +389,7 @@ function rowArrayToPole(row) {
     pjuLampPower: row[40] || undefined,
     pjuLampCondition: row[41] || undefined,
     hasKwhMeter: row[42] === 'YA' || row[42] === 'TRUE' || row[42] === true,
-    cableInstallationType: row[43] || 'UDARA'
+    cableInstallationType: row[43] || 'UDARA',
   };
 }
 
@@ -344,8 +401,9 @@ function doGet(e) {
 
     if (action === 'init') {
       initialSetup();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Inisialisasi 4 Sheet Bahasa Indonesia berhasil' }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: true, message: 'Inisialisasi 4 Sheet Bahasa Indonesia berhasil' })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     // Ambil Data Akun Petugas & Surveyor
@@ -357,10 +415,11 @@ function doGet(e) {
       }
       var userData = userSheet.getDataRange().getValues();
       if (userData.length <= 1) {
-        return ContentService.createTextOutput(JSON.stringify({ success: true, data: [] }))
-          .setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(
+          JSON.stringify({ success: true, data: [] })
+        ).setMimeType(ContentService.MimeType.JSON);
       }
-      var users = userData.slice(1).map(function(row) {
+      var users = userData.slice(1).map(function (row) {
         return {
           id: String(row[0] || ''),
           name: String(row[1] || ''),
@@ -370,11 +429,12 @@ function doGet(e) {
           agency: String(row[5] || ''),
           phone: String(row[6] || ''),
           status: String(row[7] || 'AKTIF'),
-          createdAt: String(row[8] || '')
+          createdAt: String(row[8] || ''),
         };
       });
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: users }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: true, data: users })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     var sheet = ss.getSheetByName(POLE_SHEET_NAME) || ss.getSheetByName('POLES');
@@ -385,20 +445,23 @@ function doGet(e) {
 
     var data = sheet.getDataRange().getValues();
     if (data.length <= 1) {
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: [] }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: true, data: [] })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     var rows = data.slice(1);
-    var poles = rows.map(function(row) {
+    var poles = rows.map(function (row) {
       return rowArrayToPole(row);
     });
 
-    return ContentService.createTextOutput(JSON.stringify({ success: true, data: poles }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: true, data: poles })
+    ).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: false, error: err.toString() })
+    ).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -412,7 +475,7 @@ function doPost(e) {
     // 1. Upload Foto Kamera Langsung ke Google Drive
     if (action === 'uploadPhoto') {
       var base64Data = contents.base64;
-      var fileName = contents.fileName || ('FOTO_TIANG_' + new Date().getTime() + '.jpg');
+      var fileName = contents.fileName || 'FOTO_TIANG_' + new Date().getTime() + '.jpg';
       var mimeType = contents.mimeType || 'image/jpeg';
 
       var folder = getOrCreatePhotoFolder();
@@ -424,14 +487,16 @@ function doPost(e) {
       var fileId = file.getId();
       var photoUrl = 'https://lh3.googleusercontent.com/d/' + fileId + '=w1000';
 
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        data: {
-          fileId: fileId,
-          photoUrl: photoUrl,
-          fileName: fileName
-        }
-      })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({
+          success: true,
+          data: {
+            fileId: fileId,
+            photoUrl: photoUrl,
+            fileName: fileName,
+          },
+        })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 2. Simpan Data Tiang Baru ke Sheet DATA_TIANG
@@ -466,8 +531,9 @@ function doPost(e) {
       var row = poleToRowArray(pole);
       poleSheet.appendRow(row);
 
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: true, data: pole })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 3. Update Data Tiang yang Sudah Ada di Sheet DATA_TIANG
@@ -497,8 +563,9 @@ function doPost(e) {
         poleSheet.appendRow(rowValues);
       }
 
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: pole }))
-        .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: true, data: pole })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 4. Hapus Data Tiang dari Sheet DATA_TIANG
@@ -522,11 +589,13 @@ function doPost(e) {
 
       if (targetRow !== -1) {
         poleSheet.deleteRow(targetRow);
-        return ContentService.createTextOutput(JSON.stringify({ success: true, message: 'Tiang berhasil dihapus' }))
-          .setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(
+          JSON.stringify({ success: true, message: 'Tiang berhasil dihapus' })
+        ).setMimeType(ContentService.MimeType.JSON);
       } else {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Tiang tidak ditemukan' }))
-          .setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(
+          JSON.stringify({ success: false, error: 'Tiang tidak ditemukan' })
+        ).setMimeType(ContentService.MimeType.JSON);
       }
     }
 
@@ -543,31 +612,41 @@ function doPost(e) {
       var data = userSheet.getDataRange().getValues();
       for (var i = 1; i < data.length; i++) {
         var row = data[i];
-        var rowEmail = String(row[2] || '').trim().toLowerCase();
+        var rowEmail = String(row[2] || '')
+          .trim()
+          .toLowerCase();
         var rowPassword = String(row[3] || '');
         if (rowEmail === email && rowPassword === password) {
-          return ContentService.createTextOutput(JSON.stringify({
-            success: true,
-            user: {
-              id: String(row[0]),
-              name: String(row[1]),
-              email: String(row[2]),
-              role: String(row[4] || 'SURVEYOR'),
-              roleLabel: String(row[4] || 'SURVEYOR') === 'ADMIN_KOMINFO'
-                ? 'Admin Teknis & Infrastruktur GIS'
-                : 'Petugas Survei Spasial Lapangan',
-              agency: String(row[5] || 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'),
-              phone: String(row[6] || ''),
-              status: String(row[7] || 'AKTIF'),
-              avatar: String(row[4]).includes('KOMINFO') ? '🏢' : '👨‍💼'
-            }
-          })).setMimeType(ContentService.MimeType.JSON);
+          return ContentService.createTextOutput(
+            JSON.stringify({
+              success: true,
+              user: {
+                id: String(row[0]),
+                name: String(row[1]),
+                email: String(row[2]),
+                role: String(row[4] || 'SURVEYOR'),
+                roleLabel:
+                  String(row[4] || 'SURVEYOR') === 'ADMIN_KOMINFO'
+                    ? 'Admin Teknis & Infrastruktur GIS'
+                    : 'Petugas Survei Spasial Lapangan',
+                agency: String(
+                  row[5] ||
+                    'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'
+                ),
+                phone: String(row[6] || ''),
+                status: String(row[7] || 'AKTIF'),
+                avatar: String(row[4]).includes('KOMINFO') ? '🏢' : '👨‍💼',
+              },
+            })
+          ).setMimeType(ContentService.MimeType.JSON);
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: false,
-        error: 'Email atau kata sandi tidak cocok di database DATA_SURVEYOR.'
-      })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({
+          success: false,
+          error: 'Email atau kata sandi tidak cocok di database DATA_SURVEYOR.',
+        })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 6. Full Sync: Clear & Write Semua Data Tiang dari Supabase ke Sheet
@@ -585,15 +664,19 @@ function doPost(e) {
 
       var poles = contents.data || [];
       if (poles.length > 0) {
-        var rows = poles.map(function(p) { return poleToRowArray(p); });
+        var rows = poles.map(function (p) {
+          return poleToRowArray(p);
+        });
         poleSheet.getRange(2, 1, rows.length, POLE_HEADERS.length).setValues(rows);
       }
 
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        message: 'Berhasil sync ' + poles.length + ' data tiang ke Google Sheets',
-        count: poles.length
-      })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({
+          success: true,
+          message: 'Berhasil sync ' + poles.length + ' data tiang ke Google Sheets',
+          count: poles.length,
+        })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 7. Full Sync: Clear & Write Semua Data Provider dari Supabase ke Sheet
@@ -610,23 +693,25 @@ function doPost(e) {
 
       var providers = contents.data || [];
       if (providers.length > 0) {
-        var provRows = providers.map(function(p) {
+        var provRows = providers.map(function (p) {
           return [
             p.id || '',
             p.name || '',
             p.code || '',
             p.colorHex || p.color_hex || '#3b82f6',
-            p.status || 'ACTIVE'
+            p.status || 'ACTIVE',
           ];
         });
         provSheet.getRange(2, 1, provRows.length, PROVIDER_HEADERS.length).setValues(provRows);
       }
 
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        message: 'Berhasil sync ' + providers.length + ' data provider ke Google Sheets',
-        count: providers.length
-      })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({
+          success: true,
+          message: 'Berhasil sync ' + providers.length + ' data provider ke Google Sheets',
+          count: providers.length,
+        })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 8. Full Sync: Clear & Write Semua Data Segmen dari Supabase ke Sheet
@@ -643,7 +728,7 @@ function doPost(e) {
 
       var segments = contents.data || [];
       if (segments.length > 0) {
-        var segRows = segments.map(function(s) {
+        var segRows = segments.map(function (s) {
           return [
             s.id || '',
             s.segmentCode || s.segment_code || '',
@@ -657,23 +742,27 @@ function doPost(e) {
             s.status || 'ACTIVE',
             s.description || '',
             s.createdAt || s.created_at || new Date().toISOString(),
-            s.updatedAt || s.updated_at || new Date().toISOString()
+            s.updatedAt || s.updated_at || new Date().toISOString(),
           ];
         });
         segSheet.getRange(2, 1, segRows.length, SEGMENT_HEADERS.length).setValues(segRows);
       }
 
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        message: 'Berhasil sync ' + segments.length + ' data segmen ke Google Sheets',
-        count: segments.length
-      })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(
+        JSON.stringify({
+          success: true,
+          message: 'Berhasil sync ' + segments.length + ' data segmen ke Google Sheets',
+          count: segments.length,
+        })
+      ).setMimeType(ContentService.MimeType.JSON);
     }
 
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Unknown action' }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: false, error: 'Unknown action' })
+    ).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: false, error: err.toString() })
+    ).setMimeType(ContentService.MimeType.JSON);
   }
 }

@@ -44,7 +44,10 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
           }));
         }
       } catch (pgError: any) {
-        console.warn('[DB Cascade Fallback] VPS PostgreSQL segments findAll notice:', pgError?.message || pgError);
+        console.warn(
+          '[DB Cascade Fallback] VPS PostgreSQL segments findAll notice:',
+          pgError?.message || pgError
+        );
       }
     }
 
@@ -73,7 +76,10 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
         }));
       }
     } catch (sbError: any) {
-      console.warn('[DB Cascade Fallback] Supabase segments findAll notice:', sbError?.message || sbError);
+      console.warn(
+        '[DB Cascade Fallback] Supabase segments findAll notice:',
+        sbError?.message || sbError
+      );
     }
 
     // --- TIER 3: Google Sheets Fallback ---
@@ -86,7 +92,10 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
         }
       }
     } catch (gsError: any) {
-      console.warn('[DB Cascade Fallback] Google Sheets segments notice:', gsError?.message || gsError);
+      console.warn(
+        '[DB Cascade Fallback] Google Sheets segments notice:',
+        gsError?.message || gsError
+      );
     }
 
     return MOCK_SEGMENTS;
@@ -119,7 +128,11 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
     }
 
     try {
-      const { data, error } = await supabase.from('segments').select('*').eq('id', id).maybeSingle();
+      const { data, error } = await supabase
+        .from('segments')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
       if (!error && data) {
         return {
           id: data.id,
@@ -199,7 +212,10 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
         }));
       }
     } catch (err: any) {
-      console.warn('[DB Cascade Fallback] Supabase findByNodeId segment notice:', err?.message || err);
+      console.warn(
+        '[DB Cascade Fallback] Supabase findByNodeId segment notice:',
+        err?.message || err
+      );
     }
 
     return MOCK_SEGMENTS.filter((s) => s.fromNodeId === nodeId || s.toNodeId === nodeId);
@@ -295,12 +311,14 @@ export class SupabaseSegmentRepository implements ISegmentRepository {
               updatedAt: now,
             }
           );
-          sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: `${SEGMENT_SHEET_NAME}!A:L`,
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [sheetRow] },
-          }).catch(() => {});
+          sheets.spreadsheets.values
+            .append({
+              spreadsheetId,
+              range: `${SEGMENT_SHEET_NAME}!A:L`,
+              valueInputOption: 'USER_ENTERED',
+              requestBody: { values: [sheetRow] },
+            })
+            .catch(() => {});
         }
       } catch (_) {}
     }
@@ -363,9 +381,7 @@ export class GoogleSheetsSegmentRepository implements ISegmentRepository {
         return MOCK_SEGMENTS;
       }
 
-      const segments = rows
-        .map(sheetRowToSegment)
-        .filter((s): s is NetworkSegment => s !== null);
+      const segments = rows.map(sheetRowToSegment).filter((s): s is NetworkSegment => s !== null);
 
       return segments.length > 0 ? segments : MOCK_SEGMENTS;
     } catch (e) {
@@ -431,5 +447,6 @@ export class GoogleSheetsSegmentRepository implements ISegmentRepository {
 }
 
 export function getSegmentRepository(): ISegmentRepository {
+  // Jalur aktif memakai PostgreSQL/Supabase, meskipun nama file masih Sheets.
   return new SupabaseSegmentRepository();
 }

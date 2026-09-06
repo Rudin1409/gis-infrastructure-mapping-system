@@ -3,7 +3,8 @@ const { Client } = pg;
 
 const DB_PASSWORD = 'CiflkG1Ndc7PrXUF';
 const PROJECT_REF = 'qdiswcejzxwrrbirzstv';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
+const APPS_SCRIPT_URL =
+  'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
 
 const connectionConfigs = [
   // 1. Transaction/Session Pooler (IPv4 compatible)
@@ -13,7 +14,7 @@ const connectionConfigs = [
     user: `postgres.${PROJECT_REF}`,
     password: DB_PASSWORD,
     database: 'postgres',
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   },
   // 2. Direct Connection
   {
@@ -22,7 +23,7 @@ const connectionConfigs = [
     user: 'postgres',
     password: DB_PASSWORD,
     database: 'postgres',
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   },
   // 3. Session Pooler Port 5432
   {
@@ -31,8 +32,8 @@ const connectionConfigs = [
     user: `postgres.${PROJECT_REF}`,
     password: DB_PASSWORD,
     database: 'postgres',
-    ssl: { rejectUnauthorized: false }
-  }
+    ssl: { rejectUnauthorized: false },
+  },
 ];
 
 const SCHEMA_SQL = `
@@ -141,7 +142,9 @@ async function getClient() {
       return client;
     } catch (err) {
       console.log(`⚠️ Gagal ke ${config.host}:${config.port} (${err.message})`);
-      try { await client.end(); } catch (_) {}
+      try {
+        await client.end();
+      } catch (_) {}
     }
   }
   throw new Error('Semua opsi koneksi database gagal terhubung.');
@@ -162,15 +165,61 @@ async function run() {
   // 2. Suntikkan 5 Akun Resmi Dinas
   console.log('👥 [2/3] Mendaftarkan 5 akun resmi DISKOMINFOTIKSAN...');
   const users = [
-    ['USR-KOMINFO-ADMIN', 'Admin DISKOMINFOTIKSAN', 'admin.kominfo@lubuklinggaukota.go.id', 'kominfo123', 'ADMIN_KOMINFO', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '0812-7890-1234', 'AKTIF'],
-    ['USR-SURVEYOR-01', 'M. Tri Saputra', 'tri.saputra@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '083196589665', 'AKTIF'],
-    ['USR-SURVEYOR-02', 'Yodi Heropralaga', 'yodi.heropralaga@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '081373193335', 'AKTIF'],
-    ['USR-SURVEYOR-03', 'Andika Yulian Putra', 'andika.yulian@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '081373249228', 'AKTIF'],
-    ['USR-SURVEYOR-04', 'Pradigga Navigasi', 'pradigga.navigasi@lubuklinggaukota.go.id', 'surveyor123', 'SURVEYOR', 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau', '082251654742', 'AKTIF']
+    [
+      'USR-KOMINFO-ADMIN',
+      'Admin DISKOMINFOTIKSAN',
+      'admin.kominfo@lubuklinggaukota.go.id',
+      'kominfo123',
+      'ADMIN_KOMINFO',
+      'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+      '0812-7890-1234',
+      'AKTIF',
+    ],
+    [
+      'USR-SURVEYOR-01',
+      'M. Tri Saputra',
+      'tri.saputra@lubuklinggaukota.go.id',
+      'surveyor123',
+      'SURVEYOR',
+      'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+      '083196589665',
+      'AKTIF',
+    ],
+    [
+      'USR-SURVEYOR-02',
+      'Yodi Heropralaga',
+      'yodi.heropralaga@lubuklinggaukota.go.id',
+      'surveyor123',
+      'SURVEYOR',
+      'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+      '081373193335',
+      'AKTIF',
+    ],
+    [
+      'USR-SURVEYOR-03',
+      'Andika Yulian Putra',
+      'andika.yulian@lubuklinggaukota.go.id',
+      'surveyor123',
+      'SURVEYOR',
+      'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+      '081373249228',
+      'AKTIF',
+    ],
+    [
+      'USR-SURVEYOR-04',
+      'Pradigga Navigasi',
+      'pradigga.navigasi@lubuklinggaukota.go.id',
+      'surveyor123',
+      'SURVEYOR',
+      'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
+      '082251654742',
+      'AKTIF',
+    ],
   ];
 
   for (const u of users) {
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO public.users (id, name, email, password, role, agency, phone, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT (id) DO UPDATE SET
@@ -178,7 +227,9 @@ async function run() {
         email = EXCLUDED.email,
         password = EXCLUDED.password,
         phone = EXCLUDED.phone;
-    `, u);
+    `,
+      u
+    );
   }
   console.log('✅ 5 Akun resmi berhasil terdaftar di database!\n');
 
@@ -199,62 +250,63 @@ async function run() {
   if (poles.length === 0) {
     poles = [
       {
-        id: "LL-0001",
-        poleCode: "LLG-T1-TJ-463",
+        id: 'LL-0001',
+        poleCode: 'LLG-T1-TJ-463',
         poleLatitude: -3.2964,
         poleLongitude: 102.8617,
-        providerId: "TELKOM",
-        providerName: "PT Telkom Indonesia",
-        poleType: "BETON",
-        condition: "GOOD",
-        road: "Jl. Yos Sudarso",
-        kelurahan: "Taba Jemekeh",
-        kecamatan: "Lubuklinggau Timur I",
-        surveyDate: "2026-08-25",
-        validationStatus: "VERIFIED"
+        providerId: 'TELKOM',
+        providerName: 'PT Telkom Indonesia',
+        poleType: 'BETON',
+        condition: 'GOOD',
+        road: 'Jl. Yos Sudarso',
+        kelurahan: 'Taba Jemekeh',
+        kecamatan: 'Lubuklinggau Timur I',
+        surveyDate: '2026-08-25',
+        validationStatus: 'VERIFIED',
       },
       {
-        id: "LL-0002",
-        poleCode: "LLG-T2-CK-102",
-        poleLatitude: -3.2980,
-        poleLongitude: 102.8640,
-        providerId: "ICON_PLUS",
-        providerName: "PLN Icon Plus",
-        poleType: "BESI",
-        condition: "NEEDS_REPAIR",
-        road: "Jl. Ahmad Yani",
-        kelurahan: "Cereme Taba",
-        kecamatan: "Lubuklinggau Timur II",
+        id: 'LL-0002',
+        poleCode: 'LLG-T2-CK-102',
+        poleLatitude: -3.298,
+        poleLongitude: 102.864,
+        providerId: 'ICON_PLUS',
+        providerName: 'PLN Icon Plus',
+        poleType: 'BESI',
+        condition: 'NEEDS_REPAIR',
+        road: 'Jl. Ahmad Yani',
+        kelurahan: 'Cereme Taba',
+        kecamatan: 'Lubuklinggau Timur II',
         isMessyCable: true,
         isCorroded: true,
-        surveyDate: "2026-08-25",
-        validationStatus: "SUBMITTED"
+        surveyDate: '2026-08-25',
+        validationStatus: 'SUBMITTED',
       },
       {
-        id: "LL-0003",
-        poleCode: "LLG-B1-KP-088",
-        poleLatitude: -3.2930,
-        poleLongitude: 102.8550,
-        providerId: "INDOSAT",
-        providerName: "Indosat Ooredoo Hutchison",
-        poleType: "BETON",
-        condition: "DAMAGED",
-        road: "Jl. Garuda Hitam",
-        kelurahan: "Pasar Pemiri",
-        kecamatan: "Lubuklinggau Barat I",
+        id: 'LL-0003',
+        poleCode: 'LLG-B1-KP-088',
+        poleLatitude: -3.293,
+        poleLongitude: 102.855,
+        providerId: 'INDOSAT',
+        providerName: 'Indosat Ooredoo Hutchison',
+        poleType: 'BETON',
+        condition: 'DAMAGED',
+        road: 'Jl. Garuda Hitam',
+        kelurahan: 'Pasar Pemiri',
+        kecamatan: 'Lubuklinggau Barat I',
         isTilted: true,
         isMessyCable: true,
         isLowCable: true,
         isHazardous: true,
         isObstructing: true,
-        surveyDate: "2026-08-25",
-        validationStatus: "SUBMITTED"
-      }
+        surveyDate: '2026-08-25',
+        validationStatus: 'SUBMITTED',
+      },
     ];
   }
 
   for (const p of poles) {
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO public.poles (
         id, pole_code, pole_latitude, pole_longitude, device_latitude, device_longitude,
         gps_accuracy, distance_from_device, location_method, provider_id, provider_name,
@@ -280,52 +332,56 @@ async function run() {
         photo_url = EXCLUDED.photo_url,
         has_network_cable = EXCLUDED.has_network_cable,
         updated_at = NOW();
-    `, [
-      p.id,
-      p.poleCode || p.pole_code || null,
-      parseFloat(p.poleLatitude || p.pole_latitude || -3.2964),
-      parseFloat(p.poleLongitude || p.pole_longitude || 102.8617),
-      p.deviceLatitude ? parseFloat(p.deviceLatitude) : null,
-      p.deviceLongitude ? parseFloat(p.deviceLongitude) : null,
-      p.gpsAccuracy ? parseFloat(p.gpsAccuracy) : null,
-      p.distanceFromDevice ? parseFloat(p.distanceFromDevice) : null,
-      p.locationMethod || 'GPS_DEVICE',
-      p.providerId || p.provider_id || 'UNKNOWN',
-      p.providerName || p.provider_name || 'Tidak Diketahui',
-      p.poleType || p.pole_type || 'BETON',
-      p.condition || 'GOOD',
-      p.road || '-',
-      p.kelurahan || '-',
-      p.kecamatan || 'Lubuklinggau Timur I',
-      p.kota || 'Kota Lubuklinggau',
-      p.patokanLokasi || null,
-      p.sisiJalan || 'KIRI',
-      p.height || '7m',
-      p.ownershipStatus || 'SENDIRI',
-      p.cableInstallationType || 'UDARA',
-      p.infrastructureCategory || 'FO_WIFI',
-      p.pjuLampType || 'TIDAK_ADA',
-      p.pjuLampPower || null,
-      p.pjuLampCondition || 'TIDAK_ADA',
-      Boolean(p.hasKwhMeter),
-      Boolean(p.hasNetworkCable),
-      Boolean(p.isTilted),
-      Boolean(p.isMessyCable),
-      Boolean(p.isLowCable),
-      Boolean(p.isHazardous),
-      Boolean(p.isCorroded),
-      Boolean(p.isObstructing),
-      p.description || null,
-      p.photoFileId || null,
-      p.photoUrl || null,
-      p.surveyorId || null,
-      p.surveyorName || null,
-      p.surveyDate || new Date().toISOString().split('T')[0],
-      p.validationStatus || 'SUBMITTED'
-    ]);
+    `,
+      [
+        p.id,
+        p.poleCode || p.pole_code || null,
+        parseFloat(p.poleLatitude || p.pole_latitude || -3.2964),
+        parseFloat(p.poleLongitude || p.pole_longitude || 102.8617),
+        p.deviceLatitude ? parseFloat(p.deviceLatitude) : null,
+        p.deviceLongitude ? parseFloat(p.deviceLongitude) : null,
+        p.gpsAccuracy ? parseFloat(p.gpsAccuracy) : null,
+        p.distanceFromDevice ? parseFloat(p.distanceFromDevice) : null,
+        p.locationMethod || 'GPS_DEVICE',
+        p.providerId || p.provider_id || 'UNKNOWN',
+        p.providerName || p.provider_name || 'Tidak Diketahui',
+        p.poleType || p.pole_type || 'BETON',
+        p.condition || 'GOOD',
+        p.road || '-',
+        p.kelurahan || '-',
+        p.kecamatan || 'Lubuklinggau Timur I',
+        p.kota || 'Kota Lubuklinggau',
+        p.patokanLokasi || null,
+        p.sisiJalan || 'KIRI',
+        p.height || '7m',
+        p.ownershipStatus || 'SENDIRI',
+        p.cableInstallationType || 'UDARA',
+        p.infrastructureCategory || 'FO_WIFI',
+        p.pjuLampType || 'TIDAK_ADA',
+        p.pjuLampPower || null,
+        p.pjuLampCondition || 'TIDAK_ADA',
+        Boolean(p.hasKwhMeter),
+        Boolean(p.hasNetworkCable),
+        Boolean(p.isTilted),
+        Boolean(p.isMessyCable),
+        Boolean(p.isLowCable),
+        Boolean(p.isHazardous),
+        Boolean(p.isCorroded),
+        Boolean(p.isObstructing),
+        p.description || null,
+        p.photoFileId || null,
+        p.photoUrl || null,
+        p.surveyorId || null,
+        p.surveyorName || null,
+        p.surveyDate || new Date().toISOString().split('T')[0],
+        p.validationStatus || 'SUBMITTED',
+      ]
+    );
   }
 
-  console.log(`✅ Sebanyak ${poles.length} data tiang berhasil dipindahkan ke Supabase PostgreSQL!`);
+  console.log(
+    `✅ Sebanyak ${poles.length} data tiang berhasil dipindahkan ke Supabase PostgreSQL!`
+  );
 
   await client.end();
   console.log('\n===========================================================');

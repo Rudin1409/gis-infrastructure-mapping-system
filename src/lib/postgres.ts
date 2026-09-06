@@ -44,7 +44,10 @@ export function getPostgresPool(): any {
   return pool;
 }
 
-export async function dbQuery(text: string, values: any[] = []): Promise<{ rows: any[]; rowCount: number }> {
+export async function dbQuery(
+  text: string,
+  values: any[] = []
+): Promise<{ rows: any[]; rowCount: number }> {
   const result = await getPostgresPool().query(text, values);
   return {
     rows: result.rows,

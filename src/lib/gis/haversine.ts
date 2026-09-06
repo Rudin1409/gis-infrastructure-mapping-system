@@ -4,10 +4,7 @@ import { Coordinates, GpsQualityInfo, GpsQualityLevel, LocationQC } from '@/type
  * Calculate spatial distance between two geographic coordinates using the Haversine formula.
  * @returns Distance in meters.
  */
-export function calculateHaversineDistance(
-  coord1: Coordinates,
-  coord2: Coordinates
-): number {
+export function calculateHaversineDistance(coord1: Coordinates, coord2: Coordinates): number {
   const R = 6371e3; // Earth radius in meters
   const lat1Rad = (coord1.lat * Math.PI) / 180;
   const lat2Rad = (coord2.lat * Math.PI) / 180;
@@ -16,10 +13,7 @@ export function calculateHaversineDistance(
 
   const a =
     Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
-    Math.cos(lat1Rad) *
-      Math.cos(lat2Rad) *
-      Math.sin(deltaLngRad / 2) *
-      Math.sin(deltaLngRad / 2);
+    Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLngRad / 2) * Math.sin(deltaLngRad / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -29,10 +23,7 @@ export function calculateHaversineDistance(
 /**
  * Calculate geographical midpoint coordinate between two points
  */
-export function calculateMidpoint(
-  coord1: Coordinates,
-  coord2: Coordinates
-): Coordinates {
+export function calculateMidpoint(coord1: Coordinates, coord2: Coordinates): Coordinates {
   return {
     lat: (coord1.lat + coord2.lat) / 2,
     lng: (coord1.lng + coord2.lng) / 2,

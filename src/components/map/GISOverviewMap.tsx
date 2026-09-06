@@ -226,7 +226,9 @@ export default function GISOverviewMap({
   const markerIconCacheRef = useRef<Map<string, L.DivIcon>>(new Map());
 
   const [leafletLib, setLeafletLib] = useState<typeof L | null>(null);
-  const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>('clean_satellite');
+  const [tileMode, setTileMode] = useState<'clean_satellite' | 'hybrid_survey' | 'street'>(
+    'clean_satellite'
+  );
   const [showBoundaries, setShowBoundaries] = useState(true);
   const [showLegendModal, setShowLegendModal] = useState(false);
   const [mapRenderState, setMapRenderState] = useState<MapRenderState | null>(null);
@@ -294,16 +296,23 @@ export default function GISOverviewMap({
   const [corridorPoleType, setCorridorPoleType] = useState<string>('BETON');
   const [corridorHeight, setCorridorHeight] = useState<string>('5m');
   const [corridorCondition, setCorridorCondition] = useState<PoleCondition>('GOOD');
-  const [corridorOwnershipStatus, setCorridorOwnershipStatus] = useState<OwnershipStatus>('SENDIRI');
-  const [corridorCableInstallationType, setCorridorCableInstallationType] = useState<CableInstallationType>('UDARA');
+  const [corridorOwnershipStatus, setCorridorOwnershipStatus] =
+    useState<OwnershipStatus>('SENDIRI');
+  const [corridorCableInstallationType, setCorridorCableInstallationType] =
+    useState<CableInstallationType>('UDARA');
   const [corridorHasNetworkCable, setCorridorHasNetworkCable] = useState<boolean>(false);
   const [corridorPjuLampType, setCorridorPjuLampType] = useState<LampuPjuType>('LED');
   const [corridorPjuLampPower, setCorridorPjuLampPower] = useState<string>('90W');
-  const [corridorPjuLampCondition, setCorridorPjuLampCondition] = useState<LampuPjuCondition>('MENYALA_NORMAL');
+  const [corridorPjuLampCondition, setCorridorPjuLampCondition] =
+    useState<LampuPjuCondition>('MENYALA_NORMAL');
   const [corridorHasKwhMeter, setCorridorHasKwhMeter] = useState<boolean>(false);
   const [corridorRoad, setCorridorRoad] = useState<string>('Jalan Garuda');
-  const [corridorKecamatan, setCorridorKecamatan] = useState<string>(KECAMATAN_LUBUKLINGGAU[0].name);
-  const [corridorKelurahan, setCorridorKelurahan] = useState<string>(KECAMATAN_LUBUKLINGGAU[0].kelurahan[0]);
+  const [corridorKecamatan, setCorridorKecamatan] = useState<string>(
+    KECAMATAN_LUBUKLINGGAU[0].name
+  );
+  const [corridorKelurahan, setCorridorKelurahan] = useState<string>(
+    KECAMATAN_LUBUKLINGGAU[0].kelurahan[0]
+  );
   const [corridorWithCable, setCorridorWithCable] = useState<boolean>(true);
   const [isGeneratingCorridor, setIsGeneratingCorridor] = useState<boolean>(false);
   const [corridorResultToast, setCorridorResultToast] = useState<string | null>(null);
@@ -324,14 +333,18 @@ export default function GISOverviewMap({
   const [selectedCondition, setSelectedCondition] = useState(initialCondition || 'ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'ALL'); // FO_WIFI, PJU_MANDIRI, GABUNG_PLN_PJU, PLN_MURNI, etc.
   const [selectedSurveyor, setSelectedSurveyor] = useState(initialSurveyor || 'ALL');
-  const [selectedPjuCableFilter, setSelectedPjuCableFilter] = useState<'ALL' | 'WITH_CABLE' | 'WITHOUT_CABLE'>('ALL');
+  const [selectedPjuCableFilter, setSelectedPjuCableFilter] = useState<
+    'ALL' | 'WITH_CABLE' | 'WITHOUT_CABLE'
+  >('ALL');
   const [selectedKecamatan, setSelectedKecamatan] = useState(initialKecamatan || 'ALL');
   const [selectedKelurahan, setSelectedKelurahan] = useState(initialKelurahan || 'ALL');
   const [selectedSurveyDate, setSelectedSurveyDate] = useState<string>(initialSurveyDate || 'ALL');
   const [selectedType, setSelectedType] = useState(initialType || 'ALL');
   const [selectedHeight, setSelectedHeight] = useState('ALL'); // ALL, 5m, 6m, 7m, 9m, 12m
   const [selectedCableType, setSelectedCableType] = useState('ALL'); // UDARA, BAWAH_TANAH, TRANSISI_RISER
-  const [selectedHazard, setSelectedHazard] = useState<'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'>('ALL');
+  const [selectedHazard, setSelectedHazard] = useState<
+    'ALL' | 'HAZARD_ONLY' | 'TILTED' | 'MESSY' | 'LOW'
+  >('ALL');
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [showGoogleToolsMenu, setShowGoogleToolsMenu] = useState(false);
   const [selectedPole, setSelectedPole] = useState<Pole | null>(null);
@@ -521,7 +534,8 @@ export default function GISOverviewMap({
       }).bindTooltip(district.name, {
         permanent: true,
         direction: 'center',
-        className: 'text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/90 shadow-sm border border-slate-200/90 text-slate-800 pointer-events-none',
+        className:
+          'text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/90 shadow-sm border border-slate-200/90 text-slate-800 pointer-events-none',
       });
       boundaryGroup.addLayer(polygon);
     });
@@ -540,7 +554,11 @@ export default function GISOverviewMap({
     }, 150);
 
     return () => {
-      if (watchIdRef.current !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
+      if (
+        watchIdRef.current !== null &&
+        typeof navigator !== 'undefined' &&
+        navigator.geolocation
+      ) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
@@ -570,9 +588,12 @@ export default function GISOverviewMap({
         const lng = userLocation?.longitude ?? LUBUKLINGGAU_CENTER.lng;
         const exclude = user?.id ? `&excludeUserId=${encodeURIComponent(user.id)}` : '';
         const requesterInfo = `&requesterTeam=KOMINFO&requesterRole=${encodeURIComponent(user?.role || '')}`;
-        const res = await fetch(`/api/surveyors/active?lat=${lat}&lng=${lng}${exclude}${requesterInfo}`, {
-          cache: 'no-store',
-        });
+        const res = await fetch(
+          `/api/surveyors/active?lat=${lat}&lng=${lng}${exclude}${requesterInfo}`,
+          {
+            cache: 'no-store',
+          }
+        );
         const json = await res.json();
         if (!cancelled && json.success) {
           setActiveSurveyors(json.data || []);
@@ -852,8 +873,7 @@ export default function GISOverviewMap({
         const lat2 = (next.lat * Math.PI) / 180;
         const y = Math.sin(dLng) * Math.cos(lat2);
         const x =
-          Math.cos(lat1) * Math.sin(lat2) -
-          Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+          Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
         bearing = (Math.atan2(y, x) * 180) / Math.PI;
       } else if (idx > 0) {
         const prev = baseResult.poles[idx - 1].coord;
@@ -862,8 +882,7 @@ export default function GISOverviewMap({
         const lat2 = (p.coord.lat * Math.PI) / 180;
         const y = Math.sin(dLng) * Math.cos(lat2);
         const x =
-          Math.cos(lat1) * Math.sin(lat2) -
-          Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+          Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
         bearing = (Math.atan2(y, x) * 180) / Math.PI;
       }
 
@@ -987,11 +1006,14 @@ export default function GISOverviewMap({
         iconAnchor: [14, 14],
       });
       const marker = L.marker([pt.lat, pt.lng], { icon });
-      marker.bindTooltip('📍 <b>Titik Awal (A)</b><br/>Klik titik kedua (B) di jalan untuk otomatis memasang tiang tengah', {
-        permanent: true,
-        direction: 'top',
-        offset: [0, -14],
-      });
+      marker.bindTooltip(
+        '📍 <b>Titik Awal (A)</b><br/>Klik titik kedua (B) di jalan untuk otomatis memasang tiang tengah',
+        {
+          permanent: true,
+          direction: 'top',
+          offset: [0, -14],
+        }
+      );
       marker.addTo(corridorLayerGroupRef.current);
     }
   }, [
@@ -1161,8 +1183,8 @@ export default function GISOverviewMap({
       tileMode === 'clean_satellite'
         ? 'hybrid_survey'
         : tileMode === 'hybrid_survey'
-        ? 'street'
-        : 'clean_satellite';
+          ? 'street'
+          : 'clean_satellite';
     setTileMode(nextMode);
 
     if (currentTileLayerRef.current) {
@@ -1170,11 +1192,13 @@ export default function GISOverviewMap({
     }
 
     const tileConfig = MAP_TILE_LAYERS[nextMode];
-    const newLayer = leafletLib.tileLayer(tileConfig.url, {
-      attribution: tileConfig.attribution,
-      maxZoom: tileConfig.maxZoom,
-      subdomains: tileConfig.subdomains || ['0', '1', '2', '3'],
-    }).addTo(mapInstanceRef.current);
+    const newLayer = leafletLib
+      .tileLayer(tileConfig.url, {
+        attribution: tileConfig.attribution,
+        maxZoom: tileConfig.maxZoom,
+        subdomains: tileConfig.subdomains || ['0', '1', '2', '3'],
+      })
+      .addTo(mapInstanceRef.current);
 
     currentTileLayerRef.current = newLayer;
   };
@@ -1227,7 +1251,8 @@ export default function GISOverviewMap({
     const selectedCableTypeValue = selectedCableType;
     const selectedSurveyorLower = selectedSurveyor.toLowerCase().trim();
 
-    const targetProvObj = selectedProvider !== 'ALL' ? providerById.get(selectedProvider) : undefined;
+    const targetProvObj =
+      selectedProvider !== 'ALL' ? providerById.get(selectedProvider) : undefined;
 
     return livePoles.filter((pole) => {
       // 0. Resolve accurate provider and category
@@ -1307,14 +1332,20 @@ export default function GISOverviewMap({
       // 3. Infrastructure Category (PJU Mandiri, Gabung PLN+PJU, PLN Murni, FO/WiFi)
       if (selectedCategoryLower !== 'ALL') {
         if (effectiveCategory !== selectedCategoryLower) {
-          if (selectedCategoryLower === 'PLN_MURNI' && effectiveProviderId === 'PRV_PLN_DISTRIBUSI') {
+          if (
+            selectedCategoryLower === 'PLN_MURNI' &&
+            effectiveProviderId === 'PRV_PLN_DISTRIBUSI'
+          ) {
             // match
           } else if (
             selectedCategoryLower === 'GABUNG_PLN_PJU' &&
             effectiveProviderId === 'PRV_PLN_PJU_GABUNG'
           ) {
             // match
-          } else if (selectedCategoryLower === 'PJU_MANDIRI' && effectiveProviderId === 'PRV_PJU_PEMKOT') {
+          } else if (
+            selectedCategoryLower === 'PJU_MANDIRI' &&
+            effectiveProviderId === 'PRV_PJU_PEMKOT'
+          ) {
             // match
           } else {
             return false;
@@ -1716,11 +1747,7 @@ export default function GISOverviewMap({
       const orderIcon = L.divIcon({
         html: `
           <div class="w-5 h-5 rounded-full ${
-            isStart
-              ? 'bg-blue-600'
-              : isEnd
-              ? 'bg-emerald-600'
-              : 'bg-amber-500'
+            isStart ? 'bg-blue-600' : isEnd ? 'bg-emerald-600' : 'bg-amber-500'
           } text-white font-mono font-black text-[9px] flex items-center justify-center border-2 border-white shadow-md -translate-x-1/2 -translate-y-1/2">
             ${idx + 1}
           </div>
@@ -1771,9 +1798,7 @@ export default function GISOverviewMap({
           iconSize: [0, 0],
         });
 
-        L.marker([mid.lat, mid.lng], { icon: badgeIcon }).addTo(
-          measureLayerGroupRef.current
-        );
+        L.marker([mid.lat, mid.lng], { icon: badgeIcon }).addTo(measureLayerGroupRef.current);
       }
     }
   }, [leafletLib, measuredPoles]);
@@ -1899,7 +1924,9 @@ export default function GISOverviewMap({
                 ? 'bg-slate-900 text-white border-slate-700 rotate-90 scale-105 ring-4 ring-blue-500/20'
                 : 'bg-white/95 text-slate-700 hover:text-blue-600 border-slate-200 hover:scale-105 active:scale-95'
             }`}
-            title={showGoogleToolsMenu ? 'Sembunyikan Menu Alat' : 'Buka Menu Alat GIS (Ikon Bulat)'}
+            title={
+              showGoogleToolsMenu ? 'Sembunyikan Menu Alat' : 'Buka Menu Alat GIS (Ikon Bulat)'
+            }
           >
             {showGoogleToolsMenu ? (
               <X className="w-5 h-5" />
@@ -2086,7 +2113,12 @@ export default function GISOverviewMap({
             {/* 5. Bulat: Ganti Layer Peta */}
             <div className="flex items-center gap-2 group">
               <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md capitalize">
-                🛰️ {tileMode === 'clean_satellite' ? 'Satelit Polos' : tileMode === 'hybrid_survey' ? 'Satelit + Jalan' : 'Peta Jalan'}
+                🛰️{' '}
+                {tileMode === 'clean_satellite'
+                  ? 'Satelit Polos'
+                  : tileMode === 'hybrid_survey'
+                    ? 'Satelit + Jalan'
+                    : 'Peta Jalan'}
               </span>
               <button
                 type="button"
@@ -2128,7 +2160,11 @@ export default function GISOverviewMap({
                   setShowGoogleToolsMenu(false);
                   if (isLiveTracking) {
                     if (userLocation && mapInstanceRef.current) {
-                      mapInstanceRef.current.flyTo([userLocation.latitude, userLocation.longitude], 18, { animate: true });
+                      mapInstanceRef.current.flyTo(
+                        [userLocation.latitude, userLocation.longitude],
+                        18,
+                        { animate: true }
+                      );
                     }
                   } else {
                     startLocating(true);
@@ -2148,7 +2184,10 @@ export default function GISOverviewMap({
             {/* 8. Bulat: Mode Desktop Widescreen */}
             <div className="flex items-center gap-2 group">
               <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
-                🖥️ {viewMode === 'DESKTOP' ? 'Mode Desktop (Aktif)' : 'Buka Mode Desktop (Layar Lebar)'}
+                🖥️{' '}
+                {viewMode === 'DESKTOP'
+                  ? 'Mode Desktop (Aktif)'
+                  : 'Buka Mode Desktop (Layar Lebar)'}
               </span>
               <button
                 type="button"
@@ -2163,7 +2202,11 @@ export default function GISOverviewMap({
                 }`}
                 title="Beralih antara Mode Desktop Layar Lebar dan Mode Mobile"
               >
-                {viewMode === 'DESKTOP' ? <Smartphone className="w-4 h-4" /> : <Monitor className="w-4 h-4" />}
+                {viewMode === 'DESKTOP' ? (
+                  <Smartphone className="w-4 h-4" />
+                ) : (
+                  <Monitor className="w-4 h-4" />
+                )}
               </button>
             </div>
 
@@ -2200,8 +2243,8 @@ export default function GISOverviewMap({
                 {measuredPoles.length === 0
                   ? 'Ketuk Tiang Pertama (Titik Awal)'
                   : measuredPoles.length === 1
-                  ? `Titik Awal: ${measuredPoles[0].poleCode || measuredPoles[0].id} ➔ Ketuk Tiang Tujuan`
-                  : `Jalur ${measuredPoles.length} Tiang: Total ${formatDistance(totalMeasuredDistance)}`}
+                    ? `Titik Awal: ${measuredPoles[0].poleCode || measuredPoles[0].id} ➔ Ketuk Tiang Tujuan`
+                    : `Jalur ${measuredPoles.length} Tiang: Total ${formatDistance(totalMeasuredDistance)}`}
               </p>
               <p className="text-[10px] text-slate-300 leading-none mt-0.5 truncate">
                 {measuredPoles.length < 2
@@ -2291,7 +2334,9 @@ export default function GISOverviewMap({
             </div>
 
             {/* 1b. Khusus PJU: Filter Tumpangan Kabel Jaringan / FO */}
-            {(selectedCategory === 'ALL' || selectedCategory === 'PJU_MANDIRI' || selectedCategory === 'GABUNG_PLN_PJU') && (
+            {(selectedCategory === 'ALL' ||
+              selectedCategory === 'PJU_MANDIRI' ||
+              selectedCategory === 'GABUNG_PLN_PJU') && (
               <div className="mt-2 p-2.5 bg-amber-50/70 border border-amber-200 rounded-2xl">
                 <label className="block text-[10px] font-black text-amber-900 uppercase tracking-wider mb-1">
                   💡 Status Tumpangan Kabel Jaringan pada PJU:
@@ -2554,7 +2599,9 @@ export default function GISOverviewMap({
           type="button"
           onClick={() => {
             if (isLiveTracking && userLocation && mapInstanceRef.current) {
-              mapInstanceRef.current.flyTo([userLocation.latitude, userLocation.longitude], 18, { animate: true });
+              mapInstanceRef.current.flyTo([userLocation.latitude, userLocation.longitude], 18, {
+                animate: true,
+              });
               setShowGpsHud(true);
             } else {
               startLocating(true);
@@ -2564,10 +2611,12 @@ export default function GISOverviewMap({
             isLiveTracking
               ? 'bg-blue-600 text-white border-blue-400 ring-4 ring-blue-500/30'
               : isLocating
-              ? 'bg-blue-500 text-white border-blue-300 animate-pulse'
-              : 'bg-white/95 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-slate-200/90 backdrop-blur-md'
+                ? 'bg-blue-500 text-white border-blue-300 animate-pulse'
+                : 'bg-white/95 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-slate-200/90 backdrop-blur-md'
           }`}
-          title={isLiveTracking ? 'Pusatkan ke Titik Posisi Saya' : 'Lacak Lokasi Koordinat GPS Saya'}
+          title={
+            isLiveTracking ? 'Pusatkan ke Titik Posisi Saya' : 'Lacak Lokasi Koordinat GPS Saya'
+          }
         >
           <Locate className={`w-6 h-6 ${isLocating ? 'animate-spin' : ''}`} />
           {isLiveTracking && (
@@ -2689,9 +2738,13 @@ export default function GISOverviewMap({
       {isCorridorMode && corridorWaypoints.length < 2 && (
         <div className="absolute top-24 left-3.5 right-3.5 z-[450] bg-slate-900/95 text-white border border-blue-500/60 rounded-3xl p-3.5 shadow-2xl backdrop-blur-xl flex items-center justify-between animate-in fade-in slide-in-from-top-3">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-sm text-white shadow-md ${
-              corridorWaypoints.length === 0 ? 'bg-blue-600 animate-pulse' : 'bg-emerald-600 animate-pulse'
-            }`}>
+            <div
+              className={`w-8 h-8 rounded-2xl flex items-center justify-center font-black text-sm text-white shadow-md ${
+                corridorWaypoints.length === 0
+                  ? 'bg-blue-600 animate-pulse'
+                  : 'bg-emerald-600 animate-pulse'
+              }`}
+            >
               {corridorWaypoints.length === 0 ? '1' : '2'}
             </div>
             <div>
@@ -2751,7 +2804,8 @@ export default function GISOverviewMap({
                   Pengaturan Interval &amp; Tiang Tengah
                 </h4>
                 <span className="text-[10px] text-slate-500 block leading-tight font-medium">
-                  Titik A &amp; B Terhubung • Est. {formatDistance(interpolatedCorridor?.totalDistance || 0)}
+                  Titik A &amp; B Terhubung • Est.{' '}
+                  {formatDistance(interpolatedCorridor?.totalDistance || 0)}
                 </span>
               </div>
             </div>
@@ -2855,7 +2909,8 @@ export default function GISOverviewMap({
                     {interpolatedCorridor.poles.length} Tiang Total
                   </span>
                   <span className="text-[10px] text-slate-500 block">
-                    (2 Titik Ujung + {Math.max(0, interpolatedCorridor.poles.length - 2)} Tiang Tengah)
+                    (2 Titik Ujung + {Math.max(0, interpolatedCorridor.poles.length - 2)} Tiang
+                    Tengah)
                   </span>
                 </div>
                 <div className="text-right">
@@ -2866,7 +2921,8 @@ export default function GISOverviewMap({
                     {formatDistance(interpolatedCorridor.totalDistance)}
                   </span>
                   <span className="text-[10px] text-emerald-700 font-bold block">
-                    {interpolatedCorridor.segmentCount} bentang @ ~{interpolatedCorridor.averageSpan}m
+                    {interpolatedCorridor.segmentCount} bentang @ ~
+                    {interpolatedCorridor.averageSpan}m
                   </span>
                 </div>
               </div>
@@ -3131,7 +3187,11 @@ export default function GISOverviewMap({
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {side === 'KIRI' ? '◀ Sisi Kiri' : side === 'KANAN' ? 'Sisi Kanan ▶' : '● As Jalan'}
+                  {side === 'KIRI'
+                    ? '◀ Sisi Kiri'
+                    : side === 'KANAN'
+                      ? 'Sisi Kanan ▶'
+                      : '● As Jalan'}
                 </button>
               ))}
             </div>
@@ -3182,15 +3242,14 @@ export default function GISOverviewMap({
               {isGeneratingCorridor ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>
-                    Menyimpan {interpolatedCorridor?.poles.length} Tiang ke Server...
-                  </span>
+                  <span>Menyimpan {interpolatedCorridor?.poles.length} Tiang ke Server...</span>
                 </>
               ) : (
                 <>
                   <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
                   <span>
-                    🚀 TERAPKAN &amp; PASANG ({interpolatedCorridor ? interpolatedCorridor.poles.length : 0} TIANG)
+                    🚀 TERAPKAN &amp; PASANG (
+                    {interpolatedCorridor ? interpolatedCorridor.poles.length : 0} TIANG)
                   </span>
                 </>
               )}
@@ -3293,7 +3352,8 @@ export default function GISOverviewMap({
               <div>
                 <div className="flex items-center gap-1.5">
                   <h4 className="font-black text-xs text-slate-900 uppercase tracking-wider">
-                    Hasil Pengukuran Rute ({measuredPoles.length} Tiang • {spanDetails.length} Bentangan)
+                    Hasil Pengukuran Rute ({measuredPoles.length} Tiang • {spanDetails.length}{' '}
+                    Bentangan)
                   </h4>
                   {autoRouteMode && (
                     <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded-full flex items-center gap-0.5">
@@ -3405,8 +3465,8 @@ export default function GISOverviewMap({
                   selectedPole.condition === 'GOOD'
                     ? 'bg-emerald-500 ring-4 ring-emerald-100'
                     : selectedPole.condition === 'NEEDS_REPAIR'
-                    ? 'bg-amber-500 ring-4 ring-amber-100'
-                    : 'bg-rose-500 ring-4 ring-rose-100'
+                      ? 'bg-amber-500 ring-4 ring-amber-100'
+                      : 'bg-rose-500 ring-4 ring-rose-100'
                 }`}
               />
               <span className="font-black text-sm text-slate-900 font-mono">
@@ -3418,10 +3478,15 @@ export default function GISOverviewMap({
               <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-[9px] font-bold uppercase">
                 {selectedPole.poleType} • {selectedPole.height || '5m'}
               </span>
-              {(selectedPole.infrastructureCategory === 'PJU_MANDIRI' || selectedPole.infrastructureCategory === 'GABUNG_PLN_PJU') && (
-                <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
-                  selectedPole.hasNetworkCable ? 'bg-indigo-100 text-indigo-800' : 'bg-amber-100 text-amber-900'
-                }`}>
+              {(selectedPole.infrastructureCategory === 'PJU_MANDIRI' ||
+                selectedPole.infrastructureCategory === 'GABUNG_PLN_PJU') && (
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold ${
+                    selectedPole.hasNetworkCable
+                      ? 'bg-indigo-100 text-indigo-800'
+                      : 'bg-amber-100 text-amber-900'
+                  }`}
+                >
                   💡 {selectedPole.hasNetworkCable ? 'PJU + Kabel FO' : 'PJU Murni'}
                 </span>
               )}
@@ -3437,27 +3502,31 @@ export default function GISOverviewMap({
 
           <div className="grid grid-cols-3 gap-1.5 mb-2 text-[10px]">
             <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100">
-              <span className="text-slate-400 block font-semibold text-[9px] uppercase">Provider</span>
+              <span className="text-slate-400 block font-semibold text-[9px] uppercase">
+                Provider
+              </span>
               <span className="font-bold text-slate-800 truncate block mt-0.5">
                 {selectedPole.providerName || selectedPole.providerId}
               </span>
             </div>
             <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100">
-              <span className="text-slate-400 block font-semibold text-[9px] uppercase">Kondisi</span>
+              <span className="text-slate-400 block font-semibold text-[9px] uppercase">
+                Kondisi
+              </span>
               <span
                 className={`font-bold block mt-0.5 ${
                   selectedPole.condition === 'GOOD'
                     ? 'text-emerald-600'
                     : selectedPole.condition === 'NEEDS_REPAIR'
-                    ? 'text-amber-600'
-                    : 'text-rose-600'
+                      ? 'text-amber-600'
+                      : 'text-rose-600'
                 }`}
               >
                 {selectedPole.condition === 'GOOD'
                   ? 'Baik'
                   : selectedPole.condition === 'NEEDS_REPAIR'
-                  ? 'Miring'
-                  : 'Rusak'}
+                    ? 'Miring'
+                    : 'Rusak'}
               </span>
             </div>
             <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100">
@@ -3480,7 +3549,11 @@ export default function GISOverviewMap({
                   </>
                 ) : (
                   <strong className="text-slate-900">
-                    {selectedPole.kecamatan ? `Kec. ${selectedPole.kecamatan}` : (selectedPole.kelurahan ? `Kel. ${selectedPole.kelurahan}` : 'Kota Lubuklinggau')}
+                    {selectedPole.kecamatan
+                      ? `Kec. ${selectedPole.kecamatan}`
+                      : selectedPole.kelurahan
+                        ? `Kel. ${selectedPole.kelurahan}`
+                        : 'Kota Lubuklinggau'}
                   </strong>
                 )}
               </span>
@@ -3519,10 +3592,7 @@ export default function GISOverviewMap({
       )}
 
       {/* MODAL PANDUAN LENGKAP ARTI SIMBOL PIN PETA GIS */}
-      <MapPinLegendModal
-        isOpen={showLegendModal}
-        onClose={() => setShowLegendModal(false)}
-      />
+      <MapPinLegendModal isOpen={showLegendModal} onClose={() => setShowLegendModal(false)} />
     </div>
   );
 }

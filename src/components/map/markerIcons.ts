@@ -32,7 +32,8 @@ export function createUserGpsMarkerIcon(
     accuracy?: number;
   }
 ) {
-  const hasHeading = options?.heading !== undefined && options?.heading !== null && !isNaN(options.heading);
+  const hasHeading =
+    options?.heading !== undefined && options?.heading !== null && !isNaN(options.heading);
   const headingDeg = hasHeading ? options!.heading : 0;
 
   const html = `
@@ -148,8 +149,10 @@ export function createProviderPoleMarkerIcon(
   }
 
   let conditionRing = '#10b981'; // Green
-  if (condition === 'NEEDS_REPAIR') conditionRing = '#f59e0b'; // Amber
-  else if (condition === 'DAMAGED') conditionRing = '#ef4444'; // Red
+  if (condition === 'NEEDS_REPAIR')
+    conditionRing = '#f59e0b'; // Amber
+  else if (condition === 'DAMAGED')
+    conditionRing = '#ef4444'; // Red
   else if (condition === 'UNKNOWN') conditionRing = '#64748b'; // Slate
 
   // Center Emblem SVG according to Category

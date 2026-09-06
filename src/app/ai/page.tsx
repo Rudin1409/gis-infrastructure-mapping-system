@@ -42,7 +42,8 @@ const FEATURE_CARDS = [
   {
     title: 'Deteksi Titik Kritis',
     desc: 'Daftar tiang miring, kabel melorot, dan kriteria keselamatan.',
-    prompt: 'Berapa banyak tiang yang dalam kondisi rusak atau miring, dan apa kriteria tiang bahaya?',
+    prompt:
+      'Berapa banyak tiang yang dalam kondisi rusak atau miring, dan apa kriteria tiang bahaya?',
     icon: AlertTriangle,
     color: 'from-amber-500 to-rose-600',
   },
@@ -143,7 +144,8 @@ export default function AiAssistantPage() {
         {
           id: `ai-err-${Date.now()}`,
           role: 'assistant',
-          content: '⚠️ Maaf, terjadi kendala saat menghubungkan ke asisten AI. Silakan coba kembali sesaat lagi.',
+          content:
+            '⚠️ Maaf, terjadi kendala saat menghubungkan ke asisten AI. Silakan coba kembali sesaat lagi.',
           timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -222,11 +224,10 @@ export default function AiAssistantPage() {
         <div className="w-16 h-16 rounded-3xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-md">
           <Sparkles className="w-8 h-8" />
         </div>
-        <h1 className="text-base font-black text-slate-900">
-          Modul INFRA-AI Khusus Server VPS
-        </h1>
+        <h1 className="text-base font-black text-slate-900">Modul INFRA-AI Khusus Server VPS</h1>
         <p className="text-xs text-slate-500 leading-relaxed">
-          Fitur Asisten Cerdas INFRA-AI hanya aktif pada server produksi VPS resmi (<strong>inframap.my.id</strong>).
+          Fitur Asisten Cerdas INFRA-AI hanya aktif pada server produksi VPS resmi (
+          <strong>inframap.my.id</strong>).
         </p>
         <div className="pt-2">
           <a
@@ -282,7 +283,8 @@ export default function AiAssistantPage() {
               </span>
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Pusat konsultasi cerdas untuk audit inventaris tiang, analisis titik kritis, dan panduan pengisian data teknis lapangan di Kota Lubuklinggau.
+              Pusat konsultasi cerdas untuk audit inventaris tiang, analisis titik kritis, dan
+              panduan pengisian data teknis lapangan di Kota Lubuklinggau.
             </p>
           </div>
 
@@ -317,9 +319,7 @@ export default function AiAssistantPage() {
                   {card.title}
                 </h3>
               </div>
-              <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                {card.desc}
-              </p>
+              <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">{card.desc}</p>
             </button>
           );
         })}
@@ -358,9 +358,7 @@ export default function AiAssistantPage() {
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex gap-3 ${
-                msg.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
+              className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
                 <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white flex-shrink-0 mt-0.5 shadow-xs">

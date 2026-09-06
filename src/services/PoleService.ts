@@ -27,7 +27,10 @@ export class PoleService {
     input.providerName = resolved.providerName;
 
     // Set status kepemilikan yang sesuai jika PLN
-    if (input.infrastructureCategory === 'PLN_MURNI' || input.infrastructureCategory === 'GABUNG_PLN_PJU') {
+    if (
+      input.infrastructureCategory === 'PLN_MURNI' ||
+      input.infrastructureCategory === 'GABUNG_PLN_PJU'
+    ) {
       if (!input.ownershipStatus || input.ownershipStatus === 'SENDIRI') {
         input.ownershipStatus = 'BERSAMA_PLN';
       }

@@ -1,0 +1,24 @@
+# Dependencies and generated output
+node_modules/
+.next/
+out/
+build/
+coverage/
+next-env.d.ts
+package-lock.json
+*.tsbuildinfo
+
+# Local credentials, runtime state, and deployment archives
+.env*
+.deploy-key/
+.system_license_state.json
+*.tar
+*.tar.gz
+.codex/
+.agents/
+
+# One-off local deployment helpers (also excluded by .gitignore)
+scripts/check-ssh.ts
+scripts/deploy-vps.ts
+scripts/test-key.ts
+scripts/gen-key.ts

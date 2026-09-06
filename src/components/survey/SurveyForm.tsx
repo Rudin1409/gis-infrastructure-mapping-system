@@ -84,22 +84,23 @@ export default function SurveyForm({
   const [activeTab, setActiveTab] = useState<FormTab>('LOCATION');
 
   // --- 1. LOKASI & ALAMAT ---
-  const [districtsList, setDistrictsList] = useState<{ name: string; kelurahan: string[] }[]>(KECAMATAN_LUBUKLINGGAU);
+  const [districtsList, setDistrictsList] =
+    useState<{ name: string; kelurahan: string[] }[]>(KECAMATAN_LUBUKLINGGAU);
   const [road, setRoad] = useState('');
   const [isRoadAutoReliable, setIsRoadAutoReliable] = useState(false);
   const [kecamatan, setKecamatan] = useState(KECAMATAN_LUBUKLINGGAU[0].name);
   const [kelurahan, setKelurahan] = useState(KECAMATAN_LUBUKLINGGAU[0].kelurahan[0]);
   const [patokanLokasi, setPatokanLokasi] = useState('');
-  const [sisiJalan, setSisiJalan] = useState<SisiJalan>(
-    initialRoadSide || 'TIDAK_DITENTUKAN'
-  );
+  const [sisiJalan, setSisiJalan] = useState<SisiJalan>(initialRoadSide || 'TIDAK_DITENTUKAN');
 
   // --- 2. DOKUMENTASI FOTO ---
   const [selectedPhotoFile, setSelectedPhotoFile] = useState<File | null>(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | undefined>(initialPhotoUrl);
 
-  const [infrastructureCategory, setInfrastructureCategory] = useState<InfrastructureCategory>('FO_WIFI');
-  const [cableInstallationType, setCableInstallationType] = useState<CableInstallationType>('UDARA');
+  const [infrastructureCategory, setInfrastructureCategory] =
+    useState<InfrastructureCategory>('FO_WIFI');
+  const [cableInstallationType, setCableInstallationType] =
+    useState<CableInstallationType>('UDARA');
   const [pjuLampType, setPjuLampType] = useState<LampuPjuType>('LED');
   const [pjuLampPower, setPjuLampPower] = useState('90W');
   const [pjuLampCondition, setPjuLampCondition] = useState<LampuPjuCondition>('MENYALA_NORMAL');
@@ -266,7 +267,11 @@ export default function SurveyForm({
     if (found && found.kelurahan.length > 0) {
       setKelurahan(newKel);
     }
-    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(newKec, newKel, existingPoleCodes);
+    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(
+      newKec,
+      newKel,
+      existingPoleCodes
+    );
     setPoleCode(smartPoleCode);
     setSegmentCode(smartSegmentCode);
   };
@@ -274,7 +279,11 @@ export default function SurveyForm({
   const handleKelurahanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newKel = e.target.value;
     setKelurahan(newKel);
-    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(kecamatan, newKel, existingPoleCodes);
+    const { smartPoleCode, smartSegmentCode } = getNextSequentialPoleCode(
+      kecamatan,
+      newKel,
+      existingPoleCodes
+    );
     setPoleCode(smartPoleCode);
     setSegmentCode(smartSegmentCode);
   };
@@ -350,11 +359,9 @@ export default function SurveyForm({
           if (captureResponse.ok) {
             const blob = await captureResponse.blob();
             if (blob.type.startsWith('image/')) {
-              photoFileForUpload = new File(
-                [blob],
-                `streetview-pole-${Date.now()}.jpg`,
-                { type: blob.type || 'image/jpeg' }
-              );
+              photoFileForUpload = new File([blob], `streetview-pole-${Date.now()}.jpg`, {
+                type: blob.type || 'image/jpeg',
+              });
             }
           }
         } catch {
@@ -392,11 +399,26 @@ export default function SurveyForm({
         sisiJalan,
         cableInstallationType,
         infrastructureCategory,
-        pjuLampType: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampType : undefined,
-        pjuLampPower: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampPower : undefined,
-        pjuLampCondition: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? pjuLampCondition : undefined,
-        hasKwhMeter: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasKwhMeter : undefined,
-        hasNetworkCable: (infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') ? hasNetworkCable : undefined,
+        pjuLampType:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? pjuLampType
+            : undefined,
+        pjuLampPower:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? pjuLampPower
+            : undefined,
+        pjuLampCondition:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? pjuLampCondition
+            : undefined,
+        hasKwhMeter:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? hasKwhMeter
+            : undefined,
+        hasNetworkCable:
+          infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU'
+            ? hasNetworkCable
+            : undefined,
         isTilted,
         isMessyCable,
         isLowCable,
@@ -438,9 +460,12 @@ export default function SurveyForm({
         setOfflineNotice(userNotice);
         setSubmitStage('SUCCESS');
 
-        setTimeout(() => {
-          onBackToMap();
-        }, continueNext ? 900 : 1500);
+        setTimeout(
+          () => {
+            onBackToMap();
+          },
+          continueNext ? 900 : 1500
+        );
       };
 
       // 🛑 SCENARIO 1: Device is completely offline
@@ -692,7 +717,8 @@ export default function SurveyForm({
               {isRoadAutoReliable && (
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nama Jalan / Gang / Perumahan <span className="text-emerald-600">(terdeteksi)</span>
+                    Nama Jalan / Gang / Perumahan{' '}
+                    <span className="text-emerald-600">(terdeteksi)</span>
                   </label>
                   <input
                     type="text"
@@ -873,7 +899,11 @@ export default function SurveyForm({
                   type="button"
                   onClick={() => {
                     setInfrastructureCategory('FO_WIFI');
-                    if (providerId === 'PRV_PJU_PEMKOT' || providerId === 'PRV_PLN_PJU_GABUNG' || providerId === 'PRV_PLN_DISTRIBUSI') {
+                    if (
+                      providerId === 'PRV_PJU_PEMKOT' ||
+                      providerId === 'PRV_PLN_PJU_GABUNG' ||
+                      providerId === 'PRV_PLN_DISTRIBUSI'
+                    ) {
                       setProviderId('PRV_TELKOM');
                     }
                     setOwnershipStatus('SENDIRI');
@@ -918,7 +948,9 @@ export default function SurveyForm({
                     <span>💡</span>
                     <span>Tiang PJU Mandiri</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-normal">Lampu Jalan Khusus Pemkot</p>
+                  <p className="text-[10px] text-slate-500 font-normal">
+                    Lampu Jalan Khusus Pemkot
+                  </p>
                 </button>
 
                 <button
@@ -946,7 +978,9 @@ export default function SurveyForm({
                     <span>⚡💡</span>
                     <span>Gabung PLN + PJU</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-normal">Tiang Listrik Numpang Lampu</p>
+                  <p className="text-[10px] text-slate-500 font-normal">
+                    Tiang Listrik Numpang Lampu
+                  </p>
                 </button>
 
                 <button
@@ -969,12 +1003,15 @@ export default function SurveyForm({
                     <span>⚡</span>
                     <span>Tiang PLN Murni</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 font-normal">Jaringan Distribusi Listrik</p>
+                  <p className="text-[10px] text-slate-500 font-normal">
+                    Jaringan Distribusi Listrik
+                  </p>
                 </button>
               </div>
 
               {/* PJU Special Technical Details (Visible if PJU Mandiri or Gabung PLN) */}
-              {(infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') && (
+              {(infrastructureCategory === 'PJU_MANDIRI' ||
+                infrastructureCategory === 'GABUNG_PLN_PJU') && (
                 <div className="mt-3 p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3 animate-in fade-in">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-black text-amber-900 flex items-center gap-1.5 uppercase tracking-wider">
@@ -1082,9 +1119,13 @@ export default function SurveyForm({
                   <div className="pt-2 border-t border-amber-200/80">
                     <label className="block text-xs font-bold text-slate-800 mb-1.5 flex items-center justify-between">
                       <span>Kabel Jaringan / Internet Menumpang</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                        hasNetworkCable ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-600'
-                      }`}>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                          hasNetworkCable
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
                         {hasNetworkCable ? 'Ada Kabel FO' : 'PJU Murni'}
                       </span>
                     </label>
@@ -1232,9 +1273,7 @@ export default function SurveyForm({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Kepemilikan
-                  </label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Kepemilikan</label>
                   <select
                     value={ownershipStatus}
                     onChange={(e) => setOwnershipStatus(e.target.value as OwnershipStatus)}
@@ -1273,14 +1312,16 @@ export default function SurveyForm({
                       label: '🕳️ Bawah Tanah',
                       sub: 'Tanam / Ducting',
                       color: 'border-amber-200 bg-amber-50/50 text-amber-900',
-                      activeColor: 'bg-amber-600 text-white border-amber-600 ring-2 ring-amber-500/20',
+                      activeColor:
+                        'bg-amber-600 text-white border-amber-600 ring-2 ring-amber-500/20',
                     },
                     {
                       id: 'TRANSISI_RISER',
                       label: '↕️ Riser Transisi',
                       sub: 'Tiang Turun ke Tanah',
                       color: 'border-indigo-200 bg-indigo-50/50 text-indigo-900',
-                      activeColor: 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-500/20',
+                      activeColor:
+                        'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-500/20',
                     },
                   ].map((item) => (
                     <button
@@ -1550,26 +1591,32 @@ export default function SurveyForm({
                       condition === 'GOOD'
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                         : condition === 'NEEDS_REPAIR'
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                        : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
                     }`}
                   >
-                    {condition === 'GOOD' ? '🟢 Kondisi Baik' : condition === 'NEEDS_REPAIR' ? '🟡 Perlu Servis' : '🔴 Rusak'}
+                    {condition === 'GOOD'
+                      ? '🟢 Kondisi Baik'
+                      : condition === 'NEEDS_REPAIR'
+                        ? '🟡 Perlu Servis'
+                        : '🔴 Rusak'}
                   </span>
                 </div>
               </div>
 
               {/* Category Badge Banner */}
               <div className="p-2 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-center justify-between text-xs">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Kategori Infrastruktur:</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">
+                  Kategori Infrastruktur:
+                </span>
                 <span className="font-black text-blue-800">
                   {infrastructureCategory === 'PJU_MANDIRI'
                     ? '💡 Penerangan Jalan Umum (PJU Mandiri)'
                     : infrastructureCategory === 'GABUNG_PLN_PJU'
-                    ? '⚡💡 Tiang Gabungan (PLN Distribusi + PJU)'
-                    : infrastructureCategory === 'PLN_MURNI'
-                    ? '⚡ Tiang Distribusi Jaringan Listrik PLN'
-                    : '🌐 Fiber Optik / Provider WiFi Internet'}
+                      ? '⚡💡 Tiang Gabungan (PLN Distribusi + PJU)'
+                      : infrastructureCategory === 'PLN_MURNI'
+                        ? '⚡ Tiang Distribusi Jaringan Listrik PLN'
+                        : '🌐 Fiber Optik / Provider WiFi Internet'}
                 </span>
               </div>
 
@@ -1577,7 +1624,11 @@ export default function SurveyForm({
               {photoPreviewUrl && (
                 <div className="rounded-2xl overflow-hidden h-40 border border-slate-100 bg-slate-900 relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photoPreviewUrl} alt="Foto Lapangan" className="w-full h-full object-cover" />
+                  <img
+                    src={photoPreviewUrl}
+                    alt="Foto Lapangan"
+                    className="w-full h-full object-cover"
+                  />
                   <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-xs text-white rounded-md text-[9px] font-mono">
                     📷 Foto Lapangan Terlampir
                   </div>
@@ -1591,60 +1642,76 @@ export default function SurveyForm({
                 </span>
                 <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Instansi / Provider</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Instansi / Provider
+                    </span>
                     <span className="font-bold text-slate-800 truncate block mt-0.5">
                       {selectedProviderObj?.name || providerId}
                     </span>
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Material &amp; Tinggi</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Material &amp; Tinggi
+                    </span>
                     <span className="font-bold text-slate-800 block mt-0.5">
                       {poleType} • {height}
                     </span>
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Kondisi Fisik Tiang</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Kondisi Fisik Tiang
+                    </span>
                     <span
                       className={`font-bold block mt-0.5 ${
                         condition === 'GOOD'
                           ? 'text-emerald-700 font-black'
                           : condition === 'NEEDS_REPAIR'
-                          ? 'text-amber-700 font-black'
-                          : 'text-rose-700 font-black'
+                            ? 'text-amber-700 font-black'
+                            : 'text-rose-700 font-black'
                       }`}
                     >
-                      {condition === 'GOOD' ? '🟢 Kondisi Baik' : condition === 'NEEDS_REPAIR' ? '🟡 Perlu Servis' : '🔴 Rusak Berat'}
+                      {condition === 'GOOD'
+                        ? '🟢 Kondisi Baik'
+                        : condition === 'NEEDS_REPAIR'
+                          ? '🟡 Perlu Servis'
+                          : '🔴 Rusak Berat'}
                     </span>
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Status Kepemilikan</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Status Kepemilikan
+                    </span>
                     <span className="font-bold text-slate-800 block mt-0.5">
                       {ownershipStatus === 'SENDIRI'
                         ? 'Aset Sendiri'
                         : ownershipStatus === 'SEWA'
-                        ? 'Sewa Tiang'
-                        : ownershipStatus === 'BERSAMA_PLN'
-                        ? 'Joint PLN'
-                        : 'Tidak Tahu'}
+                          ? 'Sewa Tiang'
+                          : ownershipStatus === 'BERSAMA_PLN'
+                            ? 'Joint PLN'
+                            : 'Tidak Tahu'}
                     </span>
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Instalasi Kabel</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Instalasi Kabel
+                    </span>
                     <span className="font-bold text-slate-800 block mt-0.5">
                       {cableInstallationType === 'BAWAH_TANAH'
                         ? '🕳️ Kabel Bawah Tanah'
                         : cableInstallationType === 'TRANSISI_RISER'
-                        ? '↕️ Riser Transisi'
-                        : '🌐 Kabel Udara (Aerial)'}
+                          ? '↕️ Riser Transisi'
+                          : '🌐 Kabel Udara (Aerial)'}
                     </span>
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Kode Segmen Kabel</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Kode Segmen Kabel
+                    </span>
                     <span className="font-bold text-slate-800 block mt-0.5 font-mono text-xs truncate">
                       {segmentCode || '-'}
                     </span>
@@ -1653,7 +1720,8 @@ export default function SurveyForm({
               </div>
 
               {/* 2. Spesifikasi Khusus PJU (Jika PJU) */}
-              {(infrastructureCategory === 'PJU_MANDIRI' || infrastructureCategory === 'GABUNG_PLN_PJU') && (
+              {(infrastructureCategory === 'PJU_MANDIRI' ||
+                infrastructureCategory === 'GABUNG_PLN_PJU') && (
                 <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider flex items-center gap-1">
@@ -1664,29 +1732,45 @@ export default function SurveyForm({
                       {pjuLampCondition === 'MENYALA_NORMAL'
                         ? '🟢 Menyala Normal'
                         : pjuLampCondition === 'REDUP'
-                        ? '🟡 Redup'
-                        : pjuLampCondition === 'MATI_TOTAL'
-                        ? '🔴 Mati Total'
-                        : '💥 Pecah/Rusak'}
+                          ? '🟡 Redup'
+                          : pjuLampCondition === 'MATI_TOTAL'
+                            ? '🔴 Mati Total'
+                            : '💥 Pecah/Rusak'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
                     <div className="bg-white p-2 rounded-xl border border-amber-200">
-                      <span className="text-slate-400 block text-[8px] font-bold uppercase">Tipe Lampu</span>
-                      <span className="font-bold text-slate-800 block mt-0.5">{pjuLampType || 'LED'}</span>
+                      <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                        Tipe Lampu
+                      </span>
+                      <span className="font-bold text-slate-800 block mt-0.5">
+                        {pjuLampType || 'LED'}
+                      </span>
                     </div>
                     <div className="bg-white p-2 rounded-xl border border-amber-200">
-                      <span className="text-slate-400 block text-[8px] font-bold uppercase">Daya Lampu</span>
-                      <span className="font-bold text-slate-800 block mt-0.5">{pjuLampPower || '90 Watt'}</span>
+                      <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                        Daya Lampu
+                      </span>
+                      <span className="font-bold text-slate-800 block mt-0.5">
+                        {pjuLampPower || '90 Watt'}
+                      </span>
                     </div>
                     <div className="bg-white p-2 rounded-xl border border-amber-200">
-                      <span className="text-slate-400 block text-[8px] font-bold uppercase">KWh Meter</span>
-                      <span className="font-bold text-slate-800 block mt-0.5">{hasKwhMeter ? 'Ada Meter' : 'Non-Meter'}</span>
+                      <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                        KWh Meter
+                      </span>
+                      <span className="font-bold text-slate-800 block mt-0.5">
+                        {hasKwhMeter ? 'Ada Meter' : 'Non-Meter'}
+                      </span>
                     </div>
                     <div className="bg-white p-2 rounded-xl border border-amber-200">
-                      <span className="text-slate-400 block text-[8px] font-bold uppercase">Kabel Jaringan</span>
-                      <span className={`font-bold block mt-0.5 ${hasNetworkCable ? 'text-blue-700 font-black' : 'text-slate-700'}`}>
+                      <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                        Kabel Jaringan
+                      </span>
+                      <span
+                        className={`font-bold block mt-0.5 ${hasNetworkCable ? 'text-blue-700 font-black' : 'text-slate-700'}`}
+                      >
                         {hasNetworkCable ? '🌐 Ada Kabel FO' : '🚫 PJU Murni'}
                       </span>
                     </div>
@@ -1701,7 +1785,9 @@ export default function SurveyForm({
                 </span>
                 <div className="grid grid-cols-2 gap-1.5 text-[11px]">
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Ruas Jalan</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Ruas Jalan
+                    </span>
                     <span className="font-bold text-slate-900 block mt-0.5 text-xs">
                       {road.trim() || 'Belum diisi'}
                     </span>
@@ -1716,35 +1802,44 @@ export default function SurveyForm({
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Sisi Jalan</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Sisi Jalan
+                    </span>
                     <span className="font-bold text-slate-800 block mt-0.5">
                       {sisiJalan === 'MEDIAN'
                         ? '● Median Tengah'
                         : sisiJalan === 'KANAN'
-                        ? 'Sisi Kanan ▶'
-                        : sisiJalan === 'KIRI'
-                        ? '◀ Sisi Kiri'
-                        : 'Tidak Ditentukan'}
+                          ? 'Sisi Kanan ▶'
+                          : sisiJalan === 'KIRI'
+                            ? '◀ Sisi Kiri'
+                            : 'Tidak Ditentukan'}
                     </span>
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block text-[9px] uppercase font-bold">Metode Penentuan</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                      Metode Penentuan
+                    </span>
                     <span className="font-bold text-slate-800 block mt-0.5">
-                      {distanceFromDevice && distanceFromDevice > 0.5 ? '📌 Geser Pin Peta' : '🛰️ GPS Device'}
+                      {distanceFromDevice && distanceFromDevice > 0.5
+                        ? '📌 Geser Pin Peta'
+                        : '🛰️ GPS Device'}
                     </span>
                   </div>
 
                   <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 col-span-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">Koordinat WGS84 &amp; Akurasi</span>
+                      <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                        Koordinat WGS84 &amp; Akurasi
+                      </span>
                       <span className="text-[9px] font-bold text-emerald-600">Presisi GPS</span>
                     </div>
                     <span className="font-mono text-emerald-600 font-bold block mt-0.5 text-xs">
                       {confirmedCoord.lat.toFixed(6)}, {confirmedCoord.lng.toFixed(6)}
                     </span>
                     <span className="text-[10px] text-slate-500 block mt-0.5">
-                      Akurasi: {gpsAccuracy ? `±${gpsAccuracy.toFixed(1)}m` : 'Presisi'} • Deviasi ke Tiang: {formatDistance(distanceFromDevice || 0)}
+                      Akurasi: {gpsAccuracy ? `±${gpsAccuracy.toFixed(1)}m` : 'Presisi'} • Deviasi
+                      ke Tiang: {formatDistance(distanceFromDevice || 0)}
                     </span>
                   </div>
                 </div>
@@ -1755,14 +1850,43 @@ export default function SurveyForm({
                 <span className="text-[9px] font-bold text-slate-400 uppercase block mb-1.5">
                   3. Temuan Masalah &amp; Bahaya Lapangan:
                 </span>
-                {(isTilted || isMessyCable || isLowCable || isCorroded || isObstructing || isHazardous) ? (
+                {isTilted ||
+                isMessyCable ||
+                isLowCable ||
+                isCorroded ||
+                isObstructing ||
+                isHazardous ? (
                   <div className="flex flex-wrap gap-1">
-                    {isTilted && <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">⚠️ Tiang Miring</span>}
-                    {isMessyCable && <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">🔌 Kabel Semrawut</span>}
-                    {isLowCable && <span className="px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-[10px] font-bold">🚨 Kabel Rendah</span>}
-                    {isCorroded && <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">⚙️ Karat/Retak</span>}
-                    {isObstructing && <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">🚷 Ganggu Jalan</span>}
-                    {isHazardous && <span className="px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-[10px] font-bold">💥 Bahaya Listrik</span>}
+                    {isTilted && (
+                      <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">
+                        ⚠️ Tiang Miring
+                      </span>
+                    )}
+                    {isMessyCable && (
+                      <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">
+                        🔌 Kabel Semrawut
+                      </span>
+                    )}
+                    {isLowCable && (
+                      <span className="px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-[10px] font-bold">
+                        🚨 Kabel Rendah
+                      </span>
+                    )}
+                    {isCorroded && (
+                      <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">
+                        ⚙️ Karat/Retak
+                      </span>
+                    )}
+                    {isObstructing && (
+                      <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-[10px] font-bold">
+                        🚷 Ganggu Jalan
+                      </span>
+                    )}
+                    {isHazardous && (
+                      <span className="px-2.5 py-1 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-[10px] font-bold">
+                        💥 Bahaya Listrik
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-[10px] font-bold flex items-center gap-1.5">
@@ -1775,18 +1899,28 @@ export default function SurveyForm({
               {/* 5. Catatan Lapangan & Petugas Surveyor */}
               <div className="grid grid-cols-2 gap-1.5 text-[10px] pt-1 border-t border-slate-100">
                 <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 col-span-2">
-                  <span className="text-slate-400 block text-[8px] font-bold uppercase">Catatan Keterangan Lapangan</span>
+                  <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                    Catatan Keterangan Lapangan
+                  </span>
                   <span className="font-medium text-slate-700 block mt-0.5 text-[11px] italic">
                     {description || 'Tidak ada catatan tambahan'}
                   </span>
                 </div>
                 <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 block text-[8px] font-bold uppercase">Petugas Surveyor</span>
-                  <span className="font-bold text-slate-800 block mt-0.5 truncate">{surveyorName}</span>
+                  <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                    Petugas Surveyor
+                  </span>
+                  <span className="font-bold text-slate-800 block mt-0.5 truncate">
+                    {surveyorName}
+                  </span>
                 </div>
                 <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                  <span className="text-slate-400 block text-[8px] font-bold uppercase">Waktu Survei</span>
-                  <span className="font-bold text-slate-800 block mt-0.5">{surveyDate} • {surveyTime}</span>
+                  <span className="text-slate-400 block text-[8px] font-bold uppercase">
+                    Waktu Survei
+                  </span>
+                  <span className="font-bold text-slate-800 block mt-0.5">
+                    {surveyDate} • {surveyTime}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1799,9 +1933,7 @@ export default function SurveyForm({
                   <span className="font-bold block text-amber-900">
                     Tersimpan Aman di Memori HP (Mode Antrean Offline)
                   </span>
-                  <p className="text-[11px] text-amber-800 leading-relaxed">
-                    {offlineNotice}
-                  </p>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">{offlineNotice}</p>
                 </div>
               </div>
             )}
@@ -1829,10 +1961,10 @@ export default function SurveyForm({
                       {submitStage === 'UPLOADING_PHOTO'
                         ? 'Mengunggah Foto Media...'
                         : submitStage === 'SAVING_SHEET'
-                        ? 'Menyimpan Data Survei ke Cloud...'
-                        : submitStage === 'SAVING_OFFLINE'
-                        ? 'Mengamankan Data ke Memori HP...'
-                        : 'Menyimpan Data...'}
+                          ? 'Menyimpan Data Survei ke Cloud...'
+                          : submitStage === 'SAVING_OFFLINE'
+                            ? 'Mengamankan Data ke Memori HP...'
+                            : 'Menyimpan Data...'}
                     </span>
                   </>
                 ) : submitStage === 'SUCCESS' ? (
@@ -1937,7 +2069,8 @@ export default function SurveyForm({
                   {poleCode.split('-')[3] || '001'}
                 </span>
                 <div className="text-[11px] text-slate-700 leading-tight">
-                  <strong>Nomor Urut Tiang (001, 002, 003...):</strong> Berurutan otomatis per kelurahan
+                  <strong>Nomor Urut Tiang (001, 002, 003...):</strong> Berurutan otomatis per
+                  kelurahan
                 </div>
               </div>
             </div>

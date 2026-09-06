@@ -27,12 +27,7 @@ export default function BackButton({
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleBack}
-      className={className}
-      aria-label={label}
-    >
+    <button type="button" onClick={handleBack} className={className} aria-label={label}>
       <ChevronLeft className="w-4 h-4" />
       <span>{label}</span>
     </button>

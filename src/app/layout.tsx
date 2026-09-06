@@ -27,11 +27,7 @@ export const viewport: Viewport = {
   themeColor: '#0d9488',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id">
       <body className="bg-teal-50/40 text-slate-800 antialiased selection:bg-teal-600 selection:text-white">

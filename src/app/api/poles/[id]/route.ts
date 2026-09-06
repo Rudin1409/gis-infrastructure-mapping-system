@@ -4,10 +4,7 @@ import { updatePoleSchema } from '@/lib/validation/poleSchema';
 import { sheetsBackupService } from '@/services/sheetsBackupService';
 import { isDataMutationAllowed } from '@/lib/ai/aiConfig';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
     const pole = await poleService.getPoleById(id);
@@ -32,16 +29,14 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     if (!isDataMutationAllowed()) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Pembaruan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
+          error:
+            'Pembaruan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
         },
         { status: 403 }
       );
@@ -81,16 +76,14 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     if (!isDataMutationAllowed()) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Penghapusan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
+          error:
+            'Penghapusan data tiang dinonaktifkan pada versi demo. Silakan gunakan server resmi VPS.',
         },
         { status: 403 }
       );

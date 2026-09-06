@@ -8,8 +8,9 @@ export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/admin/sync-to-sheets
- * 
- * Full sync: Ambil semua data dari Supabase → tulis ulang ke Google Sheets.
+ *
+ * Full sync: Ambil data dari repository aktif (PostgreSQL/Supabase)
+ * lalu tulis ulang sheet tiang, provider, dan segmen di Google Sheets.
  * Digunakan admin untuk sinkronisasi manual atau recovery.
  */
 export async function POST() {
@@ -45,7 +46,7 @@ export async function POST() {
     }
 
     const elapsed = Date.now() - startTime;
-    const allSuccess = Object.values(results).every(r => r.success);
+    const allSuccess = Object.values(results).every((r) => r.success);
 
     return NextResponse.json({
       success: allSuccess,

@@ -48,7 +48,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const isFullScreenPage = pathname.startsWith('/map') || pathname.startsWith('/poles/new') || isLoginPage;
+  const isFullScreenPage =
+    pathname.startsWith('/map') || pathname.startsWith('/poles/new') || isLoginPage;
 
   return (
     <>
@@ -107,9 +108,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <div
           key={pathname}
           className={`w-full ${
-            isFullScreenPage
-              ? 'h-full flex flex-col flex-1 overflow-hidden'
-              : 'min-h-full'
+            isFullScreenPage ? 'h-full flex flex-col flex-1 overflow-hidden' : 'min-h-full'
           } animate-in fade-in duration-150`}
         >
           {children}

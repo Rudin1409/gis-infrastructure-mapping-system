@@ -1,4 +1,9 @@
-import { Subdistrict, DistrictGroup, CreateSubdistrictInput, UpdateSubdistrictInput } from '@/types/district';
+import {
+  Subdistrict,
+  DistrictGroup,
+  CreateSubdistrictInput,
+  UpdateSubdistrictInput,
+} from '@/types/district';
 
 export interface IDistrictRepository {
   /**

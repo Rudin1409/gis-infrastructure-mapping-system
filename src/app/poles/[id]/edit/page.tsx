@@ -6,11 +6,7 @@ import EditPoleForm from '@/components/survey/EditPoleForm';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EditPolePage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function EditPolePage({ params }: { params: { id: string } }) {
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 

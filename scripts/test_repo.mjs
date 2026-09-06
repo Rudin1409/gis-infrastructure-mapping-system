@@ -10,7 +10,7 @@ async function test() {
   if (error) console.error(error);
   else {
     console.log(`TOTAL TIANG DI SUPABASE SEKARANG: ${data.length} tiang`);
-    data.forEach(p => console.log(`- ${p.id} : ${p.pole_code} (${p.road}, ${p.kelurahan})`));
+    data.forEach((p) => console.log(`- ${p.id} : ${p.pole_code} (${p.road}, ${p.kelurahan})`));
   }
 }
 

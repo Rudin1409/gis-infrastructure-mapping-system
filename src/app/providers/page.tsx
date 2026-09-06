@@ -9,10 +9,7 @@ export default async function ProvidersPage() {
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 
-  const [allPoles, providers] = await Promise.all([
-    poleRepo.findAll(),
-    providerRepo.findAll(),
-  ]);
+  const [allPoles, providers] = await Promise.all([poleRepo.findAll(), providerRepo.findAll()]);
 
   return (
     <div className="min-h-screen bg-slate-100">

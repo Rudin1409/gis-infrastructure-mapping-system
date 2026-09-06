@@ -10,7 +10,7 @@ const client = new Client({
   user: `postgres.${PROJECT_REF}`,
   password: DB_PASSWORD,
   database: 'postgres',
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 const INITIAL_SEGMENTS = [
@@ -25,7 +25,7 @@ const INITIAL_SEGMENTS = [
     installation_type: 'AERIAL',
     estimated_distance: 45.2,
     status: 'ACTIVE',
-    description: 'Jalur kabel FO 24 core Jl. Majapahit'
+    description: 'Jalur kabel FO 24 core Jl. Majapahit',
   },
   {
     id: 'SEG-0002',
@@ -38,7 +38,7 @@ const INITIAL_SEGMENTS = [
     installation_type: 'AERIAL',
     estimated_distance: 49.0,
     status: 'ACTIVE',
-    description: 'Jalur kabel FO Jl. Majapahit No. 2 ke No. 3'
+    description: 'Jalur kabel FO Jl. Majapahit No. 2 ke No. 3',
   },
   {
     id: 'SEG-0003',
@@ -51,8 +51,8 @@ const INITIAL_SEGMENTS = [
     installation_type: 'AERIAL',
     estimated_distance: 35.8,
     status: 'ACTIVE',
-    description: 'Jalur kabel FO Jalan Garuda (Pelita Jaya - Belakang Bapenda)'
-  }
+    description: 'Jalur kabel FO Jalan Garuda (Pelita Jaya - Belakang Bapenda)',
+  },
 ];
 
 async function setupSegments() {
@@ -98,11 +98,26 @@ async function setupSegments() {
   `);
 
   for (const s of INITIAL_SEGMENTS) {
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO public.segments (id, segment_code, from_node_id, to_node_id, provider_id, provider_name, network_type, installation_type, estimated_distance, status, description)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       ON CONFLICT (id) DO NOTHING;
-    `, [s.id, s.segment_code, s.from_node_id, s.to_node_id, s.provider_id, s.provider_name, s.network_type, s.installation_type, s.estimated_distance, s.status, s.description]);
+    `,
+      [
+        s.id,
+        s.segment_code,
+        s.from_node_id,
+        s.to_node_id,
+        s.provider_id,
+        s.provider_name,
+        s.network_type,
+        s.installation_type,
+        s.estimated_distance,
+        s.status,
+        s.description,
+      ]
+    );
   }
 
   console.log('✅ TABEL SEGMENTS DI SUPABASE BERHASIL DIBUAT & DIISI 100%!');

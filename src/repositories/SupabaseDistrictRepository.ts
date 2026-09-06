@@ -152,7 +152,9 @@ export class SupabaseDistrictRepository implements IDistrictRepository {
     const groups: DistrictGroup[] = [];
     groupsMap.forEach((kelurahan, name) => {
       // Sort kelurahan by orderIndex then name
-      kelurahan.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0) || a.name.localeCompare(b.name));
+      kelurahan.sort(
+        (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0) || a.name.localeCompare(b.name)
+      );
       groups.push({
         name,
         kelurahan,

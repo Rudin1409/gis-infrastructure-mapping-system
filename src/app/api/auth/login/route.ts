@@ -50,9 +50,18 @@ export async function POST(request: NextRequest) {
               name: dbUser.name,
               email: dbUser.email,
               role: dbUser.role,
-              roleLabel: dbUser.role === 'ADMIN_KOMINFO' ? 'Administrator DISKOMINFOTIKSAN' : 'Petugas Survei Spasial',
-              agency: dbUser.agency || (dbUser.team === 'BAPENDA' ? 'Badan Pendapatan Daerah (BAPENDA) Kota Lubuklinggau' : 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'),
-              team: dbUser.team || (dbUser.agency?.toLowerCase().includes('bapenda') ? 'BAPENDA' : 'KOMINFO'),
+              roleLabel:
+                dbUser.role === 'ADMIN_KOMINFO'
+                  ? 'Administrator DISKOMINFOTIKSAN'
+                  : 'Petugas Survei Spasial',
+              agency:
+                dbUser.agency ||
+                (dbUser.team === 'BAPENDA'
+                  ? 'Badan Pendapatan Daerah (BAPENDA) Kota Lubuklinggau'
+                  : 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'),
+              team:
+                dbUser.team ||
+                (dbUser.agency?.toLowerCase().includes('bapenda') ? 'BAPENDA' : 'KOMINFO'),
               phone: dbUser.phone,
               avatar: dbUser.role === 'ADMIN_KOMINFO' ? '🏢' : '👨‍💼',
             },
@@ -68,7 +77,9 @@ export async function POST(request: NextRequest) {
         const { data: dbUser, error: dbErr } = await supabase
           .from('users')
           .select('*')
-          .or(`email.ilike.${trimmedEmail},phone.ilike.%${cleanPhoneQuery.length >= 8 ? cleanPhoneQuery : 'NOMATCH'}%`)
+          .or(
+            `email.ilike.${trimmedEmail},phone.ilike.%${cleanPhoneQuery.length >= 8 ? cleanPhoneQuery : 'NOMATCH'}%`
+          )
           .eq('password', password)
           .single();
 
@@ -80,9 +91,18 @@ export async function POST(request: NextRequest) {
               name: dbUser.name,
               email: dbUser.email,
               role: dbUser.role,
-              roleLabel: dbUser.role === 'ADMIN_KOMINFO' ? 'Administrator DISKOMINFOTIKSAN' : 'Petugas Survei Spasial',
-              agency: dbUser.agency || (dbUser.team === 'BAPENDA' ? 'Badan Pendapatan Daerah (BAPENDA) Kota Lubuklinggau' : 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'),
-              team: dbUser.team || (dbUser.agency?.toLowerCase().includes('bapenda') ? 'BAPENDA' : 'KOMINFO'),
+              roleLabel:
+                dbUser.role === 'ADMIN_KOMINFO'
+                  ? 'Administrator DISKOMINFOTIKSAN'
+                  : 'Petugas Survei Spasial',
+              agency:
+                dbUser.agency ||
+                (dbUser.team === 'BAPENDA'
+                  ? 'Badan Pendapatan Daerah (BAPENDA) Kota Lubuklinggau'
+                  : 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'),
+              team:
+                dbUser.team ||
+                (dbUser.agency?.toLowerCase().includes('bapenda') ? 'BAPENDA' : 'KOMINFO'),
               phone: dbUser.phone,
               avatar: dbUser.role === 'ADMIN_KOMINFO' ? '🏢' : '👨‍💼',
             },
@@ -141,7 +161,9 @@ export async function POST(request: NextRequest) {
         role: matched.role,
         roleLabel: matched.roleLabel,
         agency: matched.agency,
-        team: matched.team || (matched.agency?.toLowerCase().includes('bapenda') ? 'BAPENDA' : 'KOMINFO'),
+        team:
+          matched.team ||
+          (matched.agency?.toLowerCase().includes('bapenda') ? 'BAPENDA' : 'KOMINFO'),
         phone: matched.phone,
         avatar: matched.avatar,
       };

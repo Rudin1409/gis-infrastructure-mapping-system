@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
   const lng = searchParams.get('lng');
 
   if (!lat || !lng) {
-    return NextResponse.json({ success: false, error: 'Latitude dan longitude wajib diisi' }, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: 'Latitude dan longitude wajib diisi' },
+      { status: 400 }
+    );
   }
 
   const cacheKey = `${Number(lat).toFixed(5)},${Number(lng).toFixed(5)}`;
@@ -73,7 +76,10 @@ export async function GET(request: NextRequest) {
     });
 
     if (!res.ok) {
-      return NextResponse.json({ success: false, error: `Nominatim status ${res.status}` }, { status: 502 });
+      return NextResponse.json(
+        { success: false, error: `Nominatim status ${res.status}` },
+        { status: 502 }
+      );
     }
 
     const payload = await res.json();
@@ -86,6 +92,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.warn('Reverse geocode proxy error:', error?.message || error);
-    return NextResponse.json({ success: false, error: error?.message || 'Geocoding failed' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Geocoding failed' },
+      { status: 500 }
+    );
   }
 }

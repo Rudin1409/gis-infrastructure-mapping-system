@@ -39,7 +39,10 @@ export default function DistrictsManagerClient({
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Toast / notification state
-  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Modals state
   const [editingSubdistrict, setEditingSubdistrict] = useState<{
@@ -343,7 +346,8 @@ export default function DistrictsManagerClient({
                 Mode Edit Wilayah Aktif
               </span>
               <span className="text-[10px] text-purple-800 leading-tight block">
-                Ketuk tombol pensil di kelurahan untuk mengubah nama atau tombol + untuk menambah baru.
+                Ketuk tombol pensil di kelurahan untuk mengubah nama atau tombol + untuk menambah
+                baru.
               </span>
             </div>
           </div>
@@ -442,9 +446,7 @@ export default function DistrictsManagerClient({
         {filteredDistricts.length === 0 ? (
           <div className="bg-white rounded-3xl p-8 border border-slate-100 text-center space-y-2">
             <span className="text-3xl block">🔍</span>
-            <h3 className="text-sm font-black text-slate-800">
-              Tidak Ada Wilayah yang Sesuai
-            </h3>
+            <h3 className="text-sm font-black text-slate-800">Tidak Ada Wilayah yang Sesuai</h3>
             <p className="text-xs text-slate-500">
               Coba gunakan kata kunci pencarian kelurahan atau kecamatan yang lain.
             </p>
@@ -505,7 +507,8 @@ export default function DistrictsManagerClient({
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Kelurahan / Desa {isManageMode ? '(Ketuk pensil untuk edit):' : '(Ketuk untuk filter):'}
+                      Kelurahan / Desa{' '}
+                      {isManageMode ? '(Ketuk pensil untuk edit):' : '(Ketuk untuk filter):'}
                     </span>
                   </div>
 
@@ -599,9 +602,7 @@ export default function DistrictsManagerClient({
                 <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
                   <Edit2 className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-black text-slate-900">
-                  Edit Data Kelurahan
-                </h3>
+                <h3 className="text-sm font-black text-slate-900">Edit Data Kelurahan</h3>
               </div>
               <button
                 type="button"
@@ -614,9 +615,7 @@ export default function DistrictsManagerClient({
 
             <form onSubmit={handleSubmitEdit} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Nama Kelurahan / Desa
-                </label>
+                <label className="block font-bold text-slate-700 mb-1">Nama Kelurahan / Desa</label>
                 <input
                   type="text"
                   required
@@ -628,9 +627,7 @@ export default function DistrictsManagerClient({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Wilayah Kecamatan
-                </label>
+                <label className="block font-bold text-slate-700 mb-1">Wilayah Kecamatan</label>
                 <select
                   value={editKecamatan}
                   onChange={(e) => setEditKecamatan(e.target.value)}
@@ -673,7 +670,9 @@ export default function DistrictsManagerClient({
                   <div className="text-[11px] text-slate-700">
                     <span className="font-bold block">Perbarui Otomatis Data Tiang Terdaftar</span>
                     <span className="text-[10px] text-slate-500">
-                      Jika nama diubah dari &quot;{editingSubdistrict.subdistrict.name}&quot; ke &quot;{editName}&quot;, semua tiang lama otomatis diganti namanya agar tidak hilang dari filter.
+                      Jika nama diubah dari &quot;{editingSubdistrict.subdistrict.name}&quot; ke
+                      &quot;{editName}&quot;, semua tiang lama otomatis diganti namanya agar tidak
+                      hilang dari filter.
                     </span>
                   </div>
                 </label>
@@ -713,9 +712,7 @@ export default function DistrictsManagerClient({
                 <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
                   <Plus className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-black text-slate-900">
-                  Tambah Kelurahan / Desa Baru
-                </h3>
+                <h3 className="text-sm font-black text-slate-900">Tambah Kelurahan / Desa Baru</h3>
               </div>
               <button
                 type="button"
@@ -742,9 +739,7 @@ export default function DistrictsManagerClient({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Kecamatan Tujuan
-                </label>
+                <label className="block font-bold text-slate-700 mb-1">Kecamatan Tujuan</label>
                 <select
                   value={addKecamatan}
                   onChange={(e) => setAddKecamatan(e.target.value)}
@@ -848,11 +843,10 @@ export default function DistrictsManagerClient({
             </div>
 
             <div className="text-center space-y-1">
-              <h3 className="text-sm font-black text-slate-900">
-                Reset ke 72 Kelurahan Resmi?
-              </h3>
+              <h3 className="text-sm font-black text-slate-900">Reset ke 72 Kelurahan Resmi?</h3>
               <p className="text-xs text-slate-500">
-                Data kelurahan akan dikembalikan sesuai standar default 8 Kecamatan dan 72 Kelurahan resmi Kota Lubuklinggau.
+                Data kelurahan akan dikembalikan sesuai standar default 8 Kecamatan dan 72 Kelurahan
+                resmi Kota Lubuklinggau.
               </p>
             </div>
 

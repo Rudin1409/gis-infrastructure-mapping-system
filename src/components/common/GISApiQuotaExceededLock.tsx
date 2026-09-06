@@ -23,7 +23,8 @@ export default function GISApiQuotaExceededLock({
             API 429 • Quota Limit Exceeded
           </div>
           <p className="text-[11px] text-slate-400 font-sans max-w-xs leading-tight">
-            Layanan pemetaan GIS ditangguhkan otomatis karena kuota panggilan data API telah melampaui batas paket.
+            Layanan pemetaan GIS ditangguhkan otomatis karena kuota panggilan data API telah
+            melampaui batas paket.
           </p>
         </div>
       </div>
@@ -96,7 +97,9 @@ export default function GISApiQuotaExceededLock({
 
         {/* Formal API Footnote - Pure Automated GIS API notice */}
         <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans pt-1">
-          Layanan pemetaan interaktif ditangguhkan otomatis oleh API Geospatial Gateway karena batas alokasi kuota pemanggilan telah terpenuhi. Diperlukan pembaruan paket lisensi untuk mengaktifkan kembali akses API.
+          Layanan pemetaan interaktif ditangguhkan otomatis oleh API Geospatial Gateway karena batas
+          alokasi kuota pemanggilan telah terpenuhi. Diperlukan pembaruan paket lisensi untuk
+          mengaktifkan kembali akses API.
         </p>
       </div>
     </div>

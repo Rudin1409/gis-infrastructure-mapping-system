@@ -14,7 +14,10 @@ export default function PoleDetailActions({ poleId, poleCode }: PoleDetailAction
   const router = useRouter();
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -120,10 +123,12 @@ export default function PoleDetailActions({ poleId, poleCode }: PoleDetailAction
             <div className="text-center space-y-1">
               <h3 className="text-base font-black text-slate-900">Konfirmasi Hapus Tiang</h3>
               <p className="text-xs text-slate-500">
-                Apakah Anda yakin ingin menghapus tiang <strong className="font-mono text-slate-800">{poleCode || poleId}</strong>?
+                Apakah Anda yakin ingin menghapus tiang{' '}
+                <strong className="font-mono text-slate-800">{poleCode || poleId}</strong>?
               </p>
               <div className="p-2 bg-amber-50 rounded-xl border border-amber-200 text-[10px] text-amber-800 text-left font-medium mt-2">
-                ⚠️ <strong>Validasi Ganda:</strong> Data akan dihapus secara permanen dari Server Basis Data Pusat.
+                ⚠️ <strong>Validasi Ganda:</strong> Data akan dihapus secara permanen dari Server
+                Basis Data Pusat.
               </div>
             </div>
 
@@ -142,7 +147,11 @@ export default function PoleDetailActions({ poleId, poleCode }: PoleDetailAction
                 onClick={handleDelete}
                 className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-bold text-white shadow-md shadow-rose-500/25 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                {isDeleting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
                 <span>{isDeleting ? 'Menghapus DB...' : 'Ya, Hapus Sekarang'}</span>
               </button>
             </div>

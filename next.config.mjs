@@ -2,11 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
-    // ESLint is checked in development/CI; skipping during next build speeds up VPS deployment drastically
+    // ESLint belum dikonfigurasi. Pemeriksaan format dan tipe dijalankan terpisah
+    // melalui npm run check sebelum deployment.
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // TypeScript check is already verified in GitHub Actions (npx tsc --noEmit); skipping redundant check speeds up VPS build
+    // TypeScript sudah diperiksa melalui npm run check di GitHub Actions.
+    // Build VPS melewati pemeriksaan ulang; build lokal juga perlu npm run check.
     ignoreBuildErrors: true,
   },
   images: {
@@ -23,7 +25,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
-      }
+      },
     ],
   },
 };
