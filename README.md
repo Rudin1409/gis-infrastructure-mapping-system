@@ -1,530 +1,459 @@
-# Infrastructure Mapping System — Infra-Map
+<div align="center">
 
-Aplikasi Web GIS untuk pendataan tiang dan jalur jaringan infrastruktur di Kota
-Lubuklinggau. Aplikasi menggabungkan survei lapangan, GPS, foto, inventaris provider,
-kondisi tiang, jaringan kabel, dan ringkasan data untuk petugas serta admin.
-Kategori infrastruktur mencakup FO/WiFi, PJU mandiri, PLN dengan PJU, dan PLN murni.
+# Infra-Map
 
-README ini menjelaskan implementasi repository, termasuk pilihan database,
-integrasi lama, pengembangan, deployment, dan batasan operasional. Jumlah data
-serta status layanan produksi dapat berubah; keduanya bukan konstanta proyek.
+### Infrastructure Mapping System
 
-## Daftar isi
+**Pendataan dan pemetaan infrastruktur Kota Lubuklinggau**
 
-- [Fitur dan halaman](#fitur-dan-halaman)
-- [Teknologi dan struktur proyek](#teknologi-dan-struktur-proyek)
-- [Arsitektur dan alur data](#arsitektur-dan-alur-data)
-- [Menjalankan proyek](#menjalankan-proyek)
-- [Konfigurasi lingkungan](#konfigurasi-lingkungan)
-- [Database dan model data](#database-dan-model-data)
-- [Referensi API](#referensi-api)
-- [Survei offline dan pembaruan data](#survei-offline-dan-pembaruan-data)
-- [Integrasi Google dan AI](#integrasi-google-dan-ai)
-- [Script pemeliharaan](#script-pemeliharaan)
-- [Deployment VPS](#deployment-vps)
-- [Panduan perubahan dan verifikasi](#panduan-perubahan-dan-verifikasi)
-- [Pemecahan masalah](#pemecahan-masalah)
-- [Batasan implementasi](#batasan-implementasi)
+Survei lapangan · Inventaris aset · Peta jaringan · Pemantauan kondisi
 
-## Fitur dan halaman
+</div>
 
-| Halaman            | Fungsi                                                                             |
-| ------------------ | ---------------------------------------------------------------------------------- |
-| `/`                | Dashboard jumlah tiang, kondisi, provider, wilayah, dan estimasi panjang jaringan. |
-| `/login`           | Masuk melalui email, nomor telepon, atau alias yang didukung fallback akun.        |
-| `/map`             | Peta GIS, marker tiang, filter, jalur jaringan, dan alat pemetaan.                 |
-| `/poles`           | Daftar inventaris dengan pencarian dan filter.                                     |
-| `/poles/new`       | Survei baru: koordinat, wilayah, provider, kondisi, kategori, dan foto.            |
-| `/poles/[id]`      | Detail tiang dan tindakan terkait data tersebut.                                   |
-| `/poles/[id]/edit` | Penyuntingan data tiang.                                                           |
-| `/segments`        | Informasi segmen jaringan kabel.                                                   |
-| `/providers`       | Ringkasan inventaris menurut provider.                                             |
-| `/districts`       | Pengelolaan master kelurahan dan kecamatan terkait.                                |
-| `/surveyor`        | Portal petugas survei.                                                             |
-| `/mobile`          | Tampilan untuk penggunaan perangkat seluler.                                       |
-| `/profile`         | Informasi profil pengguna.                                                         |
-| `/ai`              | Asisten GIS yang terhubung ke layanan AI.                                          |
-| `/admin`           | Ringkasan administrasi, sumber data, wilayah, dan informasi pengaturan.            |
-| `/system-gateway`  | Pengaturan kunci akses modul pemetaan.                                             |
+---
 
-Navigasi dan tampilan mengikuti konteks pengguna serta mode layar. Tipe peran yang
-tersedia adalah `ADMIN_KOMINFO`, `SURVEYOR`, dan `SUPER_ADMIN`; tim petugas mencakup
-KOMINFO dan BAPENDA. Informasi pengaturan pada admin tidak semuanya merupakan
-pengaturan server yang dapat diedit; lihat handler halaman untuk tindakan aktifnya.
+Infra-Map adalah aplikasi Web GIS yang menghubungkan hasil survei lapangan dengan
+inventaris infrastruktur berbasis lokasi. Setiap titik memiliki informasi posisi,
+kategori, provider atau instansi, kondisi fisik, foto, serta identitas petugas survei.
+Hubungan antartitik dicatat sebagai segmen jaringan dan dapat dilihat bersama pada peta.
 
-## Teknologi dan struktur proyek
+Sistem mencakup tiang jaringan FO/WiFi, penerangan jalan umum (PJU), tiang PLN yang
+juga digunakan untuk PJU, dan tiang PLN murni. Data yang sama menjadi dasar daftar
+inventaris, peta, ringkasan dashboard, serta ekspor spasial.
 
-| Bagian            | Implementasi                                                            |
-| ----------------- | ----------------------------------------------------------------------- |
-| Web dan API       | Next.js 14 App Router, React 18, TypeScript                             |
-| Antarmuka         | Tailwind CSS, Lucide React, `clsx`, `tailwind-merge`                    |
-| GIS               | Leaflet, utilitas spasial internal, Google Maps/Street View, OSRM       |
-| Validasi          | Zod pada jalur CRUD tiang                                               |
-| Database          | PostgreSQL melalui `pg`, atau Supabase melalui `@supabase/supabase-js`  |
-| Foto dan cadangan | Google Drive, Google Sheets, Google Apps Script, `googleapis`           |
-| Offline           | IndexedDB, service worker, manifest aplikasi                            |
-| Pengembangan      | TypeScript, Prettier; versi dependency pasti ada di `package-lock.json` |
-| Deployment        | GitHub Actions, SSH, Bash, PM2                                          |
+> **Ruang lingkup dokumentasi**
+>
+> Penjelasan ini menggambarkan perilaku dan struktur kode dalam repository.
+> Ketersediaan integrasi dan status aktivasi di server mengikuti konfigurasi
+> lingkungan. Panduan aktivasi keamanan tersedia di [dokumentasi keamanan](docs/SECURITY.md).
+
+## Jelajahi dokumentasi
+
+| Memahami aplikasi                                 | Memahami sistem                                     |
+| ------------------------------------------------- | --------------------------------------------------- |
+| [Tujuan dan cakupan](#tujuan-dan-cakupan)         | [Arsitektur aplikasi](#arsitektur-aplikasi)         |
+| [Pengguna dan hak akses](#pengguna-dan-hak-akses) | [Model data dan hubungan](#model-data-dan-hubungan) |
+| [Alur survei](#alur-survei)                       | [Integrasi layanan](#integrasi-layanan)             |
+| [Halaman dan fitur](#halaman-dan-fitur)           | [Struktur repository](#struktur-repository)         |
+| [Cara membaca data](#cara-membaca-data)           | [Referensi teknis](#referensi-teknis)               |
+| [Survei offline](#survei-offline)                 | [Batasan operasional](#batasan-operasional)         |
+
+## Tujuan dan cakupan
+
+Infra-Map membantu menyatukan pencatatan lapangan sehingga lokasi aset, atribut,
+dan bukti dokumentasinya dapat ditelusuri dalam satu aplikasi. Peta menunjukkan
+persebaran infrastruktur, daftar inventaris membantu penelusuran detail, dan
+dashboard merangkum data untuk melihat kondisi wilayah secara menyeluruh.
+
+| Kategori             | Kode data        | Informasi yang dicatat                                              |
+| -------------------- | ---------------- | ------------------------------------------------------------------- |
+| Jaringan FO/WiFi     | `FO_WIFI`        | Tiang provider jaringan, material, kondisi, serta pemasangan kabel. |
+| PJU mandiri          | `PJU_MANDIRI`    | Tiang penerangan jalan beserta jenis, daya, dan kondisi lampu.      |
+| Gabungan PLN dan PJU | `GABUNG_PLN_PJU` | Tiang PLN yang juga digunakan untuk penerangan jalan.               |
+| PLN murni            | `PLN_MURNI`      | Tiang distribusi listrik dalam inventaris infrastruktur.            |
+
+Atribut tambahan mencakup kepemilikan, keberadaan kWh meter, kabel jaringan yang
+menumpang, dan penanda kondisi berisiko. Kelengkapan atribut mengikuti kategori
+serta informasi yang tersedia saat survei.
+
+## Pengguna dan hak akses
+
+Akun memiliki peran, identitas instansi, serta tim KOMINFO atau BAPENDA.
+Identitas akun digunakan untuk atribusi survei dan penentuan akses oleh server.
+
+| Peran                       | Cakupan                                                                                                                  |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Petugas (`SURVEYOR`)        | Melihat inventaris, melakukan survei, dan mengedit data survei bersama setelah login.                                    |
+| Admin (`ADMIN_KOMINFO`)     | Mengakses inventaris dan tindakan administratif, seperti pengelolaan wilayah, penghapusan massal, dan sinkronisasi data. |
+| Super admin (`SUPER_ADMIN`) | Memiliki akses administratif yang dikenali oleh pemeriksaan peran server.                                                |
+
+**Data survei merupakan inventaris bersama.** Petugas dapat mengedit data yang
+dibuat petugas lain. Identitas pembuat tetap berasal dari sesi saat pembuatan dan
+tidak dapat diganti melalui payload penyuntingan. Hak melihat posisi petugas
+mengikuti peran dan tim akun yang tersimpan pada server.
+
+Login menerima email, nomor telepon, atau alias akun yang didukung. Sesi diverifikasi
+oleh server melalui cookie; data profil yang disimpan browser bukan dasar hak akses
+API. Profil menyediakan perubahan identitas tampilan dan password. Perubahan password
+mengakhiri sesi perangkat lain tanpa menghapus draf survei di perangkat tersebut.
+
+## Alur survei
+
+```mermaid
+flowchart LR
+    A[Masuk ke aplikasi] --> B[Tentukan lokasi tiang]
+    B --> C[Isi atribut dan foto]
+    C --> D{Koneksi tersedia?}
+    D -->|Ya| E[Validasi dan simpan melalui server]
+    D -->|Tidak| F[Simpan dalam antrean perangkat]
+    F --> G[Koneksi pulih dan sesi valid]
+    G --> E
+    E --> H[Inventaris, peta, dan dashboard]
+```
+
+1. **Masuk dengan akun petugas.** Server memverifikasi akun dan menyiapkan sesi.
+2. **Tentukan posisi aset.** Gunakan posisi GPS perangkat atau sesuaikan pin pada peta.
+   Posisi tiang dan posisi perangkat dicatat sebagai dua informasi terpisah.
+3. **Lengkapi atribut.** Pilih kategori, provider atau instansi, wilayah, material,
+   kondisi, dan informasi tambahan yang relevan.
+4. **Tambahkan dokumentasi.** Foto dan catatan membantu menjelaskan keadaan aset
+   serta patokan lokasinya.
+5. **Simpan survei.** Permintaan daring melewati pemeriksaan sesi dan validasi data.
+   Survei offline disimpan dahulu pada perangkat untuk dikirim saat memungkinkan.
+6. **Tinjau hasilnya.** Data tersimpan dapat dibuka pada detail, disunting melalui
+   inventaris, ditampilkan pada peta, dan digunakan dalam ekspor.
+
+Provider dinormalisasi agar penyebutan instansi konsisten. Pada pembuatan kategori
+PLN murni atau gabungan PLN/PJU, kepemilikan kosong atau `SENDIRI` disesuaikan menjadi
+`BERSAMA_PLN`. Penyimpanan utama dan pembaruan mirror merupakan proses berbeda;
+berhasil menyimpan survei tidak berarti salinan Google Sheets sudah selesai diperbarui.
+
+## Halaman dan fitur
+
+### Ringkasan dan penelusuran
+
+| Halaman          | Alamat        | Peran dalam aplikasi                                                                  |
+| ---------------- | ------------- | ------------------------------------------------------------------------------------- |
+| Dashboard        | `/`           | Ringkasan jumlah tiang, kondisi, provider, wilayah, dan estimasi panjang jaringan.    |
+| Peta GIS         | `/map`        | Persebaran titik, filter infrastruktur, jalur jaringan, dan alat penelusuran spasial. |
+| Inventaris tiang | `/poles`      | Daftar aset dengan pencarian dan filter untuk menemukan data yang diperlukan.         |
+| Detail tiang     | `/poles/[id]` | Atribut satu aset, posisi, dokumentasi, dan informasi surveinya.                      |
+| Segmen jaringan  | `/segments`   | Hubungan antartitik beserta atribut jalur kabel.                                      |
+| Provider         | `/providers`  | Ringkasan inventaris berdasarkan penyedia jaringan atau instansi.                     |
+
+### Survei dan pengelolaan
+
+| Halaman        | Alamat             | Peran dalam aplikasi                                                      |
+| -------------- | ------------------ | ------------------------------------------------------------------------- |
+| Survei baru    | `/poles/new`       | Formulir pendataan lokasi, kategori, kondisi, wilayah, dan foto aset.     |
+| Edit tiang     | `/poles/[id]/edit` | Memperbarui atribut aset yang sudah tercatat.                             |
+| Portal petugas | `/surveyor`        | Informasi dan aktivitas petugas survei sesuai akses akun.                 |
+| Wilayah        | `/districts`       | Master kelurahan dan kecamatan yang digunakan dalam pendataan.            |
+| Administrasi   | `/admin`           | Ringkasan administrasi, sumber data, dan akses pengelolaan yang tersedia. |
+
+### Akun dan pendukung
+
+| Halaman          | Alamat     | Peran dalam aplikasi                                                                             |
+| ---------------- | ---------- | ------------------------------------------------------------------------------------------------ |
+| Login            | `/login`   | Verifikasi akun sebelum mengakses data aplikasi.                                                 |
+| Profil           | `/profile` | Identitas petugas, perubahan profil/password, serta preferensi tampilan.                         |
+| Tampilan seluler | `/mobile`  | Tampilan yang ditujukan untuk penggunaan perangkat seluler.                                      |
+| Asisten GIS      | `/ai`      | Percakapan pendukung melalui integrasi layanan AI ketika dikonfigurasi dan diizinkan lingkungan. |
+
+`[id]` mewakili identitas record yang dipilih. Navigasi mengikuti konteks pengguna
+dan mode layar; keberadaan sebuah halaman tidak memberikan hak administratif
+kepada akun yang membukanya.
+
+## Cara membaca data
+
+### Identitas, posisi, dan wilayah
+
+- **ID tiang** adalah identitas record. **Kode fisik** (`poleCode`) merupakan label
+  tiang di lapangan; keduanya tidak selalu sama.
+- **Koordinat tiang** adalah posisi aset yang ditetapkan melalui pin. **Koordinat
+  perangkat** adalah posisi GPS saat survei, jika tersedia.
+- **Akurasi GPS** menjelaskan ketelitian pembacaan perangkat. **Jarak perangkat ke
+  pin** membantu memeriksa apakah posisi yang dipilih masuk akal.
+- **Kelurahan, kecamatan, jalan, dan patokan** memberi konteks administratif serta
+  petunjuk untuk menemukan kembali aset.
+
+Perhitungan jarak menggunakan Haversine. Pemeriksaan kualitas lokasi memberikan
+peringatan ketika jarak melampaui 50 meter dan tingkat berlebih ketika melampaui
+100 meter. Indikator tersebut membantu peninjauan; kondisi GPS dan situasi lapangan
+tetap perlu diperhatikan.
+
+### Kondisi dan status pencatatan
+
+| Kelompok                    | Nilai                                                 | Makna                                               |
+| --------------------------- | ----------------------------------------------------- | --------------------------------------------------- |
+| Kondisi fisik               | `GOOD`, `NEEDS_REPAIR`, `DAMAGED`, `UNKNOWN`          | Baik, perlu perbaikan, rusak, atau belum diketahui. |
+| Status validasi             | `DRAFT`, `SUBMITTED`, `VERIFIED`, `REJECTED`          | Tahap pencatatan atau peninjauan record.            |
+| Material                    | `BETON`, `BESI`, `KAYU`, `LAINNYA`, `TIDAK_DIKETAHUI` | Bahan utama tiang.                                  |
+| Metode lokasi               | `MANUAL_MAP_PIN`, `GPS_DEVICE`, `IMPORT_DATA`         | Cara posisi aset diperoleh.                         |
+| Pemasangan kabel pada tiang | `UDARA`, `BAWAH_TANAH`, `TRANSISI_RISER`              | Bentuk pemasangan kabel yang dicatat.               |
+
+Kondisi fisik dan status validasi adalah dua atribut berbeda. Record berstatus
+`SUBMITTED` belum berarti asetnya rusak atau sudah diverifikasi. Penanda tambahan
+mencatat tiang miring, kabel semrawut/rendah, korosi, gangguan ruang jalan, dan potensi
+bahaya. Daftar status mendeskripsikan model data, bukan jaminan tersedianya proses
+persetujuan terpisah untuk setiap tahap.
+
+### Jaringan dan ringkasan
+
+Satu segmen menghubungkan titik awal (`fromNodeId`) dengan titik akhir (`toNodeId`).
+Segmen menyimpan provider, jenis jaringan, cara pemasangan, status, dan estimasi jarak.
+Segmen memiliki identitas sendiri, terpisah dari kedua tiang yang dihubungkannya.
+
+Dashboard menggabungkan data tiang, provider, dan segmen. Perhitungan survei harian
+menggunakan zona waktu `Asia/Jakarta`. Panjang jaringan yang dihitung secara spasial
+adalah estimasi; nilainya tidak menggantikan pengukuran kabel fisik di lapangan.
+
+Ekspor tersedia dalam **CSV**, **KML**, dan **GeoJSON** untuk tabulasi maupun
+pengolahan GIS lanjutan. Nilai teks CSV yang berpotensi dibaca sebagai formula
+spreadsheet diberi perlindungan saat diekspor.
+
+## Survei offline
+
+Draf tertunda disimpan pada IndexedDB perangkat. Setiap item memuat payload survei,
+foto lokal bila tersedia, identitas draf, status pengiriman, dan informasi percobaan
+ulang. Identitas yang sama digunakan ketika pengiriman diulang untuk membantu
+mencegah duplikasi record.
+
+| Keadaan                          | Perilaku                                                       |
+| -------------------------------- | -------------------------------------------------------------- |
+| Koneksi terputus                 | Draf tetap berada dalam antrean perangkat.                     |
+| Sesi berakhir                    | Sinkronisasi meminta login kembali dan mempertahankan draf.    |
+| Akun lain masuk                  | Sinkronisasi memeriksa pemilik draf sebelum memproses antrean. |
+| Server mengonfirmasi penyimpanan | Item yang berhasil dikirim dihapus dari antrean.               |
+| Pengiriman gagal                 | Item dipertahankan agar dapat dicoba kembali.                  |
+
+Service worker menyimpan formulir survei baru dan aset statis yang diperlukan.
+Respons API dan halaman inventaris tidak disimpan dalam cache navigasi tersebut.
+Ketersediaan offline tetap bergantung pada aset yang sudah termuat; tile peta,
+Street View, pencarian alamat, dan asisten daring memerlukan jaringan.
+
+**Draf lokal belum menjadi cadangan server.** Menghapus data situs, berpindah browser,
+atau kehilangan perangkat dapat menghilangkan survei yang belum terkirim. Status
+antrean perlu diperiksa sebelum pekerjaan dinyatakan selesai.
+
+## Arsitektur aplikasi
+
+```mermaid
+flowchart TD
+    UI[Halaman dan komponen antarmuka] --> API[API: sesi, hak akses, validasi]
+    API --> SERVICE[Service: aturan bisnis dan statistik]
+    PAGE[Halaman server dengan pemeriksaan sesi] --> SERVICE
+    SERVICE --> REPO[Repository: akses dan pemetaan data]
+    REPO --> DB[(PostgreSQL atau Supabase)]
+    API --> MIRROR[Mirror Google Sheets melalui integrasi Google]
+    UI --> OUTBOX[(Antrean lokal IndexedDB)]
+    OUTBOX --> API
+```
+
+| Lapisan              | Tanggung jawab                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| Halaman dan komponen | Menampilkan informasi, menerima input, dan mengelola interaksi peta/formulir.                      |
+| Context dan hooks    | Menjaga status akun, mode tampilan, pembaruan inventaris, dan aktivitas petugas.                   |
+| API                  | Memverifikasi sesi, membatasi tindakan sesuai peran, memvalidasi permintaan, dan menyusun respons. |
+| Service              | Menjalankan normalisasi provider, aturan data tiang, perhitungan, dan statistik.                   |
+| Repository           | Membaca/menulis penyimpanan dan mengonversi nama field API dengan kolom database.                  |
+| Integrasi            | Menghubungkan aplikasi dengan foto, spreadsheet, alamat, rute, dan layanan pendukung.              |
+
+### Penyimpanan utama dan salinan
+
+Koneksi PostgreSQL dipilih dari `DATABASE_URL`, `POSTGRES_URL`, `POSTGRESQL_URL`,
+atau `PG_CONNECTION_STRING`, sesuai urutan tersebut. Tanpa konfigurasi PostgreSQL,
+akses data menggunakan Supabase dengan kredensial khusus server.
+
+Repository inventaris juga memiliki jalur pembacaan cadangan melalui Supabase dan
+Google ketika sumber sebelumnya gagal. Hasil kosong yang valid pada sumber utama
+tidak memicu pengambilan inventaris lama dari mirror. Perilaku fallback berbeda
+antaroperasi; salinan tidak boleh dianggap selalu identik dengan database utama.
+
+Nama beberapa file dipertahankan dari arsitektur sebelumnya. `SupabasePoleRepository`
+juga melayani PostgreSQL; factory provider dan segmen berada dalam file bernama
+`GoogleSheets…Repository`, meskipun jalur aktifnya mendukung PostgreSQL/Supabase.
+Adapter lama dan mock tersedia dalam source, tetapi konfigurasi kosong tidak otomatis
+memilih database mock.
+
+### Pembaruan tampilan
+
+Inventaris menggunakan polling API sekitar setiap 20 detik dan event
+`gis:hard-refresh`. Hook `useSupabaseRealtimePoles` mempertahankan nama historis;
+implementasinya tidak memakai subscription Supabase Realtime. Tampilan dapat
+mempertahankan snapshot sebelumnya ketika respons kosong diterima setelah data
+pernah terisi.
+
+## Model data dan hubungan
+
+| Entitas               | Tabel                | Hubungan dan isi utama                                                              |
+| --------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| Tiang                 | `poles`              | Titik aset beserta kategori, provider, kondisi, wilayah, foto, dan atribusi survei. |
+| Provider              | `providers`          | Referensi penyedia atau instansi yang digunakan oleh tiang dan segmen.              |
+| Segmen                | `segments`           | Hubungan titik awal/akhir dan karakteristik jaringan kabel.                         |
+| Akun                  | `users`              | Identitas, peran, instansi, status akun, dan kredensial autentikasi.                |
+| Wilayah               | `subdistricts`       | Referensi kelurahan, kecamatan, kode, dan urutan tampilan.                          |
+| Posisi petugas        | `surveyor_locations` | Posisi terbaru, tim, akurasi, dan waktu pembaruan petugas.                          |
+| Sesi                  | `auth_sessions`      | Token sesi dalam bentuk hash, akun terkait, dan masa berlaku.                       |
+| Pembatasan permintaan | `auth_rate_limits`   | Penghitung bersama untuk membatasi percobaan login dan API tertentu.                |
+
+Objek antarmuka/API menggunakan `camelCase`, sedangkan kolom SQL menggunakan
+`snake_case`. Repository menangani konversinya. ID record, kode fisik, nama wilayah,
+dan identitas provider mempunyai fungsi berbeda dan tidak saling menggantikan.
+
+Kontrak domain tersedia pada [tipe tiang](src/types/pole.ts),
+[tipe segmen](src/types/segment.ts), dan [tipe akun](src/types/auth.ts).
+Validasi permintaan tiang merujuk pada [schema Zod](src/lib/validation/poleSchema.ts).
+Beberapa atribut menerima string umum pada runtime walaupun tipe domain mencantumkan
+pilihan nilai yang lebih spesifik.
+
+## Integrasi layanan
+
+| Layanan                     | Kegunaan                                                       | Ketika layanan tidak tersedia                                       |
+| --------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Leaflet dan penyedia tile   | Menampilkan peta dan objek spasial.                            | Peta dasar bergantung pada jaringan dan tile yang tersedia.         |
+| Google Maps / Street View   | Referensi lokasi dan tampilan jalan.                           | Tampilan terkait dapat tidak tersedia tanpa key atau akses layanan. |
+| LocationIQ / Nominatim      | Mencari alamat dari koordinat.                                 | Alamat dapat tidak lengkap dan perlu dilengkapi manual.             |
+| OSRM                        | Referensi rute jalan.                                          | Visualisasi rute bergantung pada respons layanan.                   |
+| Google Drive                | Menyimpan foto survei melalui jalur upload yang dikonfigurasi. | Upload dapat beralih ke fallback foto lokal/base64.                 |
+| Google Sheets / Apps Script | Mirror data dan integrasi pencatatan.                          | Salinan dapat tertinggal dari penyimpanan utama.                    |
+| OpenRouter                  | Layanan percakapan asisten GIS.                                | Fitur memerlukan konfigurasi dan izin lingkungan yang sesuai.       |
+
+Upload foto mencoba Apps Script, kemudian Drive langsung melalui service account,
+lalu fallback base64 dengan ID lokal. Respons fallback bukan bukti foto sudah
+tersimpan di Google Drive. Apps Script menggunakan POST dengan shared secret dari
+server. Mirror CRUD berjalan secara asinkron; full sync menulis ulang sheet tujuan
+serta menunggu hasil per kategori.
+
+## Struktur repository
 
 ```text
 src/
-  app/                   Halaman App Router, layout, loading, dan API
-    api/                 Handler HTTP aplikasi
-  components/            UI per fitur: map, survey, common, districts, dll.
-  config/                Master wilayah Lubuklinggau dan normalisasi provider
-  context/               Status autentikasi dan mode tampilan
-  hooks/                 Penyegaran inventaris dan kehadiran surveyor
-  lib/
-    ai/                  Aturan fitur berdasarkan lingkungan
-    gis/                 Jarak, alamat, batas wilayah, rute, ekspor, Street View
-    google/              Client Sheets, Drive, dan Apps Script
-    offline/             Antrean survei IndexedDB
-    utils/               Format, ID, gambar, dan kelas CSS
-    validation/          Schema input tiang
-    postgres.ts          Pool PostgreSQL dan helper SQL
-    supabase.ts          Client Supabase yang dibuat saat diperlukan
-    systemLicense.ts     Penyimpanan status kunci modul peta
-  repositories/
-    interfaces/          Kontrak akses data
-    *Repository.ts       Implementasi penyimpanan dan adapter lama
-    *Factory.ts          Pintu masuk pemilihan repository
-  services/              Aturan bisnis tiang, statistik, dan mirror Sheets
-  types/                 Kontrak data domain
-public/                  Aset, ikon, manifest, dan sumber service worker
-supabase/                Schema awal dan migrasi SQL
-google-apps-script/      Backend Apps Script (Code.gs)
-scripts/                 Setup, migrasi, pemeriksaan integrasi, deployment
-.github/workflows/       Workflow deploy VPS
+├── app/                 Halaman, layout, dan endpoint API
+├── components/          Komponen peta, survei, akun, dan tampilan lainnya
+├── config/              Referensi wilayah dan normalisasi provider
+├── context/             Status akun dan mode tampilan
+├── hooks/               Pembaruan inventaris dan aktivitas petugas
+├── lib/
+│   ├── gis/             Jarak, alamat, rute, ekspor, dan Street View
+│   ├── google/          Adapter Google Sheets, Drive, dan Apps Script
+│   ├── offline/         Antrean survei pada perangkat
+│   ├── security/        Sesi, password, otorisasi, dan perlindungan input
+│   ├── validation/      Schema validasi data
+│   └── utils/           Utilitas format, gambar, dan identitas
+├── repositories/        Kontrak dan implementasi akses penyimpanan
+├── services/            Aturan bisnis, statistik, dan sinkronisasi
+└── types/               Definisi data domain
+public/                  Aset aplikasi, manifest, dan service worker
+supabase/                Schema database dan migrasi SQL
+google-apps-script/      Kode integrasi Web App Apps Script
+tests/                   Pengujian keamanan terisolasi
+scripts/                 Utilitas migrasi, pemeriksaan, dan deployment
+docs/                    Dokumentasi pendukung
+.github/workflows/       Pemeriksaan otomatis dan deployment
 ```
 
-Alias `@/*` menunjuk ke `src/*`. `.next/`, `node_modules/`, arsip deployment, dan
-`*.tsbuildinfo` merupakan hasil proses atau dependency, bukan sumber aplikasi.
+Alias `@/` menunjuk ke `src/`. Direktori `.next/`, `node_modules/`, dan arsip rilis
+merupakan keluaran proses atau dependensi.
 
-## Arsitektur dan alur data
+## Referensi teknis
 
-Alur umum penulisan data tiang:
+### Teknologi utama
 
-```text
-SurveyForm / EditPoleForm
-  → /api/poles atau /api/poles/[id]
-  → validasi Zod
-  → PoleService (normalisasi provider dan perhitungan jarak)
-  → getPoleRepository()
-  → PostgreSQL jika koneksi terisi; Supabase jika tidak
-  → respons ke pengguna + mirror Google Sheets secara asinkron
-```
+| Bagian                | Teknologi                                                        |
+| --------------------- | ---------------------------------------------------------------- |
+| Aplikasi dan API      | Next.js 15.5.24 App Router, React 18, TypeScript                 |
+| Antarmuka             | Tailwind CSS, Lucide React                                       |
+| Pemetaan              | Leaflet dan utilitas GIS internal                                |
+| Validasi dan sanitasi | Zod, DOMPurify                                                   |
+| Database              | PostgreSQL (`pg`) dan Supabase                                   |
+| Operasi offline       | IndexedDB dan service worker                                     |
+| Integrasi Google      | Google APIs dan Apps Script                                      |
+| Pemeriksaan           | Prettier, TypeScript, Node test runner, PGlite, Gitleaks, CodeQL |
+| Rilis                 | GitHub Actions, SSH, Bash, PM2                                   |
 
-Halaman server juga dapat membaca service/repository secara langsung. Dashboard
-menggabungkan tiang, provider, dan segmen. Perhitungan survei hari ini menggunakan
-zona waktu `Asia/Jakarta`.
+Versi dependensi terpasang direkam dalam `package-lock.json`. Konfigurasi contoh
+tersedia pada [`.env.local.example`](.env.local.example). Secret database dan
+integrasi dibaca dari environment server; variabel `NEXT_PUBLIC_*` dapat terlihat
+oleh browser.
 
-### Pemilihan penyimpanan
+<details>
+<summary><strong>Kelompok API dan perilaku respons</strong></summary>
 
-1. `src/lib/postgres.ts` membaca koneksi dengan urutan `DATABASE_URL`, `POSTGRES_URL`,
-   `POSTGRESQL_URL`, lalu `PG_CONNECTION_STRING`.
-2. Jika salah satunya terisi, repository aktif memakai PostgreSQL.
-3. Jika semuanya kosong, jalur aktif menggunakan Supabase.
-4. Koneksi PostgreSQL yang salah tetap memilih mode PostgreSQL; ini bukan perpindahan
-   otomatis ke Supabase setiap kali query gagal.
+API data memerlukan sesi yang valid. Permintaan perubahan data juga diperiksa
+asalnya, sementara tindakan administratif membutuhkan peran admin.
 
-`SupabasePoleRepository` dan `SupabaseDistrictRepository` merupakan nama historis:
-keduanya juga menangani PostgreSQL langsung. Factory provider dan segmen berada di
-`GoogleSheetsProviderRepository.ts` dan `GoogleSheetsSegmentRepository.ts`, tetapi
-mengembalikan implementasi aktif PostgreSQL/Supabase. Adapter Sheets, Apps Script,
-dan mock tetap tersedia; factory tiang tidak otomatis memilih mock ketika env kosong.
+| Kelompok             | Endpoint                                                                                         | Fungsi                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| Akun                 | `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/profile`, `/api/auth/password` | Login, pemeriksaan sesi, logout, profil, dan password.          |
+| Inventaris           | `/api/poles`, `/api/poles/[id]`                                                                  | Daftar, pembuatan, detail, penyuntingan, dan penghapusan tiang. |
+| Operasi kolektif     | `/api/poles/batch`, `/api/poles/batch-delete`                                                    | Pembuatan koridor dan penghapusan massal.                       |
+| Referensi dan ekspor | `/api/poles/codes`, `/api/poles/fix-codes`, `/api/poles/export`                                  | Referensi kode, pemeliharaan kode, dan ekspor data.             |
+| Master dan jaringan  | `/api/providers`, `/api/segments`, `/api/districts`                                              | Provider, segmen, dan wilayah.                                  |
+| Ringkasan            | `/api/dashboard`                                                                                 | Statistik inventaris.                                           |
+| Dokumentasi          | `/api/upload`                                                                                    | Foto multipart dengan field `photo`.                            |
+| Petugas              | `/api/surveyors/active`                                                                          | Kehadiran dan posisi petugas sesuai akses.                      |
+| GIS                  | `/api/gis/reverse-geocode`, `/api/streetview/photo`                                              | Alamat dan foto jalan.                                          |
+| Asisten              | `/api/ai/chat`                                                                                   | Percakapan melalui layanan AI.                                  |
+| Sinkronisasi         | `/api/admin/sync-to-sheets`                                                                      | Pembaruan mirror oleh admin.                                    |
 
-`GET /api/system/data-source` menampilkan backend aktif dan jumlah data. Gunakan
-endpoint ini untuk memastikan lingkungan yang dibaca aplikasi. URL database pada
-respons disamarkan, tetapi tetap memuat metadata koneksi.
+Mayoritas respons berbentuk JSON dengan `success`, `data`, `count`, atau `error`.
+Ekspor dan foto dapat mengembalikan konten lain. HTTP 401 berarti sesi tidak valid;
+403 menunjukkan akses atau asal permintaan ditolak; 429 menunjukkan batas permintaan.
 
-### Aturan bisnis utama
+Pencarian tiang menerima `providerId`, `condition`, `kecamatan`, `kelurahan`,
+`poleType`, dan `search`. Koordinat `lat`/`lng` mengaktifkan pencarian terdekat:
+`radius` 10–500 meter (default 75) dan `limit` 1–100 (default 20). Batas tersebut
+bukan pagination umum ketika koordinat tidak diberikan.
 
-- Provider dinormalisasi melalui `src/config/providers.ts`.
-- Pada pembuatan tiang PLN murni atau gabungan PLN/PJU, kepemilikan kosong atau
-  `SENDIRI` disesuaikan menjadi `BERSAMA_PLN`.
-- Koordinat pin disimpan terpisah dari koordinat perangkat. Jarak dihitung memakai
-  Haversine jika koordinat perangkat tersedia dan jarak belum diberikan.
-- QC lokasi memberi peringatan pada jarak lebih dari 50 m dan status berlebih pada
-  jarak lebih dari 100 m untuk membantu pemeriksaan posisi lapangan.
-- Estimasi jaringan merupakan hasil perhitungan spasial, bukan pengukuran kabel fisik.
-- Lingkungan Vercel dideteksi melalui flag/hostname; AI dan jalur mutasi yang memakai
-  guard dinonaktifkan. Tersedia cutoff data demo `2026-08-29T14:15:00.000Z`.
-  Guard belum diterapkan seragam di seluruh endpoint.
+</details>
 
-## Menjalankan proyek
+<details>
+<summary><strong>Menjalankan dan memverifikasi salinan lokal</strong></summary>
 
-Gunakan Node.js 22 agar sama dengan workflow CI, npm, serta database development.
-GPS, kamera, peta daring, dan integrasi eksternal bergantung pada izin browser,
-jaringan, dan konfigurasi layanan masing-masing.
+Gunakan Node.js 22, konfigurasi development sendiri, serta database yang sudah
+memiliki schema dan akun terhash. Petunjuk migrasi dan aktivasi ada dalam
+[panduan keamanan](docs/SECURITY.md). Akun fallback dengan password bawaan tidak
+digunakan untuk autentikasi.
 
 ```bash
 npm ci
-```
-
-Salin konfigurasi contoh sesuai terminal:
-
-```powershell
-# PowerShell
-Copy-Item .env.local.example .env.local
-```
-
-```bash
-# Bash
-cp .env.local.example .env.local
-```
-
-Jika `.env.local` sudah ada, pertahankan isinya dan lengkapi variabel yang diperlukan.
-Isi koneksi development sendiri sebelum menguji penulisan. Integrasi lama memiliki
-fallback konfigurasi; env kosong belum tentu berarti tidak ada koneksi eksternal.
-
-```bash
+# Siapkan .env.local berdasarkan .env.local.example tanpa menimpa konfigurasi yang ada.
 npm run dev
 ```
 
-Buka [aplikasi lokal](http://localhost:3000), lalu masuk dengan akun lingkungan
-tersebut. Urutan autentikasi dijelaskan di [batasan implementasi](#batasan-implementasi).
-Restart setelah mengubah environment. Perubahan `NEXT_PUBLIC_*` memerlukan build
-ulang produksi karena nilainya dapat masuk ke bundle browser.
+Aplikasi lokal tersedia di `http://localhost:3000`. Integrasi eksternal tetap
+memerlukan konfigurasi masing-masing.
 
-### Perintah harian
+| Perintah                   | Tujuan                                                               |
+| -------------------------- | -------------------------------------------------------------------- |
+| `npm run check`            | Memeriksa format dan TypeScript.                                     |
+| `npm run test:security`    | Menguji handler keamanan dengan database dan IndexedDB terisolasi.   |
+| `npm run build`            | Memvalidasi tipe dan membuat build produksi.                         |
+| `npm run start`            | Menjalankan build produksi.                                          |
+| `npm run security:prepare` | Laporan kesiapan akun; tidak mengubah database tanpa opsi `--apply`. |
 
-| Perintah               | Kegunaan                                                |
-| ---------------------- | ------------------------------------------------------- |
-| `npm run dev`          | Server pengembangan.                                    |
-| `npm run format`       | Merapikan sumber/dokumentasi yang didukung Prettier.    |
-| `npm run format:check` | Memeriksa format tanpa mengubah file.                   |
-| `npm run lint`         | Alias pemeriksaan format; bukan analisis aturan ESLint. |
-| `npm run typecheck`    | Pemeriksaan TypeScript tanpa menghasilkan JavaScript.   |
-| `npm run check`        | Pemeriksaan format dilanjutkan TypeScript.              |
-| `npm run build`        | Membuat bundle produksi Next.js.                        |
-| `npm run start`        | Menjalankan bundle yang sudah dibangun.                 |
+Script operasional lama dalam `scripts/` dapat mengakses atau menulis layanan nyata;
+nama `test_*` tidak menjamin isolasi. Pengujian terisolasi yang disediakan package
+script adalah `test:security`.
 
-`next.config.mjs` melewati pemeriksaan ESLint dan TypeScript saat build. Karena itu,
-keberhasilan build saja belum mencakup pemeriksaan tipe; jalankan `npm run check`.
+</details>
 
-## Konfigurasi lingkungan
+<details>
+<summary><strong>Rilis dan aktivasi</strong></summary>
 
-Contoh ada di [`.env.local.example`](.env.local.example). Jangan memasukkan secret
-ke README, commit, atau variabel berawalan `NEXT_PUBLIC_`.
+Workflow [Deploy VPS](.github/workflows/deploy-vps.yml) dipicu oleh push ke `main`
+atau secara manual. Alurnya memeriksa format, tipe, regresi keamanan, dan audit
+dependensi sebelum mengirim source ke VPS. Preflight konfigurasi/database dijalankan
+sebelum pengalihan rilis, kemudian Next.js dijalankan melalui PM2.
 
-| Variabel                                                       | Fungsi dan prioritas                                                  |
-| -------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `DATABASE_URL`                                                 | Koneksi PostgreSQL utama; alias dijelaskan di atas.                   |
-| `DATABASE_SSL`                                                 | `true`: SSL aktif; `false`: nonaktif; kosong: deteksi hostname.       |
-| `DATABASE_POOL_MAX`                                            | Batas pool, default 10.                                               |
-| `DATABASE_IDLE_TIMEOUT_MS`                                     | Timeout koneksi idle, default 30000 ms.                               |
-| `DATABASE_CONNECTION_TIMEOUT_MS`                               | Timeout pembukaan koneksi, default 10000 ms.                          |
-| `NEXT_PUBLIC_SUPABASE_URL`                                     | URL project Supabase fallback.                                        |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                         | Key Supabase yang diprioritaskan.                                     |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                | Alternatif jika publishable key kosong.                               |
-| `NEXT_PUBLIC_APPS_SCRIPT_URL`, `APPS_SCRIPT_URL`               | URL Web App Apps Script; variabel public diprioritaskan.              |
-| `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_SHEET_ID` | Ketiganya diperlukan untuk deteksi konfigurasi Google langsung.       |
-| `GOOGLE_DRIVE_FOLDER_ID`                                       | Folder tujuan upload Drive langsung.                                  |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`                              | Key browser Maps/Street View.                                         |
-| `GOOGLE_MAPS_API_KEY`                                          | Key server foto Street View; fallback ke key browser.                 |
-| `LOCATIONIQ_API_KEY`                                           | Reverse geocoding melalui endpoint server.                            |
-| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`                       | Key/model AI; default model ada di contoh env dan handler.            |
-| `MASTER_SECURITY_PIN`                                          | PIN perubahan status kunci sistem.                                    |
-| `VERCEL`, `NEXT_PUBLIC_VERCEL_ENV`                             | Deteksi lingkungan demo; biarkan mati untuk development penuh.        |
-| `NEXT_PUBLIC_APP_URL`                                          | Metadata contoh env; belum dibaca runtime `src/`.                     |
-| `GIS_DEPLOY_ROOT`                                              | Root PM2/deploy; script membatasi lokasi ke `/home/admin/gis-deploy`. |
+Environment produksi disimpan terpisah dari arsip source. Pemeriksaan startup
+membantu mendeteksi kegagalan rilis, tetapi tidak menggantikan pengujian login,
+survei, foto, dan sinkronisasi pada lingkungan tujuan. Migrasi akun, rotasi secret,
+dan pembaruan Apps Script mengikuti [panduan aktivasi](docs/SECURITY.md).
 
-Script lama juga memakai `SUPABASE_URL`, `SUPABASE_KEY`, `DB_PASSWORD`, dan
-`PROJECT_REF`. Itu bukan pengganti otomatis `NEXT_PUBLIC_SUPABASE_*` pada aplikasi.
-Baca konfigurasi script sebelum menggunakannya.
+Workflow [Security analysis](.github/workflows/security.yml) menyediakan CodeQL dan
+pemindaian riwayat Gitleaks. Ketersediaan CodeQL pada repository privat bergantung
+pada dukungan GitHub Code Security; required checks dikendalikan pengaturan repository.
 
-## Database dan model data
+</details>
 
-| Tabel                | Isi                                                                 |
-| -------------------- | ------------------------------------------------------------------- |
-| `poles`              | Titik tiang, kategori, provider, kondisi, lokasi, foto, dan survei. |
-| `providers`          | Master penyedia jaringan dan informasi visual.                      |
-| `segments`           | Hubungan titik awal/akhir dan atribut jaringan kabel.               |
-| `users`              | Akun petugas; juga record khusus status kunci sistem.               |
-| `subdistricts`       | Master kelurahan, kecamatan, kode, dan urutan.                      |
-| `surveyor_locations` | Posisi terbaru petugas, tim, akurasi, dan waktu pembaruan.          |
+## Batasan operasional
 
-Schema awal ada di [`supabase/schema.sql`](supabase/schema.sql), master kelurahan
-di [`supabase/subdistricts_migration.sql`](supabase/subdistricts_migration.sql),
-dan migrasi lokasi petugas di
-[`supabase/surveyor_locations_migration.sql`](supabase/surveyor_locations_migration.sql).
-Schema utama sudah mendefinisikan tabel lokasi petugas; pilih migrasi tambahan sesuai
-kondisi database, jangan menjalankan seluruh file berulang tanpa pemeriksaan.
+- **Ketepatan lokasi:** GPS, penempatan pin, dan hasil pencarian alamat dapat
+  berbeda dari kondisi lapangan. Jarak dan panjang jaringan merupakan estimasi.
+- **Konsistensi salinan:** mirror dapat tertinggal; hasil fallback perlu diperhatikan
+  ketika penyimpanan utama mengalami gangguan.
+- **Pembaruan tampilan:** polling bukan pembaruan seketika. Snapshot kosong setelah
+  penghapusan semua data mungkin memerlukan pemuatan ulang untuk pemeriksaan.
+- **Ketersediaan offline:** penyimpanan draf tidak membuat seluruh layanan peta dan
+  integrasi dapat digunakan tanpa internet.
+- **Privasi foto:** link Drive yang sebelumnya dibagikan publik tetap mengikuti
+  izin file tersebut. Perlindungan API aplikasi tidak mengubah izin foto lama.
+- **Lingkungan demo:** guard Vercel membatasi AI dan mutasi tertentu serta menggunakan
+  cutoff data demo. Aturan demo belum seragam pada seluruh endpoint.
+- **Status produksi:** perubahan kode dan pengujian lokal tidak otomatis mengaktifkan
+  migrasi atau mencabut kredensial lama pada layanan eksternal.
 
-Untuk database development baru, jalankan schema utama lalu schema kelurahan melalui
-SQL editor atau `psql`. SQL tersebut juga berisi policy dan seed, bukan sekadar tabel.
-`CREATE POLICY` pada file awal tidak seluruhnya idempoten: eksekusi ulang dapat gagal
-karena policy sudah ada. Schema awal tidak mengisi seluruh inventaris tiang/provider/
-segmen; data tersebut berasal dari survei atau migrasi terpisah.
-
-Objek TypeScript/API memakai `camelCase`, kolom SQL memakai `snake_case`, dan repository
-mengonversi keduanya. Kontrak lengkap ada di [`src/types/pole.ts`](src/types/pole.ts),
-[`src/types/segment.ts`](src/types/segment.ts), dan `src/repositories/interfaces/`.
-
-| Atribut           | Nilai domain                                            |
-| ----------------- | ------------------------------------------------------- |
-| Kondisi           | `GOOD`, `NEEDS_REPAIR`, `DAMAGED`, `UNKNOWN`            |
-| Validasi          | `DRAFT`, `SUBMITTED`, `VERIFIED`, `REJECTED`            |
-| Metode lokasi     | `MANUAL_MAP_PIN`, `GPS_DEVICE`, `IMPORT_DATA`           |
-| Kategori          | `FO_WIFI`, `PJU_MANDIRI`, `GABUNG_PLN_PJU`, `PLN_MURNI` |
-| Material          | `BETON`, `BESI`, `KAYU`, `LAINNYA`, `TIDAK_DIKETAHUI`   |
-| Kabel tiang       | `UDARA`, `BAWAH_TANAH`, `TRANSISI_RISER`                |
-| Pemasangan segmen | `AERIAL`, `UNDERGROUND`, `OTHER`                        |
-
-Union TypeScript tidak selalu berarti validasi runtime sama ketatnya: beberapa field
-Zod masih menerima string umum. Rujukan payload runtime adalah
-[`src/lib/validation/poleSchema.ts`](src/lib/validation/poleSchema.ts).
-
-## Referensi API
-
-Mayoritas endpoint mengembalikan JSON dengan `success`, lalu `data`/`count` atau
-`error`. Payload dan kode status mengikuti handler masing-masing; ekspor dan foto
-Street View dapat mengembalikan konten selain JSON.
-
-| Method                 | Endpoint                    | Fungsi                                                       |
-| ---------------------- | --------------------------- | ------------------------------------------------------------ |
-| POST                   | `/api/auth/login`           | Verifikasi kredensial dan profil.                            |
-| GET, POST              | `/api/poles`                | Daftar/pencarian dan pembuatan satu tiang.                   |
-| GET, PUT, DELETE       | `/api/poles/[id]`           | Baca, ubah, hapus satu tiang.                                |
-| POST                   | `/api/poles/batch`          | Membuat beberapa tiang dan opsional segmen.                  |
-| POST                   | `/api/poles/batch-delete`   | Menghapus beberapa ID tiang.                                 |
-| GET                    | `/api/poles/codes`          | Referensi kode tiang.                                        |
-| POST                   | `/api/poles/fix-codes`      | Pemeliharaan kode tiang tersimpan.                           |
-| GET                    | `/api/poles/export`         | Unduh KML, CSV, atau GeoJSON.                                |
-| GET                    | `/api/providers`            | Daftar provider.                                             |
-| GET, POST              | `/api/segments`             | Daftar dan pembuatan segmen.                                 |
-| GET                    | `/api/dashboard`            | Statistik inventaris.                                        |
-| GET, POST, PUT, DELETE | `/api/districts`            | CRUD wilayah; update dapat mengubah referensi tiang terkait. |
-| POST                   | `/api/districts/reset`      | Reset master wilayah.                                        |
-| POST                   | `/api/upload`               | Upload multipart dengan field `photo`.                       |
-| GET, POST              | `/api/surveyors/active`     | Membaca/memperbarui kehadiran dan lokasi petugas.            |
-| GET                    | `/api/gis/reverse-geocode`  | Informasi alamat dari koordinat.                             |
-| GET                    | `/api/streetview/photo`     | Proxy foto Street View.                                      |
-| POST                   | `/api/ai/chat`              | Permintaan asisten GIS.                                      |
-| GET                    | `/api/system/data-source`   | Backend aktif dan jumlah record.                             |
-| GET, POST              | `/api/system/license`       | Baca/ubah status kunci modul peta.                           |
-| POST                   | `/api/admin/sync-to-sheets` | Menulis ulang mirror tiang, provider, segmen di Sheets.      |
-
-### Filter dan contoh payload
-
-`GET /api/poles` menerima `providerId`, `condition`, `kecamatan`, `kelurahan`,
-`poleType`, dan `search`. Jika `lat`/`lng` valid diberikan, pencarian terdekat memakai
-`radius` default 75 m (batas 10–500 m) dan `limit` default 20 (batas 1–100).
-Tanpa koordinat, `limit` tersebut bukan pagination daftar umum.
-
-```text
-GET /api/poles?condition=GOOD&search=merdeka
-GET /api/poles?lat=-3.3&lng=102.86&radius=100&limit=10
-GET /api/poles/export?format=geojson
-```
-
-Contoh pembuatan di database uji; sesuaikan provider dan wilayah dengan master:
-
-```json
-{
-  "poleLatitude": -3.3,
-  "poleLongitude": 102.86,
-  "providerId": "ID_PROVIDER_UJI",
-  "poleType": "BETON",
-  "condition": "GOOD",
-  "road": "Jalan Contoh",
-  "kelurahan": "Air Kuti",
-  "kecamatan": "Lubuklinggau Timur I",
-  "locationMethod": "MANUAL_MAP_PIN",
-  "infrastructureCategory": "FO_WIFI"
-}
-```
-
-Pembuatan berhasil menghasilkan HTTP 201; validasi gagal menghasilkan HTTP 400 dengan
-`details` per field. Batch memakai objek berisi array `poles` dan opsi `createSegments`;
-batch-delete memakai `{ "ids": ["ID_TIANG_UJI"] }`. Batch bukan jaminan transaksi
-atomik; periksa respons sebelum mengulang pengiriman.
-
-## Survei offline dan pembaruan data
-
-Survei tertunda disimpan di IndexedDB `InfraMapOfflineDB`, object store `pole_outbox`,
-melalui [`src/lib/offline/offlineQueue.ts`](src/lib/offline/offlineQueue.ts). Item
-menyimpan payload, foto bila ada, status `PENDING`/`SYNCING`/`FAILED`, jumlah retry,
-dan kesalahan terakhir. ID persisten membantu retry memakai identitas record yang sama.
-Item dihapus setelah respons penyimpanan sukses; periksa indikator sinkronisasi sebelum
-menutup pekerjaan atau menghapus data browser.
-
-Antrean bergantung pada penyimpanan browser. Menghapus site data, pindah browser,
-atau kehilangan perangkat dapat menghilangkan item yang belum terkirim. Antrean tidak
-menjamin semua tile peta, Street View, AI, dan halaman tersedia tanpa internet.
-
-Sumber worker adalah [`public/sw.js`](public/sw.js); `src/app/sw.js/route.ts` juga
-menyajikannya dengan header tanpa cache. Worker melewati API dan non-GET; penulisan
-offline ditangani outbox, bukan cache HTTP.
-
-`useSupabaseRealtimePoles` memakai polling `/api/poles` setiap 20 detik dan event
-`gis:hard-refresh`, bukan subscription Supabase Realtime. Hook mempertahankan snapshot
-lama jika respons kosong datang setelah daftar berisi data. Penghapusan seluruh
-inventaris karena itu tidak selalu langsung tercermin pada snapshot client.
-
-## Integrasi Google dan AI
-
-Upload foto mencoba Apps Script, lalu Drive langsung via service account, kemudian
-fallback URL base64 dengan ID lokal. Respons fallback tidak berarti foto berhasil
-diunggah ke Google Drive.
-
-1. Siapkan spreadsheet/folder Drive dan sesuaikan konfigurasi
-   [`google-apps-script/Code.gs`](google-apps-script/Code.gs).
-2. Deploy sebagai Web App, lalu isi URL endpoint Apps Script pada env.
-3. Untuk akses Google langsung, isi service account, private key, spreadsheet ID,
-   folder ID, serta berikan akses spreadsheet/folder kepada service account.
-4. Isi key Maps browser dan opsional key server Street View. Pembatasan key harus
-   sesuai domain/lingkungan aplikasi.
-5. Isi LocationIQ untuk endpoint alamat dan OpenRouter untuk AI.
-
-Mirror CRUD dipanggil tanpa menunggu hasil supaya kegagalannya tidak membatalkan
-penyimpanan utama. Full sync menunggu hasil per kategori dan menulis ulang sheet tujuan.
-Mirror dapat tertinggal jika jaringan gagal atau proses berhenti; periksa hasil
-sinkronisasi ketika melakukan pemulihan.
-
-Geocoding juga memiliki jalur Nominatim; rute jalan memakai OSRM. Kegagalan provider
-dapat mengurangi kelengkapan alamat atau visualisasi rute. AI memakai OpenRouter
-melalui handler server dan mengikuti guard lingkungan Vercel.
-
-## Script pemeliharaan
-
-`scripts/` mencakup utilitas operasional lama dengan asumsi target tersendiri.
-Nama `test_*` tidak berarti unit test terisolasi: beberapa script mengakses layanan
-eksternal atau menulis data. Script tersebut tidak dijalankan oleh `npm run check`.
-
-| Script/kelompok                                                                                  | Tujuan dan dampak                                                                |
-| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| `setup-sheets.mjs` / `npm run setup:sheets`                                                      | Menulis header/master provider dan petugas ke sheet tujuan.                      |
-| `migrate_supabase_to_postgres.mjs` / `npm run migrate:vps-db`                                    | Membaca Supabase, menjalankan schema, upsert ke PostgreSQL.                      |
-| `verify_postgres_data.mjs` / `npm run verify:vps-db`                                             | Memeriksa data PostgreSQL.                                                       |
-| `verify_supabase_data.mjs`, `test_supabase_speed.mjs`, `test_repo.mjs`                           | Pemeriksaan data/koneksi/performa Supabase.                                      |
-| `sync_supabase_to_sheets.mjs`, `sync_sheets_to_supabase.mjs`                                     | Sinkronisasi antarpenyimpanan; menulis tujuan.                                   |
-| `migrate_to_supabase.mjs`                                                                        | Diagnostik koneksi dan jumlah tiang Supabase; nama historis, bukan migrasi data. |
-| `migrate_all_exact_sheets_data.mjs`                                                              | Migrasi data dari jalur Sheets/Apps Script ke Supabase.                          |
-| `auto_migrate_supabase_pg.mjs`                                                                   | Setup schema melalui koneksi PostgreSQL Supabase dan impor data Apps Script.     |
-| `setup_subdistricts.mjs`, `migrate_subdistricts_pg.mjs`, `clean_seed_subdistricts.mjs`           | Setup/migrasi/seed wilayah; pembersihan dapat mengganti data.                    |
-| `seed_supabase.mjs`, `setup_supabase_segments.mjs`                                               | Seed/setup data Supabase.                                                        |
-| `enable_supabase_realtime.mjs`                                                                   | Pengaturan realtime lama; hook inventaris aktif memakai polling API.             |
-| `test_crud.mjs`                                                                                  | Uji operasi data backend; bukan pemeriksaan aman untuk produksi.                 |
-| `test_geocode.mjs`, `test_locationiq_geocode.mjs`, `test_centroids.mjs`, `test_subdistricts.mjs` | Diagnostik geocoding/wilayah.                                                    |
-| `fetch-kelurahan-details.js`                                                                     | Pengumpulan informasi wilayah.                                                   |
-| `setup_vps.sh`, `vps-deploy.sh`                                                                  | Provisioning lama dan aktivasi release VPS.                                      |
-
-Pemanggilan `node` langsung tidak otomatis memuat `.env.local` seperti Next.js.
-Sebagian script membaca env sendiri, sebagian mengandalkan `process.env`.
-Pada Node.js 22, pemuatan eksplisit dapat dilakukan seperti ini:
-
-```bash
-node --env-file=.env.local scripts/verify_postgres_data.mjs
-```
-
-Siapkan cadangan dan verifikasi sumber/tujuan sebelum migrasi, seed, reset, full sync,
-atau uji CRUD. Perapian kode tidak membutuhkan script yang menulis database.
-
-## Deployment VPS
-
-[`.github/workflows/deploy-vps.yml`](.github/workflows/deploy-vps.yml) berjalan saat
-push ke `main` atau dipicu manual. Workflow memakai Node.js 22, memasang dependency,
-memeriksa format dan TypeScript, mengemas source yang sudah di-commit, mengunggah via SSH, lalu
-menjalankan `scripts/vps-deploy.sh` di VPS.
-
-Secret GitHub: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, dan `VPS_PORT` (default 22).
-Environment produksi tidak dibundel dalam `git archive`.
-
-```text
-/home/admin/gis-deploy/
-  incoming/             Arsip source masuk
-  releases/<commit>/    Source, dependency, build per release
-  shared/.env.local     Environment produksi bersama
-  current               Symlink ke release aktif
-  logs/                 Direktori yang disiapkan deployment
-```
-
-Deploy menghubungkan env bersama, menjalankan `npm ci`, membangun Next.js,
-menghapus devDependencies release, mengalihkan `current`, dan memulai PM2 `gis-app`
-pada port 3000. Jika env bersama belum ada, script mencoba menyalinnya dari
-`/home/admin/gis-app/.env.local`.
-
-Health check memanggil `http://127.0.0.1:3000/`. Kegagalan startup/health check memicu
-rollback ke release sebelumnya jika tersedia. Ini hanya memeriksa respons root,
-bukan seluruh login, CRUD, dan integrasi. Script menyimpan hingga lima direktori
-release terbaru berdasarkan waktu direktori.
-
-Jalankan `npm run check` dan `npm run build` sebelum rilis. CI saat ini memeriksa
-format dan tipe; build produksi dilakukan di VPS. Push ke `main` memicu deployment nyata.
-
-## Panduan perubahan dan verifikasi
-
-[`.prettierrc.json`](.prettierrc.json) menetapkan indentasi dua spasi, petik tunggal
-JS/TS, semicolon, lebar target 100 karakter, dan LF. [`.editorconfig`](.editorconfig)
-membantu editor mengikuti aturan tersebut; SQL memakai empat spasi. Apps Script `.gs`
-memakai parser Babel. Prettier bawaan tidak memformat SQL dan Bash secara otomatis.
-
-`.prettierignore` mengecualikan dependency, build, env privat, state lokal, dan arsip.
-Embedded language formatting dimatikan agar string HTML/SQL/template tidak ikut
-ditulis ulang sebagai bahasa terpisah.
-
-Tempatkan UI di komponen, aturan bisnis di service, akses penyimpanan di repository,
-dan kontrak data di types/schema. Komentar menjelaskan alasan atau fallback. Hindari
-mengubah ID, kode wilayah, kolom SQL, storage key, event browser, dan urutan fallback
-hanya demi kerapian.
-
-```bash
-npm run check
-npm run build
-```
-
-Untuk perubahan format besar, `npx prettier . --debug-check` memeriksa konsistensi
-parse/print formatter. Pemeriksaan struktur ini tidak menggantikan pengujian perilaku.
-
-Belum ada suite unit/E2E terisolasi pada package scripts. Sebelum rilis perubahan
-perilaku, lakukan pemeriksaan manual dengan database uji:
-
-1. Login/logout dan navigasi sesuai peran, pada desktop dan mobile.
-2. Dashboard, daftar, peta, provider, wilayah, pencarian, dan filter.
-3. Buat tiang uji, buka detail, edit, ekspor CSV/KML/GeoJSON, lalu hapus.
-4. GPS, perpindahan pin, koordinat perangkat, jarak, alamat, dan foto.
-5. Simpan survei offline, sambungkan kembali, pastikan antrean terkirim tanpa duplikasi.
-6. Segmen, indikator petugas aktif, dan refresh inventaris.
-7. Street View, AI, serta mirror Sheets dengan kredensial/data uji sendiri.
-8. Backend aktif dan log setelah startup bila deployment berubah.
-
-## Pemecahan masalah
-
-| Gejala                                  | Pemeriksaan                                                                   |
-| --------------------------------------- | ----------------------------------------------------------------------------- |
-| Memakai Supabase padahal seharusnya VPS | Periksa `DATABASE_URL` proses aktif, restart, baca `/api/system/data-source`. |
-| PostgreSQL gagal tersambung             | Host, port, database, kredensial, SSL, dan schema.                            |
-| Tabel kelurahan tidak ditemukan         | Migrasi `subdistricts_migration.sql` dan koneksi yang dipilih.                |
-| `policy already exists`                 | SQL sudah pernah dijalankan; pilih statement yang diperlukan.                 |
-| GPS tidak muncul                        | Izin lokasi dan secure context browser: HTTPS atau localhost.                 |
-| Peta/Street View kosong                 | Jaringan, key, pembatasan domain, provider, dan kunci modul peta.             |
-| Alamat tidak lengkap                    | LocationIQ/Nominatim dan koordinat; koreksi manual bila diperlukan.           |
-| Foto memiliki ID `local_...`            | Upload cloud gagal/tidak tersedia; respons merupakan fallback base64.         |
-| Sheets belum berubah                    | Konfigurasi Apps Script, log backup, hasil per kategori full sync.            |
-| Antrean offline tertahan                | Jaringan, error item, foto, respons API; pertahankan IndexedDB.               |
-| Daftar lama setelah semua data dihapus  | Hook menahan snapshot pada respons kosong; muat ulang untuk pemeriksaan.      |
-| AI/tambah tiang ditolak di demo         | Flag Vercel dan guard `src/lib/ai/aiConfig.ts`.                               |
-| Build sukses tetapi tipe bermasalah     | Jalankan `npm run typecheck`; build melewatinya.                              |
-| Format gagal                            | `npm run format`, tinjau diff, ulangi `npm run check`.                        |
-
-## Batasan implementasi
-
-Login mencoba database utama, Apps Script, kemudian akun fallback `src/types/auth.ts`.
-Status browser disimpan pada localStorage `infra_map_auth_user`. Ini belum merupakan
-session server berbasis cookie yang memverifikasi otorisasi setiap endpoint.
-Password database masih dibandingkan langsung dan schema awal memiliki policy
-akses publik yang luas.
-
-Beberapa integrasi/script masih memiliki URL, key, atau kredensial fallback dalam
-source. Nilainya tidak disalin ke README. Env kosong tidak otomatis menonaktifkannya.
-Perubahan autentikasi, policy, dan secret perlu diperlakukan sebagai perubahan
-fungsional tersendiri dengan migrasi dan pengujian.
-
-Kunci peta memakai record `_SYSTEM_LICENSE_` pada tabel `users` serta fallback file
-`.system_license_state.json`. Ini pengaturan aplikasi, bukan pembacaan otomatis
-kuota resmi provider peta.
-
-Dokumentasi ini tidak menyatakan integrasi produksi selalu tersedia atau sudah diuji
-langsung. Format, tipe, dan build memeriksa aspek berbeda; verifikasi operasional
-lengkap memerlukan uji alur dengan database serta layanan uji.
+Rincian kontrol, hasil pemeriksaan, dan tindak lanjut operasional tersedia pada
+[dokumentasi keamanan](docs/SECURITY.md).

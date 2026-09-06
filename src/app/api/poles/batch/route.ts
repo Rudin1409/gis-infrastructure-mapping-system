@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { getSegmentRepository } from '@/repositories/GoogleSheetsSegmentRepository';
@@ -41,7 +42,7 @@ interface BatchCreateCorridorPayload {
   installationType?: string;
 }
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     if (!isDataMutationAllowed()) {
       return NextResponse.json(
@@ -55,13 +56,34 @@ export async function POST(request: NextRequest) {
 
     const body: BatchCreateCorridorPayload = await request.json();
 
-    if (!body.poles || !Array.isArray(body.poles) || body.poles.length === 0) {
+    if (
+      !body.poles ||
+      !Array.isArray(body.poles) ||
+      body.poles.length === 0 ||
+      body.poles.length > 200
+    ) {
       return NextResponse.json(
         { success: false, error: 'Daftar tiang (poles) kosong atau tidak valid' },
         { status: 400 }
       );
     }
 
+    if (
+      body.poles.some(
+        (p) =>
+          !p ||
+          (!p.existingPoleId &&
+            (!Number.isFinite(p.poleLatitude) ||
+              !Number.isFinite(p.poleLongitude) ||
+              Math.abs(p.poleLatitude) > 90 ||
+              Math.abs(p.poleLongitude) > 180))
+      )
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Koordinat batch tidak valid.' },
+        { status: 400 }
+      );
+    }
     const createdPoles: Pole[] = [];
     const segmentRepo = getSegmentRepository();
     const createdSegments: NetworkSegment[] = [];
@@ -102,8 +124,8 @@ export async function POST(request: NextRequest) {
         ownershipStatus: (p.ownershipStatus as any) || 'SENDIRI',
         cableInstallationType: (p.cableInstallationType as any) || 'UDARA',
         locationMethod: 'MANUAL_MAP_PIN',
-        surveyorId: p.surveyorId || 'USR-KOMINFO-ADMIN',
-        surveyorName: p.surveyorName || 'Admin DISKOMINFO (Admin Teknis & Jaringan)',
+        surveyorId: requestUser(request).id,
+        surveyorName: requestUser(request).name,
         surveyDate: p.surveyDate || new Date().toISOString().split('T')[0],
       });
 
@@ -164,8 +186,10 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('API POST /api/poles/batch error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal generate batch tiang' },
+      { success: false, error: 'Gagal generate batch tiang' },
       { status: 500 }
     );
   }
 }
+
+export const POST = withAuth(POSTHandler, {});

@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { auth as googleAuth, drive as createDrive } from 'googleapis/build/src/apis/drive';
 import { Readable } from 'stream';
 import { isGoogleConfigured } from './sheets';
 
@@ -23,7 +23,7 @@ export async function uploadFileToGoogleDrive(
 
   try {
     const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-    const auth = new google.auth.JWT({
+    const auth = new googleAuth.JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
       key: privateKey,
       scopes: [
@@ -32,7 +32,7 @@ export async function uploadFileToGoogleDrive(
       ],
     });
 
-    const drive = google.drive({ version: 'v3', auth });
+    const drive = createDrive({ version: 'v3', auth });
 
     const readableStream = new Readable();
     readableStream.push(buffer);

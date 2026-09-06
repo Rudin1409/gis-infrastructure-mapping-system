@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { generateKml, generateCsv, generateGeoJson } from '@/lib/gis/exportSpatialData';
@@ -5,7 +6,7 @@ import { generateKml, generateCsv, generateGeoJson } from '@/lib/gis/exportSpati
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const format = (searchParams.get('format') || 'kml').toLowerCase();
@@ -61,8 +62,10 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('API /api/poles/export error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal mengekspor data tiang' },
+      { success: false, error: 'Gagal mengekspor data tiang' },
       { status: 500 }
     );
   }
 }
+
+export const GET = withAuth(GETHandler, {});

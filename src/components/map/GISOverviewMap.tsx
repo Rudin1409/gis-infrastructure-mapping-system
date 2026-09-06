@@ -1,4 +1,5 @@
 'use client';
+import { sanitizeMapHtml } from '@/lib/security/html';
 
 import React, { useEffect, useRef, useState, useMemo, useDeferredValue } from 'react';
 import type L from 'leaflet';
@@ -531,7 +532,7 @@ export default function GISOverviewMap({
         dashArray: '5, 5',
         fillColor: district.color,
         fillOpacity: 0.06,
-      }).bindTooltip(district.name, {
+      }).bindTooltip(sanitizeMapHtml(district.name), {
         permanent: true,
         direction: 'center',
         className:
@@ -647,12 +648,12 @@ export default function GISOverviewMap({
         // ✨ Pergerakan halus: geser marker ke koordinat baru tanpa render ulang
         existingMarker.setLatLng([location.latitude, location.longitude]);
         existingMarker.setIcon(createTeamLocationIcon(L, location));
-        existingMarker.setPopupContent(popupHtml);
+        existingMarker.setPopupContent(sanitizeMapHtml(popupHtml));
       } else {
         const marker = L.marker([location.latitude, location.longitude], {
           icon: createTeamLocationIcon(L, location),
           zIndexOffset: 1300,
-        }).bindPopup(popupHtml);
+        }).bindPopup(sanitizeMapHtml(popupHtml));
 
         group.addLayer(marker);
         currentMarkerMap.set(location.userId, marker);
@@ -772,7 +773,7 @@ export default function GISOverviewMap({
       icon: createUserGpsMarkerIcon(L, { heading, accuracy }),
       zIndexOffset: 1000,
     }).bindPopup(
-      `
+      sanitizeMapHtml(`
         <div class="p-2 space-y-1.5 text-xs text-slate-800">
           <div class="flex items-center gap-1.5 font-bold text-blue-600">
             <span>📍</span>
@@ -787,7 +788,7 @@ export default function GISOverviewMap({
             Waktu: ${new Date(userLocation.timestamp).toLocaleTimeString('id-ID')}
           </div>
         </div>
-      `,
+      `),
       { closeButton: true, className: 'custom-gps-popup' }
     );
     group.addLayer(userMarker);
@@ -969,13 +970,15 @@ export default function GISOverviewMap({
 
         const marker = L.marker([p.coord.lat, p.coord.lng], { icon });
         marker.bindTooltip(
-          `<b>Tiang ${p.index} ${
-            isStart ? '(Titik Pangkal A)' : isEnd ? '(Titik Ujung B)' : '(Tiang Tengah)'
-          }</b><br/>` +
-            `📍 Jarak Bentang: <b>+${p.spanFromPrevious} m</b><br/>` +
-            `📏 Jarak Kumulatif: <b>${p.distanceFromStart} m</b><br/>` +
-            `🛣️ Posisi: <b>Sisi ${corridorRoadSide} Jalan</b><br/>` +
-            `🏷️ Kode: <code>${p.poleCode}</code>`,
+          sanitizeMapHtml(
+            `<b>Tiang ${p.index} ${
+              isStart ? '(Titik Pangkal A)' : isEnd ? '(Titik Ujung B)' : '(Tiang Tengah)'
+            }</b><br/>` +
+              `📍 Jarak Bentang: <b>+${p.spanFromPrevious} m</b><br/>` +
+              `📏 Jarak Kumulatif: <b>${p.distanceFromStart} m</b><br/>` +
+              `🛣️ Posisi: <b>Sisi ${corridorRoadSide} Jalan</b><br/>` +
+              `🏷️ Kode: <code>${p.poleCode}</code>`
+          ),
           { direction: 'top', offset: [0, -12] }
         );
         marker.addTo(corridorLayerGroupRef.current!);
@@ -1007,7 +1010,9 @@ export default function GISOverviewMap({
       });
       const marker = L.marker([pt.lat, pt.lng], { icon });
       marker.bindTooltip(
-        '📍 <b>Titik Awal (A)</b><br/>Klik titik kedua (B) di jalan untuk otomatis memasang tiang tengah',
+        sanitizeMapHtml(
+          '📍 <b>Titik Awal (A)</b><br/>Klik titik kedua (B) di jalan untuk otomatis memasang tiang tengah'
+        ),
         {
           permanent: true,
           direction: 'top',
@@ -1603,9 +1608,11 @@ export default function GISOverviewMap({
 
           if (currentZoom >= 16) {
             polyline.bindTooltip(
-              `<b>${seg.segmentCode || seg.id}</b><br/>${
-                seg.installationType === 'UNDERGROUND' ? 'Kabel Bawah Tanah' : 'Kabel Udara'
-              }<br/>Est. Jarak: ${seg.estimatedDistance}m`,
+              sanitizeMapHtml(
+                `<b>${seg.segmentCode || seg.id}</b><br/>${
+                  seg.installationType === 'UNDERGROUND' ? 'Kabel Bawah Tanah' : 'Kabel Udara'
+                }<br/>Est. Jarak: ${seg.estimatedDistance}m`
+              ),
               { sticky: true }
             );
           }

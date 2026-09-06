@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -9,7 +10,7 @@ function parseBoundedNumber(value: string | null, min: number, max: number): num
   return parsed;
 }
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   const apiKey =
     process.env.GOOGLE_MAPS_API_KEY?.trim() || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim();
 
@@ -65,3 +66,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Gagal mengambil foto Street View.' }, { status: 502 });
   }
 }
+
+export const GET = withAuth(GETHandler, { limit: 40 });

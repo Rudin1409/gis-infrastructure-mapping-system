@@ -1,10 +1,10 @@
 'use client';
 
+import PasswordForm from '@/components/auth/PasswordForm';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useViewMode } from '@/context/ViewModeContext';
-import { DEFAULT_ACCOUNTS } from '@/types/auth';
 import {
   User,
   ShieldCheck,
@@ -42,19 +42,18 @@ import {
 const AVATAR_OPTIONS = ['🏢', '👨‍💼', '👩‍💼', '🧑‍💻', '👷‍♂️', '🛡️', '📡', '🌐', '⚡'];
 
 export default function ProfilePage() {
-  const { user, loginAs, logout } = useAuth();
+  const { user, updateProfile, logout } = useAuth();
   const { viewMode, toggleViewMode } = useViewMode();
   const isDesktop = viewMode === 'DESKTOP';
-  const currentUser = user ||
-    DEFAULT_ACCOUNTS[0] || {
-      name: 'Admin',
-      role: 'ADMIN',
-      roleLabel: 'Administrator',
-      id: 'SRV-001',
-      email: 'admin@lubuklinggaukota.go.id',
-      phone: '0812-7890-1234',
-      avatar: '🏢',
-    };
+  const currentUser = user || {
+    name: 'Admin',
+    role: 'ADMIN',
+    roleLabel: 'Administrator',
+    id: 'SRV-001',
+    email: 'admin@lubuklinggaukota.go.id',
+    phone: '0812-7890-1234',
+    avatar: '🏢',
+  };
 
   // Edit Profile States
   const [isEditing, setIsEditing] = useState(false);
@@ -105,7 +104,7 @@ export default function ProfilePage() {
     );
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     const updatedUser = {
       ...currentUser,
@@ -115,7 +114,17 @@ export default function ProfilePage() {
       avatar: avatar || currentUser.avatar,
     };
 
-    loginAs(updatedUser);
+    try {
+      await updateProfile({
+        name: updatedUser.name,
+        phone: updatedUser.phone || '',
+        roleLabel: updatedUser.roleLabel,
+        avatar: updatedUser.avatar,
+      });
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Profil gagal disimpan.');
+      return;
+    }
     setIsEditing(false);
     setSuccessMsg('Data profil petugas berhasil diperbarui & disimpan!');
     setTimeout(() => {
@@ -159,6 +168,7 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {user && <PasswordForm />}
       {/* Success Alert */}
       {successMsg && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in">

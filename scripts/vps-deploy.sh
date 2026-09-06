@@ -67,6 +67,7 @@ export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
 
 echo "==> [2/5] Menginstal dependensi di VPS (npm ci)..."
 npm ci --no-audit --no-fund
+node --env-file=.env.local scripts/security-preflight.mjs
 
 echo "==> [3/5] Membangun bundle produksi Next.js (npm run build)..."
 npm run build

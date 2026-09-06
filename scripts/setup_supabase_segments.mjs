@@ -1,8 +1,8 @@
 import pg from 'pg';
 const { Client } = pg;
 
-const DB_PASSWORD = 'CiflkG1Ndc7PrXUF';
-const PROJECT_REF = 'qdiswcejzxwrrbirzstv';
+const DB_PASSWORD = process.env.DB_PASSWORD || '';
+const PROJECT_REF = process.env.PROJECT_REF || '';
 
 const client = new Client({
   host: 'aws-0-ap-southeast-1.pooler.supabase.com',

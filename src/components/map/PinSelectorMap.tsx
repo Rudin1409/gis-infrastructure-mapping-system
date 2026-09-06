@@ -1,4 +1,5 @@
 'use client';
+import { sanitizeMapHtml } from '@/lib/security/html';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type L from 'leaflet';
@@ -328,7 +329,7 @@ export default function PinSelectorMap({
         dashArray: '5, 5',
         fillColor: district.color,
         fillOpacity: 0.07,
-      }).bindTooltip(district.name, {
+      }).bindTooltip(sanitizeMapHtml(district.name), {
         permanent: true,
         direction: 'center',
         className:
@@ -636,14 +637,16 @@ export default function PinSelectorMap({
       const marker = L.marker([pole.poleLatitude, pole.poleLongitude], {
         icon: createNearbyPoleIcon(L, pole.distanceMeters),
         zIndexOffset: 650,
-      }).bindPopup(`
+      }).bindPopup(
+        sanitizeMapHtml(`
         <div style="min-width:170px">
           <strong>${escapeHtml(pole.poleCode || pole.id)}</strong><br/>
           <span>${escapeHtml(pole.providerName || 'Data tiang')}</span><br/>
           <small>${escapeHtml(pole.road ? `${pole.road}, Kel. ${pole.kelurahan || '-'}` : pole.kecamatan ? `Kec. ${pole.kecamatan}` : 'Kota Lubuklinggau')}</small><br/>
           <b>Jarak: ${escapeHtml(formatDistance(pole.distanceMeters || 0))}</b>
         </div>
-      `);
+      `)
+      );
       group.addLayer(marker);
     });
   }, [nearbyPoles, showNearbyLayer, leafletLib]);
@@ -660,14 +663,16 @@ export default function PinSelectorMap({
       const marker = L.marker([location.latitude, location.longitude], {
         icon: createActiveSurveyorIcon(L, location),
         zIndexOffset: 720,
-      }).bindPopup(`
+      }).bindPopup(
+        sanitizeMapHtml(`
         <div style="min-width:170px">
           <strong>${escapeHtml(location.userName)}</strong><br/>
           <span>${escapeHtml(location.team || 'TIM')}</span><br/>
           <small>Akurasi GPS: ${escapeHtml(location.accuracy ? `±${Math.round(location.accuracy)}m` : '-')}</small><br/>
           <b>Jarak dari pin: ${escapeHtml(formatDistance(location.distanceMeters || 0))}</b>
         </div>
-      `);
+      `)
+      );
       group.addLayer(marker);
     });
   }, [activeSurveyors, showSurveyorLayer, isKominfoUser, leafletLib]);

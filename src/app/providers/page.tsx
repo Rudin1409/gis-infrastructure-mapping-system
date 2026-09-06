@@ -1,3 +1,4 @@
+import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
@@ -6,6 +7,7 @@ import ProvidersSummaryClient from '@/components/providers/ProvidersSummaryClien
 export const dynamic = 'force-dynamic';
 
 export default async function ProvidersPage() {
+  await requirePageUser();
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 

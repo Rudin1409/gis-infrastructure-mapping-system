@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useViewMode } from '@/context/ViewModeContext';
-import { DEFAULT_ACCOUNTS } from '@/types/auth';
 import { Pole } from '@/types/pole';
 import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 import { DashboardStats } from '@/services/DashboardService';
@@ -58,7 +57,15 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
   const { user } = useAuth();
   const { viewMode } = useViewMode();
   const isDesktop = viewMode === 'DESKTOP';
-  const currentUser = user || DEFAULT_ACCOUNTS[0];
+  const currentUser = user || {
+    name: 'Petugas',
+    role: 'SURVEYOR',
+    roleLabel: 'Petugas Survei',
+    team: 'KOMINFO',
+    agency: '',
+    id: '',
+    email: '',
+  };
 
   const {
     poles: livePoles,

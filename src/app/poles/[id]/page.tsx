@@ -1,3 +1,4 @@
+import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -36,14 +37,13 @@ export const dynamic = 'force-dynamic';
 
 import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 
-export default async function PoleDetailPage({ params }: { params: { id: string } }) {
+export default async function PoleDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requirePageUser();
+  const { id } = await params;
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 
-  const [pole, providers] = await Promise.all([
-    poleRepo.findById(params.id),
-    providerRepo.findAll(),
-  ]);
+  const [pole, providers] = await Promise.all([poleRepo.findById(id), providerRepo.findAll()]);
 
   if (!pole) {
     notFound();

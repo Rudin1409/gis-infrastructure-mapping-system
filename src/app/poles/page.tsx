@@ -1,3 +1,4 @@
+import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
 import Link from 'next/link';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
@@ -10,14 +11,16 @@ export const dynamic = 'force-dynamic';
 export default async function PolesListPage({
   searchParams,
 }: {
-  searchParams?: {
+  searchParams?: Promise<{
     q?: string;
     kecamatan?: string;
     kelurahan?: string;
     provider?: string;
     condition?: string;
-  };
+  }>;
 }) {
+  await requirePageUser();
+  const query = await searchParams;
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 
@@ -88,11 +91,11 @@ export default async function PolesListPage({
         <PoleListFilterClient
           initialPoles={allPoles}
           providers={providers}
-          initialQuery={searchParams?.q}
-          initialKecamatan={searchParams?.kecamatan}
-          initialKelurahan={searchParams?.kelurahan}
-          initialProvider={searchParams?.provider}
-          initialCondition={searchParams?.condition}
+          initialQuery={query?.q}
+          initialKecamatan={query?.kecamatan}
+          initialKelurahan={query?.kelurahan}
+          initialProvider={query?.provider}
+          initialCondition={query?.condition}
         />
       </div>
     </div>

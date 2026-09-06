@@ -174,7 +174,7 @@ export class SupabasePoleRepository implements IPoleRepository {
     if (isPostgresConfigured()) {
       try {
         const { rows } = await dbQuery('SELECT * FROM poles ORDER BY created_at DESC');
-        if (rows && rows.length > 0) {
+        if (rows) {
           return applyPoleFilters(rows.map(mapDbToPole), filters);
         }
       } catch (pgError: any) {
@@ -192,7 +192,7 @@ export class SupabasePoleRepository implements IPoleRepository {
         query = query.lte('created_at', VERCEL_DATA_LOCK_CUTOFF);
       }
       const { data, error } = await query;
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return applyPoleFilters(data.map(mapDbToPole), filters);
       }
       if (error) {
@@ -236,7 +236,7 @@ export class SupabasePoleRepository implements IPoleRepository {
     if (isPostgresConfigured()) {
       try {
         const { rows } = await dbQuery('SELECT * FROM poles WHERE id = $1 LIMIT 1', [id]);
-        if (rows && rows[0]) return mapDbToPole(rows[0]);
+        return rows[0] ? mapDbToPole(rows[0]) : null;
       } catch (pgError: any) {
         console.warn(
           '[DB Cascade Fallback] VPS PostgreSQL findById notice:',
@@ -346,7 +346,7 @@ export class SupabasePoleRepository implements IPoleRepository {
 
     // If VPS wasn't configured and Supabase failed, return newPole
     if (!createdPole) {
-      createdPole = newPole;
+      throw new Error('Penyimpanan utama belum berhasil. Survei harus dicoba kembali.');
     }
 
     return createdPole;
@@ -397,8 +397,7 @@ export class SupabasePoleRepository implements IPoleRepository {
     }
 
     if (!updatedPole) {
-      const existing = await this.findById(id);
-      updatedPole = { ...(existing || ({} as Pole)), ...updateInput, id, updatedAt: now };
+      throw new Error('Pembaruan pada penyimpanan utama belum berhasil.');
     }
 
     return updatedPole;

@@ -1,3 +1,4 @@
+import { appsScriptFetch as fetch } from '@/lib/google/appsScriptClient';
 import { IPoleRepository, PoleFilterOptions } from './interfaces/IPoleRepository';
 import {
   Pole,

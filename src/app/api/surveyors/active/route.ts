@@ -1,3 +1,5 @@
+import { canViewSurveyors } from '@/lib/security/policy';
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { calculateHaversineDistance } from '@/lib/gis/haversine';
 import { dbQuery, isPostgresConfigured } from '@/lib/postgres';
@@ -77,17 +79,16 @@ function mapLocation(row: any) {
   };
 }
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const lat = Number(searchParams.get('lat'));
     const lng = Number(searchParams.get('lng'));
     const excludeUserId = searchParams.get('excludeUserId') || '';
-    const requesterTeam = (searchParams.get('requesterTeam') || '').toUpperCase();
-    const requesterAgency = (searchParams.get('requesterAgency') || '').toUpperCase();
+    const authenticated = requestUser(request);
 
     // 🔒 HAK AKSES KHUSUS: Tim BAPENDA tidak diperkenankan melihat lokasi user/petugas di peta
-    if (requesterTeam === 'BAPENDA' || requesterAgency.includes('BAPENDA')) {
+    if (!canViewSurveyors(authenticated)) {
       return NextResponse.json({
         success: true,
         data: [],
@@ -154,12 +155,12 @@ export async function GET(request: NextRequest) {
       success: false,
       data: [],
       count: 0,
-      error: error.message || 'Gagal memuat lokasi user aktif',
+      error: 'Gagal memuat lokasi user aktif',
     });
   }
 }
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const queryAction = searchParams.get('action');
@@ -173,7 +174,8 @@ export async function POST(request: NextRequest) {
     }
 
     const action = queryAction || body?.action;
-    const userId = String(queryUserId || body?.userId || '').trim();
+    const authenticated = requestUser(request);
+    const userId = authenticated.id;
 
     // 🛑 HANDLER OFFLINE: Hapus seketika saat user keluar aplikasi / logout / close tab
     if (action === 'offline' && userId) {
@@ -187,20 +189,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, action: 'offline', userId });
     }
 
-    const userName = String(body.userName || '').trim();
-    const roleLabel = String(body.roleLabel || '').trim();
+    const userName = authenticated.name;
+    const roleLabel = authenticated.roleLabel;
     const latitude = Number(body.latitude ?? body.lat);
     const longitude = Number(body.longitude ?? body.lng);
     const accuracy = body.accuracy == null ? null : Number(body.accuracy);
 
-    if (!userId || !userName || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    if (
+      !userId ||
+      !userName ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      Math.abs(latitude) > 90 ||
+      Math.abs(longitude) > 180
+    ) {
       return NextResponse.json(
         { success: false, error: 'Data lokasi user belum lengkap' },
         { status: 400 }
       );
     }
 
-    const team = resolveTeam(userId, userName);
+    const team = authenticated.team || 'LAINNYA';
 
     if (isPostgresConfigured()) {
       await ensureSurveyorLocationsTable();
@@ -243,8 +252,12 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('API POST /api/surveyors/active error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal menyimpan lokasi user aktif' },
+      { success: false, error: 'Gagal menyimpan lokasi user aktif' },
       { status: 500 }
     );
   }
 }
+
+export const GET = withAuth(GETHandler, {});
+
+export const POST = withAuth(POSTHandler, {});

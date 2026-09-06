@@ -1,12 +1,13 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSystemLicenseConfig, setSystemLicenseConfig } from '@/lib/systemLicense';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const MASTER_SECURITY_PIN = process.env.MASTER_SECURITY_PIN || '140924';
+const MASTER_SECURITY_PIN = process.env.MASTER_SECURITY_PIN || '';
 
-export async function GET() {
+async function GETHandler() {
   try {
     const config = await getSystemLicenseConfig();
     return NextResponse.json({
@@ -17,19 +18,19 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: err.message,
+        error: 'Permintaan gagal diproses.',
       },
       { status: 500 }
     );
   }
 }
 
-export async function POST(req: NextRequest) {
+async function POSTHandler(req: NextRequest) {
   try {
     const body = await req.json();
     const { pin, isLocked, reason } = body;
 
-    if (!pin || pin !== MASTER_SECURITY_PIN) {
+    if (!MASTER_SECURITY_PIN || typeof pin !== 'string' || pin !== MASTER_SECURITY_PIN) {
       return NextResponse.json(
         {
           success: false,
@@ -52,9 +53,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: err.message,
+        error: 'Permintaan gagal diproses.',
       },
       { status: 500 }
     );
   }
 }
+
+export const GET = withAuth(GETHandler, {});
+
+export const POST = withAuth(POSTHandler, { admin: true });

@@ -252,10 +252,27 @@ export async function syncOfflineQueue(
   let syncedCount = 0;
 
   try {
-    const items = await getOfflineQueue();
+    // Check identity before uploading any photos or consuming another user's draft.
+    const sessionResponse = await fetch('/api/auth/me', { cache: 'no-store' });
+    if (sessionResponse.status === 401) {
+      window.dispatchEvent(new Event('inframap-session-expired'));
+      return {
+        success: false,
+        syncedCount: 0,
+        remainingCount: await getOfflineQueueCount(),
+        error: 'Silakan masuk kembali. Antrean survei tetap tersimpan.',
+      };
+    }
+    if (!sessionResponse.ok)
+      throw new Error('Verifikasi sesi belum tersedia. Antrean tetap tersimpan.');
+    const sessionUser = (await sessionResponse.json()).user;
+    const queued = await getOfflineQueue();
+    const items = queued.filter(
+      (item) => !item.payload.surveyorId || item.payload.surveyorId === sessionUser.id
+    );
     if (items.length === 0) {
       if (onProgress) onProgress({ current: 0, total: 0, isSyncing: false });
-      return { success: true, syncedCount: 0, remainingCount: 0 };
+      return { success: true, syncedCount: 0, remainingCount: await getOfflineQueueCount() };
     }
 
     const total = items.length;
@@ -343,6 +360,9 @@ export async function syncOfflineQueue(
 
         clearTimeout(timeoutId);
 
+        if (poleRes.status === 401) {
+          window.dispatchEvent(new Event('inframap-session-expired'));
+        }
         if (!poleRes.ok) {
           const errJson = await poleRes.json().catch(() => ({}));
           throw new Error(errJson.error || `Server error HTTP ${poleRes.status}`);

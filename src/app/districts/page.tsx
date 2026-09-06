@@ -1,3 +1,4 @@
+import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getDistrictRepository } from '@/repositories/DistrictRepositoryFactory';
@@ -6,6 +7,7 @@ import DistrictsManagerClient from '@/components/districts/DistrictsManagerClien
 export const dynamic = 'force-dynamic';
 
 export default async function DistrictsPage() {
+  await requirePageUser();
   const poleRepo = getPoleRepository();
   const districtRepo = getDistrictRepository();
 

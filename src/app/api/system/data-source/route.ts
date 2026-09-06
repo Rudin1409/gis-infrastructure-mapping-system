@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextResponse } from 'next/server';
 import { dbQuery, getDatabaseUrl, isPostgresConfigured } from '@/lib/postgres';
 import { supabase } from '@/lib/supabase';
@@ -15,7 +16,7 @@ function maskDatabaseUrl(url: string) {
   }
 }
 
-export async function GET() {
+async function GETHandler() {
   try {
     if (isPostgresConfigured()) {
       const [poles, providers, segments, users] = await Promise.all([
@@ -66,9 +67,11 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Gagal mengecek sumber data',
+        error: 'Gagal mengecek sumber data',
       },
       { status: 500 }
     );
   }
 }
+
+export const GET = withAuth(GETHandler, { admin: true });

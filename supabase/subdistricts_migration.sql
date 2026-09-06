@@ -20,10 +20,6 @@ CREATE INDEX IF NOT EXISTS idx_subdistricts_name ON public.subdistricts (name);
 -- RLS
 ALTER TABLE public.subdistricts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow public read on subdistricts" ON public.subdistricts FOR SELECT USING (true);
-CREATE POLICY "Allow public insert on subdistricts" ON public.subdistricts FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update on subdistricts" ON public.subdistricts FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete on subdistricts" ON public.subdistricts FOR DELETE USING (true);
 
 -- SEED DATA 72 KELURAHAN RESMI (8 KECAMATAN)
 INSERT INTO public.subdistricts (id, name, kecamatan, code, order_index) VALUES

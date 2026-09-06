@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://qdiswcejzxwrrbirzstv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
-const APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL || '';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -160,7 +159,7 @@ async function syncAllData() {
       id: 'USR-KOMINFO-ADMIN',
       name: 'Admin DISKOMINFOTIKSAN',
       email: 'admin.kominfo@lubuklinggaukota.go.id',
-      password: 'kominfo123',
+      password: process.env.SEED_ACCOUNT_PASSWORD || 'DISABLED',
       role: 'ADMIN_KOMINFO',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '0812-7890-1234',
@@ -170,7 +169,7 @@ async function syncAllData() {
       id: 'USR-SURVEYOR-01',
       name: 'M. Tri Saputra',
       email: 'tri.saputra@lubuklinggaukota.go.id',
-      password: 'surveyor123',
+      password: process.env.SEED_ACCOUNT_PASSWORD || 'DISABLED',
       role: 'SURVEYOR',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '083196589665',
@@ -180,7 +179,7 @@ async function syncAllData() {
       id: 'USR-SURVEYOR-02',
       name: 'Yodi Heropralaga',
       email: 'yodi.heropralaga@lubuklinggaukota.go.id',
-      password: 'surveyor123',
+      password: process.env.SEED_ACCOUNT_PASSWORD || 'DISABLED',
       role: 'SURVEYOR',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '081373193335',
@@ -190,7 +189,7 @@ async function syncAllData() {
       id: 'USR-SURVEYOR-03',
       name: 'Andika Yulian Putra',
       email: 'andika.yulian@lubuklinggaukota.go.id',
-      password: 'surveyor123',
+      password: process.env.SEED_ACCOUNT_PASSWORD || 'DISABLED',
       role: 'SURVEYOR',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '081373249228',
@@ -200,7 +199,7 @@ async function syncAllData() {
       id: 'USR-SURVEYOR-04',
       name: 'Pradigga Navigasi',
       email: 'pradigga.navigasi@lubuklinggaukota.go.id',
-      password: 'surveyor123',
+      password: process.env.SEED_ACCOUNT_PASSWORD || 'DISABLED',
       role: 'SURVEYOR',
       agency: 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       phone: '082251654742',

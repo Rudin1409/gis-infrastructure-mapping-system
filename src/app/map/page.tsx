@@ -1,3 +1,4 @@
+import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
 import GISOverviewMap from '@/components/map/GISOverviewMap';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
@@ -11,7 +12,7 @@ export const revalidate = 0;
 export default async function MapPage({
   searchParams,
 }: {
-  searchParams?: {
+  searchParams?: Promise<{
     provider?: string;
     q?: string;
     search?: string;
@@ -23,8 +24,10 @@ export default async function MapPage({
     date?: string;
     surveyDate?: string;
     type?: string;
-  };
+  }>;
 }) {
+  await requirePageUser();
+  const query = await searchParams;
   const poleRepo = getPoleRepository();
   const segmentRepo = getSegmentRepository();
   const providerRepo = getProviderRepository();
@@ -42,15 +45,15 @@ export default async function MapPage({
         poles={poles}
         segments={segments}
         providers={providers}
-        initialProvider={searchParams?.provider}
-        initialQuery={searchParams?.q || searchParams?.search}
-        initialCondition={searchParams?.condition}
-        initialCategory={searchParams?.category}
-        initialSurveyor={searchParams?.surveyor}
-        initialKecamatan={searchParams?.kecamatan}
-        initialKelurahan={searchParams?.kelurahan}
-        initialSurveyDate={searchParams?.date || searchParams?.surveyDate}
-        initialType={searchParams?.type}
+        initialProvider={query?.provider}
+        initialQuery={query?.q || query?.search}
+        initialCondition={query?.condition}
+        initialCategory={query?.category}
+        initialSurveyor={query?.surveyor}
+        initialKecamatan={query?.kecamatan}
+        initialKelurahan={query?.kelurahan}
+        initialSurveyDate={query?.date || query?.surveyDate}
+        initialType={query?.type}
         isLicenseLocked={licenseConfig.isLocked}
         licenseReason={licenseConfig.reason}
       />

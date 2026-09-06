@@ -1,17 +1,17 @@
+import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qdiswcejzxwrrbirzstv.supabase.co';
-const supabaseKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 let supabaseClient: SupabaseClient | null = null;
 
 function getSupabaseClient(): SupabaseClient {
   if (!supabaseClient) {
-    supabaseClient = createClient(supabaseUrl, supabaseKey);
+    if (!supabaseUrl || !supabaseKey) throw new Error('Server Supabase belum dikonfigurasi.');
+    supabaseClient = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
   }
   return supabaseClient;
 }

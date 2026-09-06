@@ -1,12 +1,13 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { updatePoleSchema } from '@/lib/validation/poleSchema';
 import { sheetsBackupService } from '@/services/sheetsBackupService';
 import { isDataMutationAllowed } from '@/lib/ai/aiConfig';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+async function GETHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const pole = await poleService.getPoleById(id);
 
     if (!pole) {
@@ -21,15 +22,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       data: pole,
     });
   } catch (error: any) {
-    console.error(`API GET /api/poles/${params.id} error:`, error);
+    console.error(`API GET /api/poles/${(await params).id} error:`, error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memuat detail tiang' },
+      { success: false, error: 'Gagal memuat detail tiang' },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+async function PUTHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     if (!isDataMutationAllowed()) {
       return NextResponse.json(
@@ -42,8 +43,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
+    // Editing remains shared, but authorship is not a client-editable identity.
+    delete body.surveyorId;
+    delete body.surveyorName;
+    delete body.id;
     const validationResult = updatePoleSchema.safeParse({ ...body, id });
 
     if (!validationResult.success) {
@@ -68,15 +73,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       data: updated,
     });
   } catch (error: any) {
-    console.error(`API PUT /api/poles/${params.id} error:`, error);
+    console.error(`API PUT /api/poles/${(await params).id} error:`, error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memperbarui data tiang' },
+      { success: false, error: 'Gagal memperbarui data tiang' },
       { status: 500 }
     );
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+async function DELETEHandler(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     if (!isDataMutationAllowed()) {
       return NextResponse.json(
@@ -89,7 +97,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const success = await poleService.deletePole(id);
 
     if (!success) {
@@ -107,10 +115,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       message: `Tiang ${id} berhasil dihapus`,
     });
   } catch (error: any) {
-    console.error(`API DELETE /api/poles/${params.id} error:`, error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Gagal menghapus tiang' },
-      { status: 500 }
-    );
+    console.error(`API DELETE /api/poles/${(await params).id} error:`, error);
+    return NextResponse.json({ success: false, error: 'Gagal menghapus tiang' }, { status: 500 });
   }
 }
+
+export const GET = withAuth(GETHandler, {});
+
+export const PUT = withAuth(PUTHandler, {});
+
+export const DELETE = withAuth(DELETEHandler, {});

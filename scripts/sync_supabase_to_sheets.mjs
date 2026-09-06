@@ -17,10 +17,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://qdiswcejzxwrrbirzstv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
-const APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL || '';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 

@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 
@@ -9,7 +10,7 @@ export const revalidate = 0;
  * Returns all existing poleCode values from the database.
  * Used by the client-side SurveyForm to generate sequential codes.
  */
-export async function GET() {
+async function GETHandler() {
   try {
     const allPoles = await poleService.getPoles();
 
@@ -24,9 +25,8 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error('API GET /api/poles/codes error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memuat kode tiang' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Gagal memuat kode tiang' }, { status: 500 });
   }
 }
+
+export const GET = withAuth(GETHandler, {});

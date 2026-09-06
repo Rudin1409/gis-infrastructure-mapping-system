@@ -1,10 +1,36 @@
+import 'server-only';
 import { Pole, CreatePoleInput } from '@/types/pole';
 
-export const APPS_SCRIPT_URL =
-  process.env.NEXT_PUBLIC_APPS_SCRIPT_URL || process.env.APPS_SCRIPT_URL || '';
+export const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL || '';
 
 export function isAppsScriptConfigured(): boolean {
-  return !!APPS_SCRIPT_URL && APPS_SCRIPT_URL.startsWith('https://script.google.com');
+  try {
+    const url = new URL(APPS_SCRIPT_URL);
+    return (
+      url.protocol === 'https:' &&
+      url.hostname === 'script.google.com' &&
+      !!process.env.APPS_SCRIPT_SHARED_SECRET
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function appsScriptFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  if (!isAppsScriptConfigured()) throw new Error('Integrasi Apps Script aman belum dikonfigurasi.');
+  const parsed = new URL(url);
+  if (parsed.origin !== 'https://script.google.com') throw new Error('Invalid Apps Script origin');
+  const body =
+    typeof init.body === 'string'
+      ? JSON.parse(init.body)
+      : { action: parsed.searchParams.get('action') || 'getPoles' };
+  return globalThis.fetch(APPS_SCRIPT_URL, {
+    ...init,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, token: process.env.APPS_SCRIPT_SHARED_SECRET }),
+    signal: init.signal || AbortSignal.timeout(15000),
+  });
 }
 
 export async function uploadPhotoViaAppsScript(
@@ -15,7 +41,7 @@ export async function uploadPhotoViaAppsScript(
   if (!isAppsScriptConfigured()) return null;
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await appsScriptFetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -41,7 +67,7 @@ export async function savePoleViaAppsScript(pole: Pole): Promise<boolean> {
   if (!isAppsScriptConfigured()) return false;
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
+    const res = await appsScriptFetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

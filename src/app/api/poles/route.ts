@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { poleService } from '@/services/PoleService';
 import { createPoleSchema } from '@/lib/validation/poleSchema';
@@ -8,7 +9,7 @@ import { calculateHaversineDistance } from '@/lib/gis/haversine';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const providerId = searchParams.get('providerId') || undefined;
@@ -66,14 +67,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('API GET /api/poles error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memuat data tiang' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: 'Gagal memuat data tiang' }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     if (!isDataMutationAllowed()) {
       return NextResponse.json(
@@ -100,7 +98,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newPole = await poleService.createPole(validationResult.data as any);
+    const user = requestUser(request);
+    const input = { ...validationResult.data, surveyorId: user.id, surveyorName: user.name };
+    // Only the original submitter may acknowledge an existing offline draft.
+    if (input.id) {
+      const existing = await poleService.getPoleById(input.id);
+      if (existing && existing.surveyorId !== user.id)
+        return NextResponse.json(
+          { success: false, error: 'ID survei sudah dipakai petugas lain.' },
+          { status: 409 }
+        );
+    }
+    const newPole = await poleService.createPole(input as any);
 
     // Fire-and-forget: backup ke Google Sheets sebagai cadangan
     sheetsBackupService.backupPoleToSheets(newPole).catch(() => {});
@@ -116,8 +125,12 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('API POST /api/poles error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal menyimpan data tiang' },
+      { success: false, error: 'Gagal menyimpan data tiang' },
       { status: 500 }
     );
   }
 }
+
+export const GET = withAuth(GETHandler, {});
+
+export const POST = withAuth(POSTHandler, {});

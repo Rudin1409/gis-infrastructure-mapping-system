@@ -189,7 +189,7 @@ function initialSetup() {
         'USR-KOMINFO-ADMIN',
         'Admin DISKOMINFOTIKSAN',
         'admin.kominfo@lubuklinggaukota.go.id',
-        'kominfo123',
+        'DISABLED',
         'ADMIN_KOMINFO',
         'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
         '0812-7890-1234',
@@ -200,7 +200,7 @@ function initialSetup() {
         'USR-SURVEYOR-01',
         'M. Tri Saputra',
         'tri.saputra@lubuklinggaukota.go.id',
-        'surveyor123',
+        'DISABLED',
         'SURVEYOR',
         'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
         '083196589665',
@@ -211,7 +211,7 @@ function initialSetup() {
         'USR-SURVEYOR-02',
         'Yodi Heropralaga',
         'yodi.heropralaga@lubuklinggaukota.go.id',
-        'surveyor123',
+        'DISABLED',
         'SURVEYOR',
         'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
         '081373193335',
@@ -222,7 +222,7 @@ function initialSetup() {
         'USR-SURVEYOR-03',
         'Andika Yulian Putra',
         'andika.yulian@lubuklinggaukota.go.id',
-        'surveyor123',
+        'DISABLED',
         'SURVEYOR',
         'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
         '081373249228',
@@ -233,7 +233,7 @@ function initialSetup() {
         'USR-SURVEYOR-04',
         'Pradigga Navigasi',
         'pradigga.navigasi@lubuklinggaukota.go.id',
-        'surveyor123',
+        'DISABLED',
         'SURVEYOR',
         'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
         '082251654742',
@@ -395,6 +395,12 @@ function rowArrayToPole(row) {
 
 // Endpoint GET: Ambil data
 function doGet(e) {
+  return ContentService.createTextOutput(
+    JSON.stringify({ success: false, error: 'Authenticated POST required' })
+  ).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleRead(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var action = (e && e.parameter && e.parameter.action) || 'getPoles';
@@ -424,7 +430,7 @@ function doGet(e) {
           id: String(row[0] || ''),
           name: String(row[1] || ''),
           email: String(row[2] || ''),
-          password: String(row[3] || ''),
+
           role: String(row[4] || 'SURVEYOR'),
           agency: String(row[5] || ''),
           phone: String(row[6] || ''),
@@ -470,7 +476,21 @@ function doPost(e) {
   try {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var contents = JSON.parse(e.postData.contents);
+    var expectedToken = PropertiesService.getScriptProperties().getProperty(
+      'APPS_SCRIPT_SHARED_SECRET'
+    );
+    if (!expectedToken || typeof contents.token !== 'string' || contents.token !== expectedToken) {
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: false, error: 'Unauthorized' })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
     var action = contents.action || 'savePole';
+    if (action === 'getPoles') return handleRead({ parameter: { action: 'getPoles' } });
+    if (action === 'login' || action === 'getUsers' || action === 'init') {
+      return ContentService.createTextOutput(
+        JSON.stringify({ success: false, error: 'Action disabled' })
+      ).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // 1. Upload Foto Kamera Langsung ke Google Drive
     if (action === 'uploadPhoto') {

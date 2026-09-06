@@ -1,3 +1,4 @@
+import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
@@ -6,14 +7,13 @@ import EditPoleForm from '@/components/survey/EditPoleForm';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EditPolePage({ params }: { params: { id: string } }) {
+export default async function EditPolePage({ params }: { params: Promise<{ id: string }> }) {
+  await requirePageUser();
+  const { id } = await params;
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 
-  const [pole, providers] = await Promise.all([
-    poleRepo.findById(params.id),
-    providerRepo.findAll(),
-  ]);
+  const [pole, providers] = await Promise.all([poleRepo.findById(id), providerRepo.findAll()]);
 
   if (!pole) {
     notFound();

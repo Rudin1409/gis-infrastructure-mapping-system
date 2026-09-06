@@ -1,5 +1,5 @@
-const CACHE_NAME = 'inframap-static-v1';
-const OFFLINE_URLS = ['/', '/poles/new', '/manifest.json', '/images/app-logo.png', '/icon.svg'];
+const CACHE_NAME = 'inframap-static-v2';
+const OFFLINE_URLS = ['/poles/new', '/manifest.json', '/images/app-logo.png', '/icon.svg'];
 
 // Install: Cache app shell
 self.addEventListener('install', (event) => {
@@ -19,7 +19,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key.startsWith('inframap-') && key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -70,7 +70,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
+          if (
+            url.pathname === '/poles/new' &&
+            networkResponse &&
+            networkResponse.status === 200 &&
+            !networkResponse.redirected
+          ) {
             const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseClone);
@@ -85,7 +90,7 @@ self.addEventListener('fetch', (event) => {
             return cachedResponse;
           }
           // Fallback to /poles/new or root shell if available
-          const fallback = (await caches.match('/poles/new')) || (await caches.match('/'));
+          const fallback = await caches.match('/poles/new');
           if (fallback) {
             return fallback;
           }

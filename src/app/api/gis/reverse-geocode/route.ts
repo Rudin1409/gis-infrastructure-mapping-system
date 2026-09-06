@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +21,7 @@ function normalizeProviderPayload(payload: any, source: 'locationiq' | 'osm') {
   };
 }
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const lat = searchParams.get('lat');
   const lng = searchParams.get('lng');
@@ -98,3 +99,5 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAuth(GETHandler, {});

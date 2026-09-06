@@ -1,10 +1,11 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { dashboardService } from '@/services/DashboardService';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const stats = await dashboardService.getStats();
     return NextResponse.json({
@@ -14,8 +15,10 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('API GET /api/dashboard error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memuat statistik dashboard' },
+      { success: false, error: 'Gagal memuat statistik dashboard' },
       { status: 500 }
     );
   }
 }
+
+export const GET = withAuth(GETHandler, {});

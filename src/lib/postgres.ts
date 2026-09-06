@@ -1,3 +1,4 @@
+import 'server-only';
 import * as pg from 'pg';
 
 const databaseUrl =
@@ -34,7 +35,14 @@ export function getPostgresPool(): any {
   if (!pool) {
     pool = new Pool({
       connectionString: databaseUrl,
-      ssl: shouldUseSsl(databaseUrl) ? { rejectUnauthorized: false } : undefined,
+      ssl: shouldUseSsl(databaseUrl)
+        ? {
+            rejectUnauthorized: true,
+            ...(process.env.DATABASE_CA_CERT
+              ? { ca: process.env.DATABASE_CA_CERT.replace(/\\n/g, '\n') }
+              : {}),
+          }
+        : undefined,
       max: Number(process.env.DATABASE_POOL_MAX || 10),
       idleTimeoutMillis: Number(process.env.DATABASE_IDLE_TIMEOUT_MS || 30000),
       connectionTimeoutMillis: Number(process.env.DATABASE_CONNECTION_TIMEOUT_MS || 10000),

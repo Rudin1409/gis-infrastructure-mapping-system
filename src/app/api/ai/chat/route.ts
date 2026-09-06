@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getSegmentRepository } from '@/repositories/GoogleSheetsSegmentRepository';
@@ -188,12 +189,23 @@ const PROVIDER_PHYSICAL_MARKINGS: Record<string, string> = {
   pju: 'PJU Pemkot Lubuklinggau: Tiang khusus lampu penerangan jalan umum dengan stang ornamen lampu LED/SON-T.',
 };
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     const body = await request.json();
     const { messages = [] }: { messages: ChatMessage[] } = body;
 
-    if (!Array.isArray(messages) || messages.length === 0) {
+    if (
+      !Array.isArray(messages) ||
+      messages.length === 0 ||
+      messages.length > 30 ||
+      messages.some(
+        (m) =>
+          !m ||
+          !['user', 'assistant'].includes(m.role) ||
+          typeof m.content !== 'string' ||
+          m.content.length > 8000
+      )
+    ) {
       return NextResponse.json(
         { success: false, error: 'Pesan percakapan tidak valid' },
         { status: 400 }
@@ -214,9 +226,7 @@ export async function POST(request: NextRequest) {
 
     const lastUserMsg = messages[messages.length - 1]?.content.toLowerCase() || '';
     const shouldAnswerFromDatabase = isDataQuestion(lastUserMsg);
-    const apiKey =
-      process.env.OPENROUTER_API_KEY ||
-      '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';
+    const apiKey = process.env.OPENROUTER_API_KEY || '';
     const primaryModel = process.env.OPENROUTER_MODEL || 'minimax/minimax-m3:free';
 
     // 1. Ambil seluruh database tiang dan segmen kabel secara real-time
@@ -1005,8 +1015,10 @@ PANDUAN JAWABAN:
   } catch (error: any) {
     console.error('API /api/ai/chat error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Terjadi kesalahan pada server AI' },
+      { success: false, error: 'Terjadi kesalahan pada server AI' },
       { status: 500 }
     );
   }
 }
+
+export const POST = withAuth(POSTHandler, { limit: 10 });

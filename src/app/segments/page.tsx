@@ -1,3 +1,4 @@
+import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
@@ -8,10 +9,9 @@ export const dynamic = 'force-dynamic';
 export default async function SegmentsPage({
   searchParams,
 }: {
-  searchParams?:
-    | Promise<{ filter?: string; type?: string; q?: string }>
-    | { filter?: string; type?: string; q?: string };
+  searchParams?: Promise<{ filter?: string; type?: string; q?: string }>;
 }) {
+  await requirePageUser();
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 

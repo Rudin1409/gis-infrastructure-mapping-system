@@ -1,10 +1,11 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDistrictRepository } from '@/repositories/DistrictRepositoryFactory';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
   try {
     const repo = getDistrictRepository();
     const grouped = await repo.getGroupedDistricts();
@@ -16,13 +17,13 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('API GET /api/districts error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memuat data kecamatan & kelurahan' },
+      { success: false, error: 'Gagal memuat data kecamatan & kelurahan' },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   try {
     const body = await request.json();
     const { name, kecamatan, code } = body;
@@ -55,13 +56,13 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('API POST /api/districts error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal menambahkan kelurahan' },
+      { success: false, error: 'Gagal menambahkan kelurahan' },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(request: NextRequest) {
+async function PUTHandler(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, name, kecamatan, code, oldName, cascadeUpdatePoles } = body;
@@ -103,13 +104,13 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     console.error('API PUT /api/districts error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memperbarui kelurahan' },
+      { success: false, error: 'Gagal memperbarui kelurahan' },
       { status: 500 }
     );
   }
 }
 
-export async function DELETE(request: NextRequest) {
+async function DELETEHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     let id = searchParams.get('id');
@@ -145,8 +146,16 @@ export async function DELETE(request: NextRequest) {
   } catch (error: any) {
     console.error('API DELETE /api/districts error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal menghapus kelurahan' },
+      { success: false, error: 'Gagal menghapus kelurahan' },
       { status: 500 }
     );
   }
 }
+
+export const GET = withAuth(GETHandler, {});
+
+export const POST = withAuth(POSTHandler, { admin: true });
+
+export const PUT = withAuth(PUTHandler, { admin: true });
+
+export const DELETE = withAuth(DELETEHandler, { admin: true });

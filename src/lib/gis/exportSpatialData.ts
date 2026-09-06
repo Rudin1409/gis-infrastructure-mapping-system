@@ -20,7 +20,8 @@ function escapeXml(unsafe: string | number | boolean | null | undefined): string
  */
 function escapeCsv(field: string | number | boolean | null | undefined): string {
   if (field === null || field === undefined) return '""';
-  const str = String(field);
+  const raw = String(field);
+  const str = typeof field === 'string' && /^[\s]*[=+@-]/.test(raw) ? "'" + raw : raw;
   if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`;
   }

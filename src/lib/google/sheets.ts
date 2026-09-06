@@ -1,4 +1,8 @@
-import { google, sheets_v4 } from 'googleapis';
+import {
+  auth as googleAuth,
+  sheets as createSheets,
+  sheets_v4,
+} from 'googleapis/build/src/apis/sheets';
 import { Pole } from '@/types/pole';
 import { Provider } from '@/types/provider';
 import { NetworkSegment } from '@/types/segment';
@@ -93,7 +97,7 @@ export function getGoogleSheetsClient(): sheets_v4.Sheets | null {
 
   try {
     const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-    const auth = new google.auth.JWT({
+    const auth = new googleAuth.JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
       key: privateKey,
       scopes: [
@@ -102,7 +106,7 @@ export function getGoogleSheetsClient(): sheets_v4.Sheets | null {
       ],
     });
 
-    return google.sheets({ version: 'v4', auth });
+    return createSheets({ version: 'v4', auth });
   } catch (error) {
     console.error('Failed to initialize Google Sheets client:', error);
     return null;

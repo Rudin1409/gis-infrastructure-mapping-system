@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextResponse } from 'next/server';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic';
  * lalu tulis ulang sheet tiang, provider, dan segmen di Google Sheets.
  * Digunakan admin untuk sinkronisasi manual atau recovery.
  */
-export async function POST() {
+async function POSTHandler() {
   try {
     const startTime = Date.now();
     const results: Record<string, { success: boolean; count: number; error?: string }> = {};
@@ -59,8 +60,10 @@ export async function POST() {
   } catch (error: any) {
     console.error('API POST /api/admin/sync-to-sheets error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal sync ke Google Sheets' },
+      { success: false, error: 'Gagal sync ke Google Sheets' },
       { status: 500 }
     );
   }
 }
+
+export const POST = withAuth(POSTHandler, { admin: true });

@@ -2,8 +2,8 @@ import pg from 'pg';
 import fs from 'fs';
 const { Client } = pg;
 
-const DB_PASSWORD = process.env.DB_PASSWORD || 'CiflkG1Ndc7PrXUF';
-const PROJECT_REF = process.env.PROJECT_REF || 'qdiswcejzxwrrbirzstv';
+const DB_PASSWORD = process.env.DB_PASSWORD || '';
+const PROJECT_REF = process.env.PROJECT_REF || '';
 
 const connectionConfigs = [
   // 1. Transaction/Session Pooler (IPv4 compatible)

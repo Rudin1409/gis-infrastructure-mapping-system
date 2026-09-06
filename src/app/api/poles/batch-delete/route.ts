@@ -1,15 +1,21 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { poleService } from '@/services/PoleService';
 import { sheetsBackupService } from '@/services/sheetsBackupService';
 import { dbQuery, isPostgresConfigured } from '@/lib/postgres';
 
-export async function POST(req: NextRequest) {
+async function POSTHandler(req: NextRequest) {
   try {
     const body = await req.json();
     const { ids } = body;
 
-    if (!Array.isArray(ids) || ids.length === 0) {
+    if (
+      !Array.isArray(ids) ||
+      ids.length === 0 ||
+      ids.length > 200 ||
+      ids.some((id) => typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(id))
+    ) {
       return NextResponse.json(
         { success: false, error: 'Array IDs tiang wajib diisi dan tidak boleh kosong' },
         { status: 400 }
@@ -82,8 +88,10 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Batch delete error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Terjadi kesalahan internal server' },
+      { success: false, error: 'Terjadi kesalahan internal server' },
       { status: 500 }
     );
   }
 }
+
+export const POST = withAuth(POSTHandler, { admin: true });

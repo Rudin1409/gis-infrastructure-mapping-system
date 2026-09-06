@@ -1,10 +1,9 @@
 import pg from 'pg';
 const { Client } = pg;
 
-const DB_PASSWORD = 'CiflkG1Ndc7PrXUF';
-const PROJECT_REF = 'qdiswcejzxwrrbirzstv';
-const APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbyUyNmERJNTJ26-M76Lg1PO7ul0HBakMTV9p3YrxJdN64s3mFTOMEyvVz2br29A4HUH/exec';
+const DB_PASSWORD = process.env.DB_PASSWORD || '';
+const PROJECT_REF = process.env.PROJECT_REF || '';
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL || '';
 
 const connectionConfigs = [
   // 1. Transaction/Session Pooler (IPv4 compatible)
@@ -169,7 +168,7 @@ async function run() {
       'USR-KOMINFO-ADMIN',
       'Admin DISKOMINFOTIKSAN',
       'admin.kominfo@lubuklinggaukota.go.id',
-      'kominfo123',
+      'DISABLED',
       'ADMIN_KOMINFO',
       'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       '0812-7890-1234',
@@ -179,7 +178,7 @@ async function run() {
       'USR-SURVEYOR-01',
       'M. Tri Saputra',
       'tri.saputra@lubuklinggaukota.go.id',
-      'surveyor123',
+      'DISABLED',
       'SURVEYOR',
       'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       '083196589665',
@@ -189,7 +188,7 @@ async function run() {
       'USR-SURVEYOR-02',
       'Yodi Heropralaga',
       'yodi.heropralaga@lubuklinggaukota.go.id',
-      'surveyor123',
+      'DISABLED',
       'SURVEYOR',
       'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       '081373193335',
@@ -199,7 +198,7 @@ async function run() {
       'USR-SURVEYOR-03',
       'Andika Yulian Putra',
       'andika.yulian@lubuklinggaukota.go.id',
-      'surveyor123',
+      'DISABLED',
       'SURVEYOR',
       'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       '081373249228',
@@ -209,7 +208,7 @@ async function run() {
       'USR-SURVEYOR-04',
       'Pradigga Navigasi',
       'pradigga.navigasi@lubuklinggaukota.go.id',
-      'surveyor123',
+      'DISABLED',
       'SURVEYOR',
       'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau',
       '082251654742',

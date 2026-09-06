@@ -1,3 +1,4 @@
+import { withAuth, requestUser } from '@/lib/security/api';
 import { NextResponse } from 'next/server';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getKecamatanCode, getKelurahanCode } from '@/lib/gis/geocoding';
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
  *
  * IMPORTANT: Only updates poleCode field - does NOT touch any other data.
  */
-export async function POST() {
+async function POSTHandler() {
   try {
     const poleRepo = getPoleRepository();
     const allPoles = await poleRepo.findAll();
@@ -89,8 +90,10 @@ export async function POST() {
   } catch (error: any) {
     console.error('API POST /api/poles/fix-codes error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memperbaiki kode tiang' },
+      { success: false, error: 'Gagal memperbaiki kode tiang' },
       { status: 500 }
     );
   }
 }
+
+export const POST = withAuth(POSTHandler, { admin: true });

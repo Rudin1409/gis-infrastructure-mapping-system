@@ -2,8 +2,8 @@ import { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://qdiswcejzxwrrbirzstv.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_JXBAQ-tsjCWcD7iOjWvuBA_JJ_EFf7y';
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 
 if (!DATABASE_URL) {
