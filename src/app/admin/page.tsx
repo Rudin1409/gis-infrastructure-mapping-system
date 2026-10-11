@@ -460,11 +460,11 @@ export default function AdminPage() {
                           Gateway Kuota Peta
                         </h3>
                         <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 shrink-0">
-                          Keamanan
+                          Khusus Admin
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500 leading-relaxed truncate">
-                        Akses khusus lisensi &amp; kuota API geospasial
+                        Kelola khusus admin
                       </p>
                     </div>
                   </div>
