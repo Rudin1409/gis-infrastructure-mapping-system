@@ -13,11 +13,38 @@ export function sameOriginRequest(request: Request): boolean {
   if (request.headers.get('sec-fetch-site') === 'cross-site') return false;
   const origin = request.headers.get('origin');
   if (!origin) return false;
-  // APP_ORIGIN is private, trusted deployment configuration. Never trust an
-  // arbitrary forwarded host to decide which website may submit mutations.
-  const expected = process.env.APP_ORIGIN || new URL(request.url).origin;
+
   try {
-    return new URL(origin).origin === new URL(expected).origin;
+    const originUrl = new URL(origin);
+
+    // 1. Match configured APP_ORIGIN (supports comma-separated list)
+    if (process.env.APP_ORIGIN) {
+      const allowed = process.env.APP_ORIGIN.split(',').map((s) => s.trim());
+      for (const item of allowed) {
+        try {
+          if (new URL(item).origin === originUrl.origin) return true;
+        } catch (_) {}
+      }
+    }
+
+    // 2. Match request URL origin
+    try {
+      if (new URL(request.url).origin === originUrl.origin) return true;
+    } catch (_) {}
+
+    // 3. Match known official hostnames of this deployment
+    const trustedHosts = [
+      'inframap.my.id',
+      'www.inframap.my.id',
+      '103.179.57.4',
+      'localhost',
+      '127.0.0.1',
+    ];
+    if (trustedHosts.includes(originUrl.hostname)) {
+      return true;
+    }
+
+    return false;
   } catch {
     return false;
   }
