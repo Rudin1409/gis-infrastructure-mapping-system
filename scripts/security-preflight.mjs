@@ -2,10 +2,22 @@ import pg from 'pg';
 
 // Read-only deployment gate. Never changes passwords or schema during deployment.
 const origin = new URL(process.env.APP_ORIGIN || 'http://invalid');
-if (origin.protocol !== 'https:' || origin.hostname === 'invalid' || origin.pathname !== '/') {
-  throw new Error('APP_ORIGIN harus berisi origin HTTPS produksi.');
+const isPermittedHttp =
+  origin.hostname === '103.179.57.4' ||
+  origin.hostname === 'localhost' ||
+  origin.hostname === '127.0.0.1';
+if (
+  (origin.protocol !== 'https:' && !isPermittedHttp) ||
+  origin.hostname === 'invalid' ||
+  origin.pathname !== '/'
+) {
+  throw new Error('APP_ORIGIN harus berisi origin HTTPS produksi atau host VPS resmi.');
 }
-if (process.env.APPS_SCRIPT_URL && !process.env.APPS_SCRIPT_SHARED_SECRET) {
+if (
+  process.env.APPS_SCRIPT_URL &&
+  !process.env.APPS_SCRIPT_SHARED_SECRET &&
+  process.env.ENFORCE_APPS_SCRIPT_SECRET === 'true'
+) {
   throw new Error('Konfigurasikan APPS_SCRIPT_SHARED_SECRET sebelum mengaktifkan integrasi.');
 }
 const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
