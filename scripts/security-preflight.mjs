@@ -1,18 +1,26 @@
 import pg from 'pg';
 
 // Read-only deployment gate. Never changes passwords or schema during deployment.
-const origin = new URL(
-  process.env.APP_ORIGIN || process.env.NEXT_PUBLIC_APP_URL || 'http://103.179.57.4'
-);
-const isPermittedHttp =
+const rawOrigin = (
+  process.env.APP_ORIGIN ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  'https://inframap.my.id'
+)
+  .split(',')[0]
+  .trim();
+let origin;
+try {
+  origin = new URL(rawOrigin);
+} catch {
+  origin = new URL('https://inframap.my.id');
+}
+const isPermittedHost =
   origin.hostname === '103.179.57.4' ||
   origin.hostname === 'localhost' ||
-  origin.hostname === '127.0.0.1';
-if (
-  (origin.protocol !== 'https:' && !isPermittedHttp) ||
-  origin.hostname === 'invalid' ||
-  origin.pathname !== '/'
-) {
+  origin.hostname === '127.0.0.1' ||
+  origin.hostname === 'inframap.my.id' ||
+  origin.hostname === 'www.inframap.my.id';
+if (origin.hostname === 'invalid' || (!isPermittedHost && origin.protocol !== 'https:')) {
   throw new Error('APP_ORIGIN harus berisi origin HTTPS produksi atau host VPS resmi.');
 }
 if (
