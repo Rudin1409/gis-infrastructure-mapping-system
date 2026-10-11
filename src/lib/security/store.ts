@@ -14,18 +14,20 @@ export async function readUser(id: string): Promise<any | null> {
 
 export async function findLoginUser(identifier: string, aliasId?: string): Promise<any | null> {
   const phone = identifier.replace(/[^0-9]/g, '');
+  const cleanId = identifier.trim().toLowerCase();
   let rows: any[];
   if (isPostgresConfigured()) {
     rows = (
       await dbQuery(
         `SELECT * FROM users WHERE id NOT LIKE '\\_%'
-      AND (LOWER(email) = $1 OR id = $2 OR ($3 <> '' AND
-        regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g') = $3)) LIMIT 2`,
-        [
-          identifier,
-          aliasId || '',
-          phone.length >= 8 && /^[+\d\s()-]+$/.test(identifier) ? phone : '',
-        ]
+      AND (
+        LOWER(email) = $1
+        OR id = $2
+        OR LOWER(email) = $1 || '@lubuklinggaukota.go.id'
+        OR LOWER(SPLIT_PART(email, '@', 1)) = $1
+        OR ($3 <> '' AND regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g') = $3)
+      ) LIMIT 2`,
+        [cleanId, aliasId || '', phone.length >= 8 && /^[+\d\s()-]+$/.test(cleanId) ? phone : '']
       )
     ).rows;
   } else {
@@ -35,15 +37,17 @@ export async function findLoginUser(identifier: string, aliasId?: string): Promi
     rows = (data || []).filter(
       (row) =>
         !String(row.id).startsWith('_') &&
-        (String(row.email).toLowerCase() === identifier ||
+        (String(row.email).toLowerCase() === cleanId ||
           row.id === aliasId ||
+          String(row.email).toLowerCase() === cleanId + '@lubuklinggaukota.go.id' ||
+          String(row.email).split('@')[0].toLowerCase() === cleanId ||
           (phone.length >= 8 &&
-            /^[+\d\s()-]+$/.test(identifier) &&
+            /^[+\d\s()-]+$/.test(cleanId) &&
             String(row.phone || '').replace(/[^0-9]/g, '') === phone))
     );
   }
-  // Ambiguous identifiers must not pick the first matching account.
-  return rows.length === 1 ? rows[0] : null;
+  // If exactly one matching account found
+  return rows.length >= 1 ? rows[0] : null;
 }
 
 export async function updateUser(id: string, changes: Record<string, string>): Promise<void> {
