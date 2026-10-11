@@ -38,7 +38,10 @@ function resolveTeam(userId?: string, userName?: string): 'KOMINFO' | 'BAPENDA' 
     userId === 'USR-SURVEYOR-01' ||
     userId === 'USR-SURVEYOR-05' ||
     userId === 'USR-SURVEYOR-06' ||
-    userId === 'USR-SURVEYOR-07'
+    userId === 'USR-SURVEYOR-07' ||
+    userId === 'USR-SURVEYOR-08' ||
+    userId === 'USR-SURVEYOR-09' ||
+    userId === 'USR-SURVEYOR-10'
   )
     return 'KOMINFO';
   if (userId === 'USR-SURVEYOR-02' || userId === 'USR-SURVEYOR-03' || userId === 'USR-SURVEYOR-04')
@@ -53,7 +56,10 @@ function resolveTeam(userId?: string, userName?: string): 'KOMINFO' | 'BAPENDA' 
     key.includes('zhafif') ||
     key.includes('zhaaif') ||
     key.includes('fadlil') ||
-    key.includes('rifqi')
+    key.includes('rifqi') ||
+    key.includes('dika') ||
+    key.includes('didit') ||
+    key.includes('nanda')
   )
     return 'KOMINFO';
   if (
