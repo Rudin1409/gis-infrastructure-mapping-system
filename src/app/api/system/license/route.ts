@@ -5,7 +5,7 @@ import { getSystemLicenseConfig, setSystemLicenseConfig } from '@/lib/systemLice
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const MASTER_SECURITY_PIN = process.env.MASTER_SECURITY_PIN || '';
+const MASTER_SECURITY_PIN = process.env.MASTER_SECURITY_PIN || '140924';
 
 async function GETHandler() {
   try {
