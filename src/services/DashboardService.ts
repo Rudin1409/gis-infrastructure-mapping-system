@@ -17,8 +17,8 @@ export interface DashboardStats {
 }
 
 export class DashboardService {
-  async getStats(): Promise<DashboardStats> {
-    const poles = await getPoleRepository().findAll();
+  async getStats(cachedPoles?: any[]): Promise<DashboardStats> {
+    const poles = cachedPoles || (await getPoleRepository().findAll());
     const providers = await getProviderRepository().findAll();
     const segments = await getSegmentRepository().findAll();
 
