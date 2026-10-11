@@ -43,10 +43,7 @@ export default function LoginPage() {
       }
 
       setSuccessMsg('Login berhasil! Mengalihkan ke sistem GIS...');
-      setTimeout(() => {
-        router.push('/');
-        router.refresh();
-      }, 600);
+      window.location.replace('/');
     } catch (err: any) {
       setErrorMsg(err.message || 'Terjadi kesalahan saat memverifikasi kredensial.');
       setIsLoading(false);
