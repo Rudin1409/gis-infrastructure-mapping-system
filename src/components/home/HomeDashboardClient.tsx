@@ -8,6 +8,7 @@ import { Pole } from '@/types/pole';
 import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 import { DashboardStats } from '@/services/DashboardService';
 import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
+import { formatGoogleDriveImageUrl } from '@/lib/utils/driveImage';
 import {
   Map,
   Plus,
@@ -1037,48 +1038,55 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Photo Thumbnail or Themed Infrastructure Icon */}
-                      {pole.photoUrl ? (
-                        <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 shadow-2xs group-hover:border-blue-300 transition-colors">
-                          <img
-                            src={pole.photoUrl}
-                            alt={pole.poleCode || pole.id}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                            loading="lazy"
-                            onError={(e) => {
-                              // Hide broken image and fallback to container icon
-                              (e.currentTarget as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                          <div className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white text-[8px]">
-                            <Camera className="w-2.5 h-2.5" />
+                      {(() => {
+                        const thumbUrl = formatGoogleDriveImageUrl(
+                          pole.photoUrl,
+                          pole.photoFileId,
+                          200
+                        );
+                        return thumbUrl ? (
+                          <div className="relative w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 shadow-2xs group-hover:border-blue-300 transition-colors">
+                            <img
+                              src={thumbUrl}
+                              alt={pole.poleCode || pole.id}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              loading="lazy"
+                              onError={(e) => {
+                                // Hide broken image and fallback to container icon
+                                (e.currentTarget as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                            <div className="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full bg-black/60 backdrop-blur-xs flex items-center justify-center text-white text-[8px]">
+                              <Camera className="w-2.5 h-2.5" />
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div
-                          className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 border transition-all ${
-                            pole.infrastructureCategory === 'PJU_MANDIRI' ||
-                            pole.providerId === 'PRV_PJU_PEMKOT'
-                              ? 'bg-amber-50 text-amber-600 border-amber-200 group-hover:bg-amber-100/70'
-                              : pole.infrastructureCategory === 'PLN_MURNI' ||
-                                  pole.providerId === 'PRV_PLN_DISTRIBUSI'
-                                ? 'bg-sky-50 text-sky-600 border-sky-200 group-hover:bg-sky-100/70'
-                                : 'bg-blue-50 text-blue-600 border-blue-200 group-hover:bg-blue-100/70'
-                          }`}
-                        >
-                          {pole.infrastructureCategory === 'PJU_MANDIRI' ||
-                          pole.providerId === 'PRV_PJU_PEMKOT' ? (
-                            <Lightbulb className="w-5 h-5" />
-                          ) : pole.infrastructureCategory === 'PLN_MURNI' ||
-                            pole.providerId === 'PRV_PLN_DISTRIBUSI' ? (
-                            <Zap className="w-5 h-5" />
-                          ) : (
-                            <Radio className="w-5 h-5" />
-                          )}
-                          <span className="text-[8.5px] font-bold font-mono uppercase mt-0.5">
-                            {cleanProvider.slice(0, 3)}
-                          </span>
-                        </div>
-                      )}
+                        ) : (
+                          <div
+                            className={`w-12 h-12 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 border transition-all ${
+                              pole.infrastructureCategory === 'PJU_MANDIRI' ||
+                              pole.providerId === 'PRV_PJU_PEMKOT'
+                                ? 'bg-amber-50 text-amber-600 border-amber-200 group-hover:bg-amber-100/70'
+                                : pole.infrastructureCategory === 'PLN_MURNI' ||
+                                    pole.providerId === 'PRV_PLN_DISTRIBUSI'
+                                  ? 'bg-sky-50 text-sky-600 border-sky-200 group-hover:bg-sky-100/70'
+                                  : 'bg-blue-50 text-blue-600 border-blue-200 group-hover:bg-blue-100/70'
+                            }`}
+                          >
+                            {pole.infrastructureCategory === 'PJU_MANDIRI' ||
+                            pole.providerId === 'PRV_PJU_PEMKOT' ? (
+                              <Lightbulb className="w-5 h-5" />
+                            ) : pole.infrastructureCategory === 'PLN_MURNI' ||
+                              pole.providerId === 'PRV_PLN_DISTRIBUSI' ? (
+                              <Zap className="w-5 h-5" />
+                            ) : (
+                              <Radio className="w-5 h-5" />
+                            )}
+                            <span className="text-[8.5px] font-bold font-mono uppercase mt-0.5">
+                              {cleanProvider.slice(0, 3)}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       {/* Main Pole Telemetry */}
                       <div className="min-w-0">

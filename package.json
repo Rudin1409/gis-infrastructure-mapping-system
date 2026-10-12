@@ -15,7 +15,8 @@
     "migrate:vps-db": "node scripts/migrate_supabase_to_postgres.mjs",
     "verify:vps-db": "node scripts/verify_postgres_data.mjs",
     "test:security": "node --test tests/security.test.mjs",
-    "security:prepare": "node --env-file=.env.local scripts/security-prepare.mjs"
+    "security:prepare": "node --env-file=.env.local scripts/security-prepare.mjs",
+    "sync:photos-to-vps": "node scripts/download_drive_photos_to_vps.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Pole } from '@/types/pole';
 import { Provider } from '@/types/provider';
 import { KECAMATAN_LUBUKLINGGAU } from '@/config/lubuklinggau';
+import { formatGoogleDriveImageUrl } from '@/lib/utils/driveImage';
 import {
   ShieldAlert,
   AlertTriangle,
@@ -728,15 +729,23 @@ export default function CableAuditClient({
                 <div className="flex items-start gap-3">
                   {/* Photo or Icon */}
                   <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center relative">
-                    {pole.photoUrl ? (
-                      <img
-                        src={pole.photoUrl}
-                        alt={`Foto tiang ${pole.poleCode}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Cable className="w-6 h-6 text-slate-400" />
-                    )}
+                    {(() => {
+                      const thumbUrl = formatGoogleDriveImageUrl(
+                        pole.photoUrl,
+                        pole.photoFileId,
+                        200
+                      );
+                      return thumbUrl ? (
+                        <img
+                          src={thumbUrl}
+                          alt={`Foto tiang ${pole.poleCode || pole.id}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <Cable className="w-6 h-6 text-slate-400" />
+                      );
+                    })()}
                   </div>
 
                   <div className="flex-1 min-w-0 space-y-1 text-xs">

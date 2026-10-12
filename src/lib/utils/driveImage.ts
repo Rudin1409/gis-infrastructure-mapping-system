@@ -7,7 +7,18 @@ export function extractGoogleDriveFileId(urlOrId?: string): string | null {
   if (!urlOrId) return null;
   const str = urlOrId.trim();
 
-  // If already a raw fileId (alphanumeric string around 25-45 chars without slashes)
+  // If already a local VPS / offline base64 / relative URL, it is NOT a Google Drive file
+  if (
+    str.startsWith('vps_') ||
+    str.startsWith('local_') ||
+    str.startsWith('/') ||
+    str.startsWith('data:') ||
+    str.includes('/uploads/')
+  ) {
+    return null;
+  }
+
+  // If already a raw Google Drive fileId (alphanumeric string around 25-50 chars without slashes)
   if (/^[a-zA-Z0-9_-]{25,50}$/.test(str)) {
     return str;
   }
@@ -40,7 +51,23 @@ export function formatGoogleDriveImageUrl(
 ): string | undefined {
   if (!urlOrFileId && !fileId) return undefined;
 
-  const targetId = fileId || extractGoogleDriveFileId(urlOrFileId);
+  // 1. Direct pass-through for local VPS uploads, offline data URLs, or relative assets
+  if (
+    urlOrFileId &&
+    (urlOrFileId.startsWith('/') ||
+      urlOrFileId.startsWith('data:') ||
+      urlOrFileId.includes('/uploads/'))
+  ) {
+    return urlOrFileId;
+  }
+
+  // 2. Resolve Google Drive ID (ignore non-drive local/vps IDs)
+  const validFileId =
+    fileId && !fileId.startsWith('vps_') && !fileId.startsWith('local_')
+      ? extractGoogleDriveFileId(fileId)
+      : null;
+
+  const targetId = validFileId || extractGoogleDriveFileId(urlOrFileId);
 
   if (targetId) {
     // lh3.googleusercontent.com is Google's official public image CDN for Drive files
@@ -55,7 +82,22 @@ export function getGoogleDriveThumbnailUrl(
   fileId?: string,
   width = 800
 ): string | undefined {
-  const targetId = fileId || extractGoogleDriveFileId(urlOrFileId);
+  if (
+    urlOrFileId &&
+    (urlOrFileId.startsWith('/') ||
+      urlOrFileId.startsWith('data:') ||
+      urlOrFileId.includes('/uploads/'))
+  ) {
+    return urlOrFileId;
+  }
+
+  const validFileId =
+    fileId && !fileId.startsWith('vps_') && !fileId.startsWith('local_')
+      ? extractGoogleDriveFileId(fileId)
+      : null;
+
+  const targetId = validFileId || extractGoogleDriveFileId(urlOrFileId);
+
   if (targetId) {
     return `https://drive.google.com/thumbnail?id=${targetId}&sz=w${width}`;
   }

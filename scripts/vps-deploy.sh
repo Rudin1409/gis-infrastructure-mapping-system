@@ -62,6 +62,13 @@ fi
 
 ln -s "$SHARED_ENV_FILE" "${RELEASE_DIR}/.env.local"
 
+# Pastikan folder shared uploads persisten ada dan terhubung ke release
+SHARED_UPLOADS_DIR="${SHARED_DIR}/uploads/poles"
+mkdir -p "$SHARED_UPLOADS_DIR"
+mkdir -p "${RELEASE_DIR}/public/uploads"
+rm -rf "${RELEASE_DIR}/public/uploads/poles"
+ln -s "$SHARED_UPLOADS_DIR" "${RELEASE_DIR}/public/uploads/poles"
+
 cd "$RELEASE_DIR"
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
 
