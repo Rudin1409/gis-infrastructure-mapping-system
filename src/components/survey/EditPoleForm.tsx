@@ -285,7 +285,14 @@ export default function EditPoleForm({ pole, providers }: EditPoleFormProps) {
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal memperbarui data tiang');
+        let errorMsg = json.error || 'Gagal memperbarui data tiang';
+        if (json.details && typeof json.details === 'object') {
+          const details = Object.entries(json.details)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+            .join('; ');
+          if (details) errorMsg = `${errorMsg} (${details})`;
+        }
+        throw new Error(errorMsg);
       }
 
       setSuccessMessage('Data tiang & titik koordinat berhasil diperbarui!');

@@ -532,7 +532,14 @@ export default function SurveyForm({
 
         if (!res.ok || !json.success) {
           if (res.status === 400) {
-            throw new Error(json.error || 'Validasi data gagal');
+            let errorMsg = json.error || 'Validasi data gagal';
+            if (json.details && typeof json.details === 'object') {
+              const details = Object.entries(json.details)
+                .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+                .join('; ');
+              if (details) errorMsg = `${errorMsg} (${details})`;
+            }
+            throw new Error(errorMsg);
           }
           await saveOfflineAndFinish(
             '⚠️ Server atau sinyal terputus sesaat. Data tiang telah diamankan di Memori HP tanpa ada data yang hilang!'
