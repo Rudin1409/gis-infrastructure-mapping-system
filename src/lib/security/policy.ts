@@ -32,15 +32,32 @@ export function sameOriginRequest(request: Request): boolean {
       if (new URL(request.url).origin === originUrl.origin) return true;
     } catch (_) {}
 
-    // 3. Match known official hostnames of this deployment
+    // 3. Match Host or X-Forwarded-Host header
+    const hostHeader = request.headers.get('x-forwarded-host') || request.headers.get('host');
+    if (hostHeader) {
+      const cleanHost = hostHeader.split(':')[0].toLowerCase();
+      if (
+        originUrl.hostname.toLowerCase() === cleanHost ||
+        originUrl.host.toLowerCase() === hostHeader.toLowerCase()
+      ) {
+        return true;
+      }
+    }
+
+    // 4. Match known official hostnames of this deployment
     const trustedHosts = [
       'inframap.my.id',
       'www.inframap.my.id',
       '103.179.57.4',
+      '27.124.75.241',
       'localhost',
       '127.0.0.1',
     ];
-    if (trustedHosts.includes(originUrl.hostname)) {
+    if (
+      trustedHosts.includes(originUrl.hostname) ||
+      originUrl.hostname.endsWith('.lubuklinggaukota.go.id') ||
+      originUrl.hostname.endsWith('.trycloudflare.com')
+    ) {
       return true;
     }
 
@@ -56,7 +73,8 @@ export function sessionCookieSecure(): boolean {
   try {
     const url = new URL(process.env.APP_ORIGIN || 'https://invalid.local');
     return !(
-      url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+      url.protocol === 'http:' &&
+      ['localhost', '127.0.0.1', '[::1]', '27.124.75.241'].includes(url.hostname)
     );
   } catch {
     return true;
