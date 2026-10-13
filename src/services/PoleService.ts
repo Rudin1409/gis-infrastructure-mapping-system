@@ -5,10 +5,41 @@ import { PoleFilterOptions } from '@/repositories/interfaces/IPoleRepository';
 import { evaluateLocationQC } from '@/lib/gis/haversine';
 
 import { resolveProviderInfo } from '@/config/providers';
+import { dbQuery, isPostgresConfigured } from '@/lib/postgres';
 
 export class PoleService {
   async getPoles(filters?: PoleFilterOptions): Promise<Pole[]> {
     return getPoleRepository().findAll(filters);
+  }
+
+  async getSummaryCounts(): Promise<{ total: number; good: number; audit: number }> {
+    if (isPostgresConfigured()) {
+      try {
+        const { rows } = await dbQuery(
+          `SELECT 
+             count(*)::int as total, 
+             count(*) FILTER (WHERE condition = 'GOOD')::int as good, 
+             count(*) FILTER (WHERE condition != 'GOOD')::int as audit 
+           FROM poles`
+        );
+        if (rows && rows.length > 0) {
+          return {
+            total: Number(rows[0].total) || 0,
+            good: Number(rows[0].good) || 0,
+            audit: Number(rows[0].audit) || 0,
+          };
+        }
+      } catch (err) {
+        console.warn('Failed to query fast summary counts from Postgres, falling back:', err);
+      }
+    }
+
+    const allPoles = await getPoleRepository().findAll();
+    return {
+      total: allPoles.length,
+      good: allPoles.filter((p) => p.condition === 'GOOD').length,
+      audit: allPoles.filter((p) => p.condition !== 'GOOD').length,
+    };
   }
 
   async getPoleById(id: string): Promise<Pole | null> {

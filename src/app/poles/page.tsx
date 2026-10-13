@@ -1,7 +1,7 @@
 import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
 import Link from 'next/link';
-import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
+import { poleService } from '@/services/PoleService';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
 import { Database, Map, PlusCircle, ShieldCheck } from 'lucide-react';
 import PoleListFilterClient from '@/components/survey/PoleListFilterClient';
@@ -21,10 +21,12 @@ export default async function PolesListPage({
 }) {
   await requirePageUser();
   const query = await searchParams;
-  const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 
-  const [allPoles, providers] = await Promise.all([poleRepo.findAll(), providerRepo.findAll()]);
+  const [stats, providers] = await Promise.all([
+    poleService.getSummaryCounts(),
+    providerRepo.findAll(),
+  ]);
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 font-sans pb-24 animate-in fade-in duration-150">
@@ -67,21 +69,17 @@ export default async function PolesListPage({
         <div className="max-w-7xl mx-auto grid grid-cols-3 gap-2.5 mt-5">
           <div className="rounded-2xl bg-white/95 text-slate-900 p-3 border border-white/70">
             <Database className="w-4 h-4 text-blue-600" />
-            <p className="mt-2 text-xl font-black font-mono leading-none">{allPoles.length}</p>
+            <p className="mt-2 text-xl font-black font-mono leading-none">{stats.total}</p>
             <span className="text-[10px] font-bold text-slate-500">Total tiang</span>
           </div>
           <div className="rounded-2xl bg-white/95 text-slate-900 p-3 border border-white/70">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <p className="mt-2 text-xl font-black font-mono leading-none">
-              {allPoles.filter((pole) => pole.condition === 'GOOD').length}
-            </p>
+            <p className="mt-2 text-xl font-black font-mono leading-none">{stats.good}</p>
             <span className="text-[10px] font-bold text-slate-500">Kondisi baik</span>
           </div>
           <div className="rounded-2xl bg-white/95 text-slate-900 p-3 border border-white/70">
             <Database className="w-4 h-4 text-amber-600" />
-            <p className="mt-2 text-xl font-black font-mono leading-none">
-              {allPoles.filter((pole) => pole.condition !== 'GOOD').length}
-            </p>
+            <p className="mt-2 text-xl font-black font-mono leading-none">{stats.audit}</p>
             <span className="text-[10px] font-bold text-slate-500">Perlu audit</span>
           </div>
         </div>
@@ -89,7 +87,7 @@ export default async function PolesListPage({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 -mt-2 relative z-10">
         <PoleListFilterClient
-          initialPoles={allPoles}
+          initialPoles={[]}
           providers={providers}
           initialQuery={query?.q}
           initialKecamatan={query?.kecamatan}

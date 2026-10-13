@@ -592,7 +592,7 @@ export default function PoleListFilterClient({
 
       {/* 4. Results List of Poles */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-        {isLoading ? (
+        {isLoading && livePoles.length === 0 ? (
           /* SKELETON LOADING UNTUK DAFTAR TIANG */
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
