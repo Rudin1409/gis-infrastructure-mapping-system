@@ -9,10 +9,12 @@ import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 import { DashboardStats } from '@/services/DashboardService';
 import { useSupabaseRealtimePoles } from '@/hooks/useSupabaseRealtimePoles';
 import { formatGoogleDriveImageUrl } from '@/lib/utils/driveImage';
+import SpatialArModal from '@/components/ar/SpatialArModal';
 import {
   Map,
   Plus,
   PlusCircle,
+  Scan,
   Activity,
   CheckCircle2,
   AlertTriangle,
@@ -79,6 +81,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
   const [greeting, setGreeting] = useState('Selamat Bertugas');
   const [timeStr, setTimeStr] = useState('');
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PROVIDERS' | 'DISTRICTS'>('OVERVIEW');
+  const [isArModalOpen, setIsArModalOpen] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -568,7 +571,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
           </div>
 
           <div
-            className={`grid gap-2 sm:gap-2.5 ${isDesktop ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'}`}
+            className={`grid gap-2 sm:gap-2.5 ${isDesktop ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-2'}`}
           >
             {/* 1. Input Survei GPS */}
             <Link
@@ -755,6 +758,30 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 </p>
               </div>
             </Link>
+
+            {/* 9. Visualisasi & Radar AR Spasial */}
+            <button
+              type="button"
+              onClick={() => setIsArModalOpen(true)}
+              className="min-h-[124px] p-3.5 bg-white rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(15,23,42,0.04)] hover:border-violet-400 hover:shadow-md transition-all group flex flex-col justify-between text-left cursor-pointer"
+            >
+              <div className="flex items-start justify-between">
+                <div className="w-10 h-10 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-all shadow-xs">
+                  <Scan className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <span className="px-2 py-0.5 bg-violet-50 text-violet-700 border border-violet-200 font-bold text-[9px] rounded-full uppercase">
+                  AR 3D
+                </span>
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-slate-900 group-hover:text-violet-600 transition-colors">
+                  Kamera &amp; Radar AR
+                </h3>
+                <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wide mt-1">
+                  Sensor + HUD Spasial
+                </p>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -1158,6 +1185,13 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
           )}
         </div>
       </div>
+
+      {/* Augmented Reality Spatial Radar HUD Modal */}
+      <SpatialArModal
+        isOpen={isArModalOpen}
+        onClose={() => setIsArModalOpen(false)}
+        poles={livePoles}
+      />
     </div>
   );
 }
