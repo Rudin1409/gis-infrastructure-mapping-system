@@ -67,9 +67,9 @@ jobs:
 
       - name: Deploy to Server Baru
         env:
-          TARGET_HOST: ${{ secrets.NEW_VPS_HOST || '27.124.75.241' }}
-          TARGET_PORT: ${{ secrets.NEW_VPS_PORT || '9393' }}
-          TARGET_USER: ${{ secrets.NEW_VPS_USER || 'admin' }}
+          TARGET_HOST: '27.124.75.241'
+          TARGET_PORT: '9393'
+          TARGET_USER: 'admin'
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           test -n "$SSH_KEY" || { echo "VPS_SSH_KEY is not configured"; exit 1; }
