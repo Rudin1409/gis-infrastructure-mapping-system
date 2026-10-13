@@ -4,24 +4,11 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Pole } from '@/types/pole';
 
 function buildPoleSnapshotSignature(poles: Pole[]): string {
-  return poles
-    .map((pole) =>
-      [
-        pole.id,
-        pole.updatedAt || '',
-        pole.createdAt || '',
-        pole.poleLatitude,
-        pole.poleLongitude,
-        pole.poleCode || '',
-        pole.providerId || '',
-        pole.providerName || '',
-        pole.infrastructureCategory || '',
-        pole.kecamatan || '',
-        pole.kelurahan || '',
-        pole.road || '',
-      ].join('~')
-    )
-    .join('|');
+  if (!poles || poles.length === 0) return 'empty';
+  const first = poles[0];
+  const mid = poles[Math.floor(poles.length / 2)];
+  const last = poles[poles.length - 1];
+  return `${poles.length}~${first?.id || ''}~${first?.updatedAt || ''}~${mid?.id || ''}~${last?.id || ''}`;
 }
 
 // Nama hook dipertahankan untuk kompatibilitas. Pembaruan menggunakan polling
@@ -49,11 +36,39 @@ export function useSupabaseRealtimePoles(
     }
   }, [initialPoles]);
 
+  const lastRevisionRef = useRef<{ count: number; latest: string }>({
+    count: initialPoles.length,
+    latest: '',
+  });
+
   // Fetch from the app API so the hook works with either Supabase atau PostgreSQL lokal VPS.
-  const fetchFreshPoles = useCallback(async (showLoading = false) => {
+  const fetchFreshPoles = useCallback(async (showLoading = false, force = false) => {
     try {
       if (showLoading) setIsLoading(true);
       else setIsSyncing(true);
+
+      // Lightweight revision check: only download full 18MB if count or latest changed
+      if (!force && lastRevisionRef.current.count > 0) {
+        try {
+          const revRes = await fetch('/api/poles/revision');
+          if (revRes.ok) {
+            const revJson = await revRes.json();
+            if (
+              revJson?.success &&
+              revJson.count === lastRevisionRef.current.count &&
+              revJson.latest === lastRevisionRef.current.latest
+            ) {
+              // Data is identical! No need to download or parse full dataset.
+              return;
+            }
+            if (revJson?.success) {
+              lastRevisionRef.current = { count: revJson.count, latest: revJson.latest };
+            }
+          }
+        } catch (_) {
+          // If revision check fails, fall through to full fetch
+        }
+      }
 
       const res = await fetch('/api/poles', { cache: 'no-store' });
       const json = await res.json();
@@ -67,10 +82,11 @@ export function useSupabaseRealtimePoles(
           return;
         }
 
-        const nextSignature = buildPoleSnapshotSignature(nextPoles);
+        const nextSignature = `${nextPoles.length}~${nextPoles[0]?.id || ''}~${nextPoles[0]?.updatedAt || ''}`;
 
         if (nextSignature !== polesSignatureRef.current) {
           polesSignatureRef.current = nextSignature;
+          lastRevisionRef.current.count = nextPoles.length;
           setPoles(nextPoles);
           if (onPolesChangeRef.current) {
             onPolesChangeRef.current(nextPoles);
@@ -90,13 +106,13 @@ export function useSupabaseRealtimePoles(
   useEffect(() => {
     // 1. Only fetch immediately if initialPoles was empty
     if (!initialPoles || initialPoles.length === 0) {
-      fetchFreshPoles(true);
+      fetchFreshPoles(true, true);
     }
 
-    // 2. Periodic background refresh every 20 seconds
+    // 2. Periodic background refresh every 25 seconds via lightweight revision check
     const interval = window.setInterval(() => {
-      fetchFreshPoles(false);
-    }, 20000);
+      fetchFreshPoles(false, false);
+    }, 25000);
 
     // 3. Global Hard-Refresh Event Listener (Tombol Reload Header)
     const handleHardRefresh = () => {

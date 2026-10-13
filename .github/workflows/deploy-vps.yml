@@ -14,10 +14,10 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    name: Build and deploy
+  build:
+    name: Verify & Package Release
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Check out source
@@ -39,37 +39,83 @@ jobs:
       - name: Package committed source
         run: git archive --format=tar.gz --output=release.tar.gz "$GITHUB_SHA"
 
-      - name: Configure SSH
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle
+          path: release.tar.gz
+          retention-days: 1
+
+  deploy-new-server:
+    name: Deploy to Server Baru (27.124.75.241)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out deploy script
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/vps-deploy.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Download release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+
+      - name: Deploy to Server Baru
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
+          TARGET_HOST: ${{ secrets.NEW_VPS_HOST || '27.124.75.241' }}
+          TARGET_PORT: ${{ secrets.NEW_VPS_PORT || '9393' }}
+          TARGET_USER: ${{ secrets.NEW_VPS_USER || 'admin' }}
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
-          test -n "$VPS_HOST"
-          test -n "$VPS_SSH_KEY"
-          VPS_PORT="${VPS_PORT:-22}"
+          test -n "$SSH_KEY" || { echo "VPS_SSH_KEY is not configured"; exit 1; }
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          ssh-keyscan -p "$TARGET_PORT" -H "$TARGET_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Upload release
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
-        run: |
-          VPS_PORT="${VPS_PORT:-22}"
-          test -n "$VPS_USER"
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p /home/admin/gis-deploy/incoming"
-          scp -P "$VPS_PORT" release.tar.gz "$VPS_USER@$VPS_HOST:/home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz"
-          scp -P "$VPS_PORT" scripts/vps-deploy.sh "$VPS_USER@$VPS_HOST:/home/admin/gis-deploy/vps-deploy.sh"
+          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "mkdir -p /home/admin/gis-deploy/incoming"
+          scp -P "$TARGET_PORT" release.tar.gz "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz"
+          scp -P "$TARGET_PORT" scripts/vps-deploy.sh "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/vps-deploy.sh"
+          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "chmod 700 /home/admin/gis-deploy/vps-deploy.sh && /home/admin/gis-deploy/vps-deploy.sh /home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz $GITHUB_SHA"
 
-      - name: Activate release
+  deploy-old-server:
+    name: Deploy to Server Lama (103.179.57.4)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out deploy script
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/vps-deploy.sh
+          sparse-checkout-cone-mode: false
+
+      - name: Download release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+
+      - name: Deploy to Server Lama
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_PORT: ${{ secrets.VPS_PORT }}
+          TARGET_HOST: ${{ secrets.VPS_HOST || '103.179.57.4' }}
+          TARGET_PORT: ${{ secrets.VPS_PORT || '22' }}
+          TARGET_USER: ${{ secrets.VPS_USER || 'admin' }}
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
-          VPS_PORT="${VPS_PORT:-22}"
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "chmod 700 /home/admin/gis-deploy/vps-deploy.sh && /home/admin/gis-deploy/vps-deploy.sh /home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz $GITHUB_SHA"
+          test -n "$SSH_KEY" || { echo "VPS_SSH_KEY is not configured"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$TARGET_PORT" -H "$TARGET_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "mkdir -p /home/admin/gis-deploy/incoming"
+          scp -P "$TARGET_PORT" release.tar.gz "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz"
+          scp -P "$TARGET_PORT" scripts/vps-deploy.sh "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/vps-deploy.sh"
+          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "chmod 700 /home/admin/gis-deploy/vps-deploy.sh && /home/admin/gis-deploy/vps-deploy.sh /home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz $GITHUB_SHA"

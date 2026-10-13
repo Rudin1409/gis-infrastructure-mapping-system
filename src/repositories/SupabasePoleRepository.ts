@@ -162,20 +162,37 @@ function applyPoleFilters(poles: Pole[], filters?: PoleFilterOptions): Pole[] {
   return result;
 }
 
+let cachedPoles: Pole[] | null = null;
+let lastCacheTimestamp = 0;
+const CACHE_TTL_MS = 15000; // 15 seconds fast in-memory cache
+
+export function invalidatePoleMemoryCache() {
+  cachedPoles = null;
+  lastCacheTimestamp = 0;
+}
+
 export class SupabasePoleRepository implements IPoleRepository {
   /**
    * 3-Tier Cascade Fallback Read:
-   * Tier 1: PostgreSQL VPS Utama
+   * Tier 1: PostgreSQL VPS Utama (with 15s in-memory cache for speed)
    * Tier 2: Supabase (Cadangan jika VPS tidak dapat dijangkau)
    * Tier 3: Google Sheets via Service Account / Apps Script (Cadangan darurat)
    */
   async findAll(filters?: PoleFilterOptions): Promise<Pole[]> {
+    // Check in-memory cache first for instant sub-millisecond response
+    if (cachedPoles && Date.now() - lastCacheTimestamp < CACHE_TTL_MS) {
+      return applyPoleFilters(cachedPoles, filters);
+    }
+
     // --- TIER 1: PostgreSQL VPS Utama ---
     if (isPostgresConfigured()) {
       try {
         const { rows } = await dbQuery('SELECT * FROM poles ORDER BY created_at DESC');
         if (rows) {
-          return applyPoleFilters(rows.map(mapDbToPole), filters);
+          const allPoles = rows.map(mapDbToPole);
+          cachedPoles = allPoles;
+          lastCacheTimestamp = Date.now();
+          return applyPoleFilters(allPoles, filters);
         }
       } catch (pgError: any) {
         console.warn(
@@ -349,6 +366,7 @@ export class SupabasePoleRepository implements IPoleRepository {
       throw new Error('Penyimpanan utama belum berhasil. Survei harus dicoba kembali.');
     }
 
+    invalidatePoleMemoryCache();
     return createdPole;
   }
 
@@ -400,6 +418,7 @@ export class SupabasePoleRepository implements IPoleRepository {
       throw new Error('Pembaruan pada penyimpanan utama belum berhasil.');
     }
 
+    invalidatePoleMemoryCache();
     return updatedPole;
   }
 
@@ -434,6 +453,7 @@ export class SupabasePoleRepository implements IPoleRepository {
       );
     }
 
+    invalidatePoleMemoryCache();
     return deletedFromPg || true;
   }
 
