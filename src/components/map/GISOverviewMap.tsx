@@ -192,7 +192,7 @@ export default function GISOverviewMap({
   licenseReason,
 }: GISOverviewMapProps) {
   const { user } = useAuth();
-  const { poles: livePoles, refreshPoles } = useSupabaseRealtimePoles(poles);
+  const { poles: livePoles, refreshPoles, isLoading } = useSupabaseRealtimePoles(poles);
   const { viewMode, toggleViewMode, isFullscreen, toggleFullscreen } = useViewMode();
   const [isLocked, setIsLocked] = useState<boolean>(isLicenseLocked);
   const [lockReason, setLockReason] = useState<string>(
@@ -480,6 +480,7 @@ export default function GISOverviewMap({
       zoom: LUBUKLINGGAU_CENTER.zoom,
       maxZoom: 21,
       zoomControl: false,
+      preferCanvas: true,
     });
 
     const tileConfig = MAP_TILE_LAYERS[tileMode];
@@ -2572,6 +2573,14 @@ export default function GISOverviewMap({
               Tampilkan ({filteredPoles.length} Tiang)
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Sleek Non-Blocking Background Loading Indicator */}
+      {isLoading && livePoles.length === 0 && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500] px-3.5 py-1.5 bg-slate-950/85 text-white text-[11px] font-bold rounded-full shadow-2xl border border-slate-700/80 backdrop-blur-md flex items-center gap-2 select-none pointer-events-none">
+          <div className="w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          <span>Sinkronisasi 14.840 Titik Tiang...</span>
         </div>
       )}
 

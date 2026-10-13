@@ -1,7 +1,6 @@
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Pole } from '@/types/pole';
+import { getCachedPoles, saveCachedPoles } from '@/lib/gis/polesClientCache';
 
 function buildPoleSnapshotSignature(poles: Pole[]): string {
   if (!poles || poles.length === 0) return 'empty';
@@ -11,8 +10,6 @@ function buildPoleSnapshotSignature(poles: Pole[]): string {
   return `${poles.length}~${first?.id || ''}~${first?.updatedAt || ''}~${mid?.id || ''}~${last?.id || ''}`;
 }
 
-// Nama hook dipertahankan untuk kompatibilitas. Pembaruan menggunakan polling
-// API aplikasi setiap 20 detik, sehingga tidak bergantung pada Supabase Realtime.
 export function useSupabaseRealtimePoles(
   initialPoles: Pole[] = [],
   onPolesChange?: (poles: Pole[]) => void
@@ -47,7 +44,7 @@ export function useSupabaseRealtimePoles(
       if (showLoading) setIsLoading(true);
       else setIsSyncing(true);
 
-      // Lightweight revision check: only download full 18MB if count or latest changed
+      // Lightweight revision check: only download full dataset if count or latest changed
       if (!force && lastRevisionRef.current.count > 0) {
         try {
           const revRes = await fetch('/api/poles/revision');
@@ -77,17 +74,25 @@ export function useSupabaseRealtimePoles(
         const nextPoles = json.data as Pole[];
 
         // Safeguard: Never replace an existing valid list of poles with an empty array or glitch response
-        if (nextPoles.length === 0 && polesSignatureRef.current.length > 0) {
+        if (
+          nextPoles.length === 0 &&
+          polesSignatureRef.current.length > 0 &&
+          polesSignatureRef.current !== 'empty'
+        ) {
           console.warn('Realtime fetch returned 0 poles; keeping last valid snapshot.');
           return;
         }
 
-        const nextSignature = `${nextPoles.length}~${nextPoles[0]?.id || ''}~${nextPoles[0]?.updatedAt || ''}`;
+        const nextSignature = buildPoleSnapshotSignature(nextPoles);
 
         if (nextSignature !== polesSignatureRef.current) {
           polesSignatureRef.current = nextSignature;
           lastRevisionRef.current.count = nextPoles.length;
           setPoles(nextPoles);
+          // Persist to browser IndexedDB cache asynchronously
+          saveCachedPoles(nextPoles, nextPoles.length, lastRevisionRef.current.latest).catch(
+            () => {}
+          );
           if (onPolesChangeRef.current) {
             onPolesChangeRef.current(nextPoles);
           }
@@ -104,9 +109,32 @@ export function useSupabaseRealtimePoles(
   }, []);
 
   useEffect(() => {
-    // 1. Only fetch immediately if initialPoles was empty
+    let isCancelled = false;
+
+    // 1. If initialPoles was empty, try instant restore from client-side IndexedDB cache
     if (!initialPoles || initialPoles.length === 0) {
-      fetchFreshPoles(true, true);
+      setIsLoading(true);
+      getCachedPoles()
+        .then((cached) => {
+          if (isCancelled) return;
+          if (cached && Array.isArray(cached.poles) && cached.poles.length > 0) {
+            setPoles(cached.poles);
+            lastRevisionRef.current = { count: cached.count, latest: cached.latest };
+            polesSignatureRef.current = buildPoleSnapshotSignature(cached.poles);
+            setIsLoading(false);
+            if (onPolesChangeRef.current) {
+              onPolesChangeRef.current(cached.poles);
+            }
+            // Check revision in background to see if sync is needed
+            fetchFreshPoles(false, false);
+          } else {
+            // First time visit: fetch fresh from server
+            fetchFreshPoles(true, true);
+          }
+        })
+        .catch(() => {
+          if (!isCancelled) fetchFreshPoles(true, true);
+        });
     }
 
     // 2. Periodic background refresh every 25 seconds via lightweight revision check
@@ -116,13 +144,14 @@ export function useSupabaseRealtimePoles(
 
     // 3. Global Hard-Refresh Event Listener (Tombol Reload Header)
     const handleHardRefresh = () => {
-      fetchFreshPoles(false);
+      fetchFreshPoles(false, true);
     };
     if (typeof window !== 'undefined') {
       window.addEventListener('gis:hard-refresh', handleHardRefresh);
     }
 
     return () => {
+      isCancelled = true;
       window.clearInterval(interval);
       if (typeof window !== 'undefined') {
         window.removeEventListener('gis:hard-refresh', handleHardRefresh);
@@ -135,6 +164,6 @@ export function useSupabaseRealtimePoles(
     isLive,
     isLoading,
     isSyncing,
-    refreshPoles: () => fetchFreshPoles(false),
+    refreshPoles: () => fetchFreshPoles(false, true),
   };
 }
