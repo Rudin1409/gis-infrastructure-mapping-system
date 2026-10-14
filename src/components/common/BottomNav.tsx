@@ -27,7 +27,7 @@ export default function BottomNav() {
     { href: '/poles', label: 'Katalog', icon: Database },
     {
       href: isAdmin ? '/admin' : '/profile',
-      label: isAdmin ? 'Admin' : 'Profil',
+      label: isAdmin ? 'Pengaturan' : 'Profil',
       icon: isAdmin ? Settings : User,
     },
   ];

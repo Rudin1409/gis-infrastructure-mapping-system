@@ -445,30 +445,30 @@ export default function AdminPage() {
                   <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
                 </Link>
 
-                {/* 4. Akses Khusus Admin */}
+                {/* 4. Menu Khusus Admin */}
                 <Link
                   href="/system-gateway"
-                  className="group rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs transition hover:shadow-md hover:border-emerald-300 flex items-center justify-between gap-4"
+                  className="group rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs transition hover:shadow-md hover:border-emerald-300 flex items-center justify-between gap-3 sm:gap-4"
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 group-hover:scale-105 transition">
-                      <ShieldCheck className="h-6 w-6" />
+                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 group-hover:scale-105 transition">
+                      <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-black text-slate-950 truncate">
-                          Akses Khusus Admin
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <h3 className="text-xs sm:text-sm font-black text-slate-950 truncate">
+                          Menu Khusus Admin
                         </h3>
-                        <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 shrink-0">
+                        <span className="rounded-md bg-emerald-50 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-emerald-700 shrink-0">
                           Khusus Admin
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500 leading-relaxed truncate">
-                        Atur kuota GIS &amp; kelola pengguna (CRUD User)
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 leading-relaxed truncate">
+                        Kelola akun pengguna &amp; konfigurasi sistem
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-emerald-600 transition shrink-0" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-emerald-600 transition shrink-0" />
                 </Link>
               </div>
             </div>

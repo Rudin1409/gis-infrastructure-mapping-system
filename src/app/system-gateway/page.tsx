@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  ShieldAlert,
   Lock,
   Unlock,
   CheckCircle2,
@@ -15,15 +14,15 @@ import {
   Search,
   Edit3,
   Trash2,
-  Key,
   Phone,
   Mail,
   Building,
   ShieldCheck,
   X,
   RefreshCw,
-  UserCheck,
-  UserX,
+  Sliders,
+  Shield,
+  KeyRound,
 } from 'lucide-react';
 import GISApiQuotaExceededLock from '@/components/common/GISApiQuotaExceededLock';
 
@@ -47,10 +46,10 @@ export default function SystemGatewayPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Active Tab: 'quota' or 'users'
-  const [activeTab, setActiveTab] = useState<'quota' | 'users'>('quota');
+  // Default active tab is 'users' (Manajemen Akun Pengguna) as requested
+  const [activeTab, setActiveTab] = useState<'users' | 'quota'>('users');
 
-  // Quota states
+  // Quota / System status states
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [reason, setReason] = useState<string>(
     'Akses modul pemetaan spasial dan visualisasi layer peta ditangguhkan otomatis oleh API Gateway karena volume data dan pemanggilan layer telah melampaui batas alokasi kuota paket yang tersedia.'
@@ -92,7 +91,7 @@ export default function SystemGatewayPage() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Fetch current quota status on mount
+  // Fetch current status on mount
   const fetchCurrentStatus = async () => {
     try {
       setIsLoading(true);
@@ -130,16 +129,16 @@ export default function SystemGatewayPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthorized && activeTab === 'users') {
+    if (isAuthorized) {
       fetchUsers();
     }
-  }, [isAuthorized, activeTab]);
+  }, [isAuthorized]);
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setAuthError(null);
     if (!pin || pin.length < 4) {
-      setAuthError('Masukkan PIN Keamanan Master dengan benar.');
+      setAuthError('Masukkan PIN Otorisasi Master dengan benar.');
       return;
     }
 
@@ -185,9 +184,13 @@ export default function SystemGatewayPage() {
       if (res.ok && data.success) {
         setIsLocked(data.isLocked);
         setUpdatedAt(data.updatedAt || new Date().toISOString());
-        showToast(data.message);
+        showToast(
+          data.isLocked
+            ? 'Akses peta berhasil dibatasi (Mode Penangguhan Aktif).'
+            : 'Akses peta berhasil dibuka normal kembali.'
+        );
       } else {
-        alert(data.error || 'Gagal mengubah status lisensi peta.');
+        alert(data.error || 'Gagal mengubah status akses peta.');
       }
     } catch (err: any) {
       alert('Terjadi kesalahan koneksi server.');
@@ -258,14 +261,14 @@ export default function SystemGatewayPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        showToast(`Pengguna "${formData.name}" berhasil ditambahkan.`);
+        showToast(`Akun "${formData.name}" berhasil ditambahkan.`);
         setShowAddModal(false);
         fetchUsers();
       } else {
-        setFormError(data.error || 'Gagal menambahkan pengguna.');
+        setFormError(data.error || 'Gagal menambahkan akun.');
       }
     } catch (err: any) {
-      setFormError('Terjadi kesalahan saat menyimpan data pengguna.');
+      setFormError('Terjadi kesalahan saat menyimpan data akun.');
     } finally {
       setIsSubmittingUser(false);
     }
@@ -290,14 +293,14 @@ export default function SystemGatewayPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        showToast(`Data "${formData.name}" berhasil diperbarui.`);
+        showToast(`Data akun "${formData.name}" berhasil diperbarui.`);
         setShowEditModal(false);
         fetchUsers();
       } else {
-        setFormError(data.error || 'Gagal memperbarui pengguna.');
+        setFormError(data.error || 'Gagal memperbarui akun.');
       }
     } catch (err: any) {
-      setFormError('Terjadi kesalahan saat memperbarui pengguna.');
+      setFormError('Terjadi kesalahan saat memperbarui akun.');
     } finally {
       setIsSubmittingUser(false);
     }
@@ -315,14 +318,14 @@ export default function SystemGatewayPage() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        showToast(`Pengguna "${selectedUser.name}" berhasil dihapus.`);
+        showToast(`Akun "${selectedUser.name}" berhasil dihapus.`);
         setShowDeleteModal(false);
         fetchUsers();
       } else {
-        alert(data.error || 'Gagal menghapus pengguna.');
+        alert(data.error || 'Gagal menghapus akun.');
       }
     } catch (err: any) {
-      alert('Terjadi kesalahan saat menghapus pengguna.');
+      alert('Terjadi kesalahan saat menghapus akun.');
     } finally {
       setIsSubmittingUser(false);
     }
@@ -348,36 +351,36 @@ export default function SystemGatewayPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col p-4 sm:p-6 lg:p-8 font-sans selection:bg-emerald-600 selection:text-white">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col p-3 sm:p-6 lg:p-8 font-sans selection:bg-emerald-600 selection:text-white">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-950 border border-emerald-500/80 text-emerald-200 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-bold animate-in fade-in slide-in-from-top-4">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <span>{toastMessage}</span>
+        <div className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-950/95 border border-emerald-500/80 text-emerald-200 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-xs font-bold animate-in fade-in slide-in-from-top-4 max-w-[90vw] text-center">
+          <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" />
+          <span className="truncate">{toastMessage}</span>
         </div>
       )}
 
-      {/* Screen 1: Admin Authorization */}
+      {/* Screen 1: Admin Authorization PIN */}
       {!isAuthorized ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl animate-in zoom-in-95 duration-300">
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-950/70 text-emerald-400 border border-emerald-700/50 flex items-center justify-center mx-auto shadow-xl">
-                <ShieldCheck className="w-8 h-8" />
+        <div className="flex-1 flex items-center justify-center py-6">
+          <div className="w-full max-w-[360px] sm:max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-[0_25px_70px_rgba(0,0,0,0.8)] backdrop-blur-2xl animate-in zoom-in-95 duration-300">
+            <div className="text-center space-y-2.5 sm:space-y-3">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-emerald-950/70 text-emerald-400 border border-emerald-700/50 flex items-center justify-center mx-auto shadow-xl">
+                <ShieldCheck className="w-7 h-7 sm:w-8 sm:h-8" />
               </div>
               <div>
-                <h2 className="text-lg font-black tracking-wider uppercase text-white font-mono">
-                  Akses Khusus Admin
+                <h2 className="text-sm sm:text-base font-black tracking-wider uppercase text-white font-mono">
+                  Menu Khusus Admin
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Kontrol Kuota GIS &amp; Manajemen Pengguna Sistem
+                <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
+                  Autentikasi Akses Administrator Sistem
                 </p>
               </div>
             </div>
 
-            <form onSubmit={handleLogin} className="mt-6 space-y-4">
+            <form onSubmit={handleLogin} className="mt-5 sm:mt-6 space-y-3.5 sm:space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 text-center">
                   PIN Otorisasi Master:
                 </label>
                 <div className="relative">
@@ -388,12 +391,12 @@ export default function SystemGatewayPage() {
                     maxLength={15}
                     placeholder="••••••"
                     autoFocus
-                    className="w-full px-4 py-3.5 bg-slate-950 border border-slate-700/80 rounded-2xl text-center text-xl font-mono tracking-widest text-white placeholder-slate-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                    className="w-full px-3 py-3 sm:px-4 sm:py-3.5 bg-slate-950 border border-slate-700/80 rounded-2xl text-center text-lg sm:text-xl font-mono tracking-widest text-white placeholder-slate-600 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                   />
                 </div>
                 {authError && (
-                  <div className="mt-2 text-xs font-bold text-red-400 flex items-center gap-1.5 justify-center">
-                    <AlertTriangle className="w-3.5 h-3.5" />
+                  <div className="mt-2 text-[11px] font-bold text-red-400 flex items-center gap-1.5 justify-center text-center">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                     <span>{authError}</span>
                   </div>
                 )}
@@ -402,220 +405,107 @@ export default function SystemGatewayPage() {
               <button
                 type="submit"
                 disabled={isLoading || !pin}
-                className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-emerald-600/30 cursor-pointer transition-all disabled:opacity-50"
+                className="w-full py-3 sm:py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-emerald-600/30 cursor-pointer transition-all disabled:opacity-50"
               >
-                {isLoading ? 'Memverifikasi...' : 'Buka Akses Khusus Admin'}
+                {isLoading ? 'Memverifikasi...' : 'Buka Menu Admin'}
               </button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+            <div className="mt-5 pt-3.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
               <Link
                 href="/admin"
                 className="text-slate-400 hover:text-white flex items-center gap-1 font-medium transition"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Dashboard Admin</span>
+                <span>Pengaturan</span>
               </Link>
-              <span className="font-mono text-slate-500 text-[10px] uppercase">
-                Khusus Administrator
-              </span>
+              <span className="font-mono text-slate-500 text-[10px] uppercase">Khusus Admin</span>
             </div>
           </div>
         </div>
       ) : (
         /* Screen 2: Admin Authorized Control Center */
-        <div className="w-full max-w-5xl mx-auto space-y-6">
+        <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-6">
           {/* Top Bar Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-xl backdrop-blur-xl">
-            <div className="flex items-center gap-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-xl backdrop-blur-xl">
+            <div className="flex items-center gap-3">
               <Link
                 href="/admin"
-                className="w-10 h-10 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition shrink-0"
-                title="Kembali ke Dashboard Admin"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition shrink-0"
+                title="Kembali ke Menu Pengaturan"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </Link>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-black text-white uppercase tracking-wider font-mono">
-                    Akses Khusus Admin
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-sm sm:text-base font-black text-white uppercase tracking-wider font-mono truncate">
+                    Menu Khusus Admin
                   </h1>
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] sm:text-[10px] font-bold shrink-0">
                     Terverifikasi
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Pengaturan Alokasi Kuota GIS &amp; Pengelolaan Akun Pengguna (CRUD)
+                <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                  Kelola Akun Pengguna &amp; Konfigurasi Sistem
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
               <button
                 type="button"
                 onClick={() => {
                   setIsAuthorized(false);
                   setPin('');
                 }}
-                className="py-2 px-4 bg-slate-800 hover:bg-red-950/80 hover:text-red-300 hover:border-red-800/80 border border-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="py-1.5 px-3 sm:py-2 sm:px-4 bg-slate-800 hover:bg-red-950/80 hover:text-red-300 border border-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 Kunci &amp; Keluar
               </button>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-3 border-b border-slate-800 pb-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab('quota')}
-              className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition cursor-pointer ${
-                activeTab === 'quota'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                  : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
-              }`}
-            >
-              <ShieldAlert className="w-4 h-4" />
-              <span>Pengaturan Kuota GIS</span>
-            </button>
-
+          {/* Navigation Tabs - Mobile Optimized */}
+          <div className="flex items-center gap-2 sm:gap-3 border-b border-slate-800 pb-2 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition cursor-pointer ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition cursor-pointer whitespace-nowrap ${
                 activeTab === 'users'
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
                   : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
               }`}
             >
-              <Users className="w-4 h-4" />
-              <span>Manajemen Pengguna ({users.length})</span>
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Kelola Akun Pengguna ({users.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('quota')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition cursor-pointer whitespace-nowrap ${
+                activeTab === 'quota'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                  : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>Kontrol Akses &amp; Layanan Peta</span>
             </button>
           </div>
 
-          {/* TAB 1: PENGATURAN KUOTA GIS */}
-          {activeTab === 'quota' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              {/* Big Master Toggle Hero Card */}
-              <div
-                className={`p-6 sm:p-8 rounded-3xl border transition-all ${
-                  isLocked
-                    ? 'bg-red-950/40 border-red-500/60 shadow-xl shadow-red-950/50'
-                    : 'bg-emerald-950/40 border-emerald-500/60 shadow-xl shadow-emerald-950/50'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
-                  <div className="space-y-2 max-w-xl">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-black/40 border border-white/10">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${
-                          isLocked ? 'bg-red-500 animate-ping' : 'bg-emerald-400 animate-pulse'
-                        }`}
-                      />
-                      <span>
-                        {isLocked
-                          ? 'Status Kuota: DITANGGUHKAN / TERKUNCI'
-                          : 'Status Kuota: NORMAL (AKTIF)'}
-                      </span>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
-                      {isLocked
-                        ? 'Peta GIS sedang TERKUNCI untuk seluruh pengguna umum.'
-                        : 'Peta GIS sedang DIBUKA dan dapat diakses normal.'}
-                    </h3>
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      {isLocked
-                        ? 'Pengguna yang membuka peta GIS maupun survei tiang baru akan melihat respon API Gateway 429 Quota Exceeded (Layar Peringatan Kuota Terlampaui).'
-                        : 'Semua surveyor dan dinas dapat melihat seluruh titik tiang, koordinat, dan layer peta secara bebas.'}
-                    </p>
-                  </div>
-
-                  {/* Action Button */}
-                  <div className="flex-shrink-0">
-                    {isLocked ? (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleLock(false)}
-                        disabled={isSaving}
-                        className="py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-emerald-600/30 cursor-pointer transition-all disabled:opacity-50 flex items-center gap-2"
-                      >
-                        <Unlock className="w-4 h-4" />
-                        <span>{isSaving ? 'Memproses...' : 'Buka Kunci Peta (Normal)'}</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleLock(true)}
-                        disabled={isSaving}
-                        className="py-4 px-6 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-red-600/30 cursor-pointer transition-all disabled:opacity-50 flex items-center gap-2"
-                      >
-                        <Lock className="w-4 h-4" />
-                        <span>{isSaving ? 'Memproses...' : 'Kunci Peta Sekarang'}</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Reason Configuration */}
-              <div className="bg-slate-900/90 p-6 rounded-3xl border border-slate-800 space-y-3 shadow-lg">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Pesan / Alasan Penangguhan Kuota API Gateway:
-                </label>
-                <textarea
-                  rows={3}
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Tuliskan pesan alasan penangguhan kuota..."
-                  className="w-full p-4 bg-slate-950 border border-slate-700/80 rounded-2xl text-xs text-slate-200 outline-none focus:border-emerald-500 font-sans leading-relaxed"
-                />
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-slate-400">
-                  <span>
-                    * Pesan resmi API Gateway ini otomatis tampil di seluruh halaman peta saat kuota
-                    dikunci.
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleLock(isLocked)}
-                    disabled={isSaving}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50 self-end sm:self-auto"
-                  >
-                    Simpan Perubahan Teks
-                  </button>
-                </div>
-              </div>
-
-              {/* Live Preview of What Users See */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-                  <span className="flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-emerald-400" />
-                    <span>Pratinjau Layar Kunci Pengguna:</span>
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-500">
-                    Terakhir diubah: {updatedAt ? new Date(updatedAt).toLocaleString('id-ID') : '-'}
-                  </span>
-                </div>
-
-                <div className="rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
-                  <GISApiQuotaExceededLock customMessage={reason} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: MANAJEMEN PENGGUNA (CRUD USER) */}
+          {/* TAB 1: KELOLA AKUN PENGGUNA (CRUD USER) - DEFAULT */}
           {activeTab === 'users' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              {/* Header Actions & Stats */}
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
+              {/* Header Actions & Search Toolbar */}
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xl space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-base font-black text-white uppercase tracking-wider font-mono">
-                      Daftar Pengguna Sistem
+                    <h2 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider font-mono">
+                      Daftar Akun Pengguna Sistem
                     </h2>
-                    <p className="text-xs text-slate-400">
-                      Kelola hak akses administrator dan surveyor lapangan
+                    <p className="text-[11px] sm:text-xs text-slate-400">
+                      Kelola hak akses surveyor lapangan dan administrator
                     </p>
                   </div>
 
@@ -624,32 +514,32 @@ export default function SystemGatewayPage() {
                       type="button"
                       onClick={fetchUsers}
                       disabled={isLoadingUsers}
-                      className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-2xl transition cursor-pointer"
-                      title="Refresh Data"
+                      className="p-2 sm:p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl sm:rounded-2xl transition cursor-pointer shrink-0"
+                      title="Perbarui Data"
                     >
                       <RefreshCw className={`w-4 h-4 ${isLoadingUsers ? 'animate-spin' : ''}`} />
                     </button>
                     <button
                       type="button"
                       onClick={openAddModal}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs rounded-2xl shadow-lg shadow-blue-600/30 transition cursor-pointer"
+                      className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-[11px] sm:text-xs rounded-xl sm:rounded-2xl shadow-lg shadow-blue-600/30 transition cursor-pointer"
                     >
-                      <UserPlus className="w-4 h-4" />
-                      <span>Tambah Pengguna Baru</span>
+                      <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span>+ Tambah Akun</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Search & Filters */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 pt-2 border-t border-slate-800">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Cari nama, email, nomor HP..."
-                      className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-600 outline-none focus:border-blue-500"
+                      className="w-full pl-9 pr-3 py-1.5 sm:py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-600 outline-none focus:border-blue-500"
                     />
                   </div>
 
@@ -657,7 +547,7 @@ export default function SystemGatewayPage() {
                     <select
                       value={roleFilter}
                       onChange={(e) => setRoleFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 outline-none focus:border-blue-500 cursor-pointer"
+                      className="w-full px-2.5 py-1.5 sm:py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value="ALL">Semua Peran (Role)</option>
                       <option value="ADMIN">Administrator (KOMINFO)</option>
@@ -669,7 +559,7 @@ export default function SystemGatewayPage() {
                     <select
                       value={teamFilter}
                       onChange={(e) => setTeamFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 outline-none focus:border-blue-500 cursor-pointer"
+                      className="w-full px-2.5 py-1.5 sm:py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value="ALL">Semua Instansi / Tim</option>
                       <option value="KOMINFO">DISKOMINFOTIKSAN</option>
@@ -681,18 +571,16 @@ export default function SystemGatewayPage() {
                 </div>
               </div>
 
-              {/* User Cards / Table */}
-              <div className="space-y-3">
+              {/* User Cards List */}
+              <div className="space-y-2.5 sm:space-y-3">
                 {isLoadingUsers ? (
-                  <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-3xl border border-slate-800">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
-                    <p className="text-xs">Memuat data pengguna...</p>
+                  <div className="p-8 sm:p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl sm:rounded-3xl border border-slate-800">
+                    <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 animate-spin mx-auto mb-2 text-blue-500" />
+                    <p className="text-xs">Memuat data akun pengguna...</p>
                   </div>
                 ) : filteredUsers.length === 0 ? (
-                  <div className="p-12 text-center text-slate-500 bg-slate-900/50 rounded-3xl border border-slate-800">
-                    <p className="text-xs font-bold">
-                      Tidak ada pengguna yang cocok dengan pencarian.
-                    </p>
+                  <div className="p-8 sm:p-12 text-center text-slate-500 bg-slate-900/50 rounded-2xl sm:rounded-3xl border border-slate-800">
+                    <p className="text-xs font-bold">Tidak ada akun yang cocok dengan pencarian.</p>
                   </div>
                 ) : (
                   filteredUsers.map((user) => {
@@ -703,11 +591,11 @@ export default function SystemGatewayPage() {
                     return (
                       <div
                         key={user.id}
-                        className="bg-slate-900/80 border border-slate-800/90 hover:border-slate-700/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition shadow-md"
+                        className="bg-slate-900/80 border border-slate-800 hover:border-slate-700/90 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 transition shadow-sm"
                       >
-                        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                        <div className="flex items-start sm:items-center gap-3 min-w-0">
                           <div
-                            className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-base shrink-0 ${
+                            className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex items-center justify-center font-bold text-sm sm:text-base shrink-0 ${
                               isAdmin
                                 ? 'bg-amber-950/60 text-amber-400 border border-amber-700/50'
                                 : 'bg-blue-950/60 text-blue-400 border border-blue-700/50'
@@ -716,58 +604,58 @@ export default function SystemGatewayPage() {
                             {isAdmin ? '🏢' : '👷‍♂️'}
                           </div>
 
-                          <div className="min-w-0 space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="text-sm font-black text-white truncate">
+                          <div className="min-w-0 space-y-0.5 sm:space-y-1">
+                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                              <h3 className="text-xs sm:text-sm font-black text-white truncate max-w-[200px] sm:max-w-none">
                                 {user.name}
                               </h3>
                               <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                className={`px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border ${
                                   isAdmin
                                     ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                                     : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                 }`}
                               >
-                                {user.role}
+                                {user.role === 'ADMIN_KOMINFO' ? 'Admin' : 'Surveyor'}
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                className={`px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border ${
                                   isActive
                                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                                     : 'bg-red-500/10 text-red-400 border-red-500/20'
                                 }`}
                               >
-                                {isActive ? 'AKTIF' : 'NONAKTIF'}
+                                {isActive ? 'Aktif' : 'Nonaktif'}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-4 text-xs text-slate-400 flex-wrap">
-                              <span className="flex items-center gap-1.5 truncate">
-                                <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                            <div className="flex items-center gap-2 sm:gap-3 text-[11px] text-slate-400 flex-wrap">
+                              <span className="flex items-center gap-1 truncate max-w-[190px] sm:max-w-none">
+                                <Mail className="w-3 h-3 text-slate-500 shrink-0" />
                                 {user.email}
                               </span>
                               {user.phone && (
-                                <span className="flex items-center gap-1.5 shrink-0">
-                                  <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                <span className="flex items-center gap-1 shrink-0">
+                                  <Phone className="w-3 h-3 text-slate-500 shrink-0" />
                                   {user.phone}
                                 </span>
                               )}
-                              <span className="flex items-center gap-1.5 text-slate-500 shrink-0">
-                                <Building className="w-3.5 h-3.5 shrink-0" />
+                              <span className="flex items-center gap-1 text-slate-500 shrink-0">
+                                <Building className="w-3 h-3 shrink-0" />
                                 {user.team || 'KOMINFO'}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 pt-1 sm:pt-0">
                           <button
                             type="button"
                             onClick={() => openEditModal(user)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition cursor-pointer"
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-[11px] font-bold transition cursor-pointer"
                           >
-                            <Edit3 className="w-3.5 h-3.5 text-blue-400" />
+                            <Edit3 className="w-3 h-3 text-blue-400" />
                             <span>Edit</span>
                           </button>
 
@@ -775,9 +663,9 @@ export default function SystemGatewayPage() {
                             <button
                               type="button"
                               onClick={() => openDeleteModal(user)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/40 rounded-xl text-xs font-bold transition cursor-pointer"
+                              className="flex items-center gap-1 px-2.5 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/40 rounded-xl text-[11px] font-bold transition cursor-pointer"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3 h-3" />
                               <span>Hapus</span>
                             </button>
                           )}
@@ -790,21 +678,129 @@ export default function SystemGatewayPage() {
             </div>
           )}
 
-          {/* MODAL: TAMBAH USER */}
+          {/* TAB 2: KONTROL AKSES & STATUS PETA */}
+          {activeTab === 'quota' && (
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
+              {/* Big Master Toggle Hero Card */}
+              <div
+                className={`p-4 sm:p-6 rounded-2xl sm:rounded-3xl border transition-all ${
+                  isLocked
+                    ? 'bg-red-950/40 border-red-500/60 shadow-xl shadow-red-950/50'
+                    : 'bg-emerald-950/40 border-emerald-500/60 shadow-xl shadow-emerald-950/50'
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 text-center sm:text-left">
+                  <div className="space-y-1.5 max-w-xl">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-black/40 border border-white/10">
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          isLocked ? 'bg-red-500 animate-ping' : 'bg-emerald-400 animate-pulse'
+                        }`}
+                      />
+                      <span>
+                        {isLocked ? 'Status: Layanan Peta Terkunci' : 'Status: Layanan Peta Aktif'}
+                      </span>
+                    </div>
+                    <h3 className="text-sm sm:text-base font-bold text-white leading-tight">
+                      {isLocked
+                        ? 'Akses peta GIS sedang DITANGGUHKAN untuk pengguna umum.'
+                        : 'Akses peta GIS sedang DIBUKA dan dapat digunakan secara normal.'}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed">
+                      {isLocked
+                        ? 'Pengguna umum yang mengakses peta GIS akan melihat dialog penangguhan sistem resmi.'
+                        : 'Seluruh surveyor dan dinas dapat mengakses peta spasial dan inventaris tiang tanpa batas.'}
+                    </p>
+                  </div>
+
+                  {/* Toggle Button */}
+                  <div className="shrink-0 w-full sm:w-auto">
+                    {isLocked ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLock(false)}
+                        disabled={isSaving}
+                        className="w-full sm:w-auto py-3 px-5 sm:py-3.5 sm:px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl sm:rounded-2xl shadow-xl shadow-emerald-600/30 cursor-pointer transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Unlock className="w-4 h-4" />
+                        <span>{isSaving ? 'Memproses...' : 'Buka Akses Peta (Normal)'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLock(true)}
+                        disabled={isSaving}
+                        className="w-full sm:w-auto py-3 px-5 sm:py-3.5 sm:px-6 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl sm:rounded-2xl shadow-xl shadow-red-600/30 cursor-pointer transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Lock className="w-4 h-4" />
+                        <span>{isSaving ? 'Memproses...' : 'Kunci Akses Peta'}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Reason Configuration */}
+              <div className="bg-slate-900/90 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-800 space-y-2.5 shadow-lg">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Pesan Resmi Penangguhan Layanan:
+                </label>
+                <textarea
+                  rows={3}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Tuliskan pesan penangguhan resmi..."
+                  className="w-full p-3 sm:p-3.5 bg-slate-950 border border-slate-700/80 rounded-xl sm:rounded-2xl text-xs text-slate-200 outline-none focus:border-emerald-500 font-sans leading-relaxed"
+                />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-[11px] text-slate-400">
+                  <span>
+                    * Pesan ini otomatis ditampilkan di layar pengguna saat akses peta dikunci.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleLock(isLocked)}
+                    disabled={isSaving}
+                    className="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer disabled:opacity-50 self-end sm:self-auto"
+                  >
+                    Simpan Perubahan Pesan
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Preview */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Pratinjau Tampilan Saat Terkunci:</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-500">
+                    {updatedAt ? new Date(updatedAt).toLocaleTimeString('id-ID') : ''}
+                  </span>
+                </div>
+
+                <div className="rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 shadow-xl">
+                  <GISApiQuotaExceededLock customMessage={reason} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL: TAMBAH USER (Mobile Responsive) */}
           {showAddModal && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-5">
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+              <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-4 my-auto max-h-[92vh] overflow-y-auto">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-950 text-blue-400 border border-blue-800/50 flex items-center justify-center font-bold">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-blue-950 text-blue-400 border border-blue-800/50 flex items-center justify-center font-bold">
                       <UserPlus className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-white uppercase tracking-wider font-mono">
-                        Tambah Pengguna Baru
+                      <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider font-mono">
+                        Tambah Akun Pengguna Baru
                       </h3>
-                      <p className="text-[11px] text-slate-400">
-                        Buat akun login untuk surveyor atau admin
+                      <p className="text-[10px] sm:text-[11px] text-slate-400">
+                        Buat akses login untuk petugas survei atau admin
                       </p>
                     </div>
                   </div>
@@ -817,17 +813,17 @@ export default function SystemGatewayPage() {
                   </button>
                 </div>
 
-                <form onSubmit={handleCreateUser} className="space-y-4">
+                <form onSubmit={handleCreateUser} className="space-y-3 sm:space-y-3.5">
                   {formError && (
-                    <div className="p-3 bg-red-950/50 border border-red-800/60 rounded-xl text-xs font-bold text-red-300 flex items-center gap-2">
+                    <div className="p-2.5 bg-red-950/50 border border-red-800/60 rounded-xl text-xs font-bold text-red-300 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 shrink-0" />
                       <span>{formError}</span>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Nama Lengkap *
                       </label>
                       <input
@@ -836,13 +832,13 @@ export default function SystemGatewayPage() {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="Contoh: Budi Santoso"
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                        Email Dinas / Login *
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        Email Login / ID *
                       </label>
                       <input
                         type="email"
@@ -850,14 +846,14 @@ export default function SystemGatewayPage() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="nama@lubuklinggaukota.go.id"
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Nomor HP / WhatsApp
                       </label>
                       <input
@@ -865,12 +861,12 @@ export default function SystemGatewayPage() {
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="0812xxxxxxxx"
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Kata Sandi *
                       </label>
                       <input
@@ -879,20 +875,20 @@ export default function SystemGatewayPage() {
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         placeholder="••••••••"
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Peran (Role)
                       </label>
                       <select
                         value={formData.role}
                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       >
                         <option value="SURVEYOR">SURVEYOR</option>
                         <option value="ADMIN_KOMINFO">ADMIN_KOMINFO</option>
@@ -900,13 +896,13 @@ export default function SystemGatewayPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Instansi / Tim
                       </label>
                       <select
                         value={formData.team}
                         onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       >
                         <option value="KOMINFO">KOMINFO</option>
                         <option value="BAPENDA">BAPENDA</option>
@@ -916,13 +912,13 @@ export default function SystemGatewayPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Status Akun
                       </label>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       >
                         <option value="AKTIF">AKTIF</option>
                         <option value="NONAKTIF">NONAKTIF</option>
@@ -931,31 +927,31 @@ export default function SystemGatewayPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                       Nama Instansi Lengkap
                     </label>
                     <input
                       type="text"
                       value={formData.agency}
                       onChange={(e) => setFormData({ ...formData, agency: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                  <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t border-slate-800">
                     <button
                       type="button"
                       onClick={() => setShowAddModal(false)}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmittingUser}
-                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-600/30 cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-600/30 cursor-pointer disabled:opacity-50"
                     >
-                      {isSubmittingUser ? 'Menyimpan...' : 'Simpan Pengguna'}
+                      {isSubmittingUser ? 'Menyimpan...' : 'Simpan Akun'}
                     </button>
                   </div>
                 </form>
@@ -965,18 +961,20 @@ export default function SystemGatewayPage() {
 
           {/* MODAL: EDIT USER */}
           {showEditModal && selectedUser && (
-            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-5">
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+              <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-4 my-auto max-h-[92vh] overflow-y-auto">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-blue-950 text-blue-400 border border-blue-800/50 flex items-center justify-center font-bold">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-blue-950 text-blue-400 border border-blue-800/50 flex items-center justify-center font-bold">
                       <Edit3 className="w-4 h-4" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-white uppercase tracking-wider font-mono">
-                        Edit Data Pengguna
+                      <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider font-mono">
+                        Edit Akun Pengguna
                       </h3>
-                      <p className="text-[11px] text-slate-400">ID: {selectedUser.id}</p>
+                      <p className="text-[10px] sm:text-[11px] text-slate-400">
+                        ID: {selectedUser.id}
+                      </p>
                     </div>
                   </div>
                   <button
@@ -988,17 +986,17 @@ export default function SystemGatewayPage() {
                   </button>
                 </div>
 
-                <form onSubmit={handleUpdateUser} className="space-y-4">
+                <form onSubmit={handleUpdateUser} className="space-y-3 sm:space-y-3.5">
                   {formError && (
-                    <div className="p-3 bg-red-950/50 border border-red-800/60 rounded-xl text-xs font-bold text-red-300 flex items-center gap-2">
+                    <div className="p-2.5 bg-red-950/50 border border-red-800/60 rounded-xl text-xs font-bold text-red-300 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 shrink-0" />
                       <span>{formError}</span>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Nama Lengkap *
                       </label>
                       <input
@@ -1006,39 +1004,39 @@ export default function SystemGatewayPage() {
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                        Email Dinas / Login *
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        Email Login / ID *
                       </label>
                       <input
                         type="email"
                         required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Nomor HP / WhatsApp
                       </label>
                       <input
                         type="text"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Ganti Kata Sandi (Opsional)
                       </label>
                       <input
@@ -1046,20 +1044,20 @@ export default function SystemGatewayPage() {
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         placeholder="Kosongkan jika tidak diubah"
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Peran (Role)
                       </label>
                       <select
                         value={formData.role}
                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       >
                         <option value="SURVEYOR">SURVEYOR</option>
                         <option value="ADMIN_KOMINFO">ADMIN_KOMINFO</option>
@@ -1067,13 +1065,13 @@ export default function SystemGatewayPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Instansi / Tim
                       </label>
                       <select
                         value={formData.team}
                         onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       >
                         <option value="KOMINFO">KOMINFO</option>
                         <option value="BAPENDA">BAPENDA</option>
@@ -1083,13 +1081,13 @@ export default function SystemGatewayPage() {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                         Status Akun
                       </label>
                       <select
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                        className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                        className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                       >
                         <option value="AKTIF">AKTIF</option>
                         <option value="NONAKTIF">NONAKTIF</option>
@@ -1098,31 +1096,31 @@ export default function SystemGatewayPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                       Nama Instansi Lengkap
                     </label>
                     <input
                       type="text"
                       value={formData.agency}
                       onChange={(e) => setFormData({ ...formData, agency: e.target.value })}
-                      className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white outline-none focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                  <div className="flex items-center justify-end gap-2.5 pt-2.5 border-t border-slate-800">
                     <button
                       type="button"
                       onClick={() => setShowEditModal(false)}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmittingUser}
-                      className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-600/30 cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-600/30 cursor-pointer disabled:opacity-50"
                     >
-                      {isSubmittingUser ? 'Menyimpan...' : 'Perbarui Pengguna'}
+                      {isSubmittingUser ? 'Menyimpan...' : 'Perbarui Akun'}
                     </button>
                   </div>
                 </form>
@@ -1133,27 +1131,27 @@ export default function SystemGatewayPage() {
           {/* MODAL: KONFIRMASI HAPUS */}
           {showDeleteModal && selectedUser && (
             <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-red-950/70 border border-red-700/60 text-red-400 flex items-center justify-center mx-auto">
-                  <Trash2 className="w-6 h-6" />
+              <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl p-5 shadow-2xl animate-in zoom-in-95 duration-200 space-y-3.5 text-center">
+                <div className="w-11 h-11 rounded-2xl bg-red-950/70 border border-red-700/60 text-red-400 flex items-center justify-center mx-auto">
+                  <Trash2 className="w-5 h-5" />
                 </div>
-                <div className="text-center space-y-1">
-                  <h3 className="text-base font-black text-white font-mono">Hapus Pengguna?</h3>
-                  <p className="text-xs text-slate-400">
-                    Apakah Anda yakin ingin menghapus akun{' '}
-                    <strong className="text-white font-bold">{selectedUser.name}</strong> (
+                <div>
+                  <h3 className="text-sm font-black text-white font-mono">Hapus Akun Pengguna?</h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Yakin ingin menghapus akun{' '}
+                    <strong className="text-white">{selectedUser.name}</strong> (
                     {selectedUser.email})?
                   </p>
-                  <p className="text-[11px] text-red-400 pt-1">
-                    Tindakan ini permanen dan akan mencabut seluruh sesi login pengguna tersebut.
+                  <p className="text-[10px] text-red-400 mt-1.5">
+                    Tindakan ini permanen dan akan mencabut sesi login pengguna tersebut.
                   </p>
                 </div>
 
-                <div className="flex items-center justify-center gap-3 pt-3 border-t border-slate-800">
+                <div className="flex items-center justify-center gap-2.5 pt-2.5 border-t border-slate-800">
                   <button
                     type="button"
                     onClick={() => setShowDeleteModal(false)}
-                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
                   >
                     Batal
                   </button>
@@ -1161,9 +1159,9 @@ export default function SystemGatewayPage() {
                     type="button"
                     onClick={handleDeleteUser}
                     disabled={isSubmittingUser}
-                    className="px-5 py-2.5 bg-red-600 hover:bg-red-500 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-red-600/30 cursor-pointer disabled:opacity-50"
+                    className="px-4 py-2 bg-red-600 hover:bg-red-500 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-red-600/30 cursor-pointer disabled:opacity-50"
                   >
-                    {isSubmittingUser ? 'Menghapus...' : 'Ya, Hapus Pengguna'}
+                    {isSubmittingUser ? 'Menghapus...' : 'Ya, Hapus'}
                   </button>
                 </div>
               </div>
