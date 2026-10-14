@@ -95,7 +95,11 @@ export default function SpatialArModal({ isOpen, onClose, poles = [] }: SpatialA
         let stream: MediaStream;
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
             audio: false,
           });
         } catch (_) {
@@ -186,10 +190,16 @@ export default function SpatialArModal({ isOpen, onClose, poles = [] }: SpatialA
     };
 
     return poles
-      .filter((p) => typeof p.lat === 'number' && typeof p.lng === 'number' && !isNaN(p.lat))
+      .filter((p) => {
+        const lat = p.poleLatitude ?? (p as any).lat;
+        const lng = p.poleLongitude ?? (p as any).lng;
+        return typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat);
+      })
       .map((pole) => {
-        const dist = calculateDistance(userCoords.lat, userCoords.lng, pole.lat, pole.lng);
-        const bearing = calculateBearing(userCoords.lat, userCoords.lng, pole.lat, pole.lng);
+        const lat = pole.poleLatitude ?? (pole as any).lat;
+        const lng = pole.poleLongitude ?? (pole as any).lng;
+        const dist = calculateDistance(userCoords.lat, userCoords.lng, lat, lng);
+        const bearing = calculateBearing(userCoords.lat, userCoords.lng, lat, lng);
         return {
           ...pole,
           distanceMeters: dist,
@@ -252,7 +262,11 @@ export default function SpatialArModal({ isOpen, onClose, poles = [] }: SpatialA
     ctx.font = '14px monospace';
     ctx.fillStyle = '#93c5fd';
     ctx.fillText(`GPS: ${userCoords.lat.toFixed(6)}, ${userCoords.lng.toFixed(6)}`, 36, 74);
-    ctx.fillText(`KOMPAS: ${heading}° | TANGGAL: ${new Date().toLocaleDateString('id-ID')}`, 36, 96);
+    ctx.fillText(
+      `KOMPAS: ${heading}° | TANGGAL: ${new Date().toLocaleDateString('id-ID')}`,
+      36,
+      96
+    );
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     setSnapshotTaken(dataUrl);
@@ -355,18 +369,18 @@ export default function SpatialArModal({ isOpen, onClose, poles = [] }: SpatialA
                 {heading >= 337.5 || heading < 22.5
                   ? 'UTARA (N)'
                   : heading >= 22.5 && heading < 67.5
-                  ? 'TIMUR LAUT (NE)'
-                  : heading >= 67.5 && heading < 112.5
-                  ? 'TIMUR (E)'
-                  : heading >= 112.5 && heading < 157.5
-                  ? 'TENGGARA (SE)'
-                  : heading >= 157.5 && heading < 202.5
-                  ? 'SELATAN (S)'
-                  : heading >= 202.5 && heading < 247.5
-                  ? 'BARAT DAYA (SW)'
-                  : heading >= 247.5 && heading < 292.5
-                  ? 'BARAT (W)'
-                  : 'BARAT LAUT (NW)'}
+                    ? 'TIMUR LAUT (NE)'
+                    : heading >= 67.5 && heading < 112.5
+                      ? 'TIMUR (E)'
+                      : heading >= 112.5 && heading < 157.5
+                        ? 'TENGGARA (SE)'
+                        : heading >= 157.5 && heading < 202.5
+                          ? 'SELATAN (S)'
+                          : heading >= 202.5 && heading < 247.5
+                            ? 'BARAT DAYA (SW)'
+                            : heading >= 247.5 && heading < 292.5
+                              ? 'BARAT (W)'
+                              : 'BARAT LAUT (NW)'}
               </span>
             </div>
             <span className="text-[9px] text-slate-400 mt-0.5">
@@ -423,7 +437,7 @@ export default function SpatialArModal({ isOpen, onClose, poles = [] }: SpatialA
           <div className="absolute inset-0 overflow-hidden pointer-events-auto">
             {nearbyArPoles.slice(0, 8).map((pole, idx) => {
               // Calculate horizontal offset based on relative bearing to heading (-60° to +60° field of view)
-              let relBearing = (pole.bearingDegrees - heading + 540) % 360 - 180;
+              let relBearing = ((pole.bearingDegrees - heading + 540) % 360) - 180;
               const inView = relBearing >= -50 && relBearing <= 50;
 
               // Normalized X position (10% to 90% screen width)
