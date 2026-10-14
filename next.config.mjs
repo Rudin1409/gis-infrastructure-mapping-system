@@ -29,6 +29,15 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/system-gateway',
+        destination: '/system_gateway',
+        permanent: false,
+      },
+    ];
+  },
   eslint: {
     // ESLint belum dikonfigurasi. Pemeriksaan format dan tipe dijalankan terpisah
     // melalui npm run check sebelum deployment.

@@ -447,7 +447,7 @@ export default function AdminPage() {
 
                 {/* 4. Menu Khusus Admin */}
                 <Link
-                  href="/system-gateway"
+                  href="/system_gateway"
                   className="group rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs transition hover:shadow-md hover:border-emerald-300 flex items-center justify-between gap-3 sm:gap-4"
                 >
                   <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
