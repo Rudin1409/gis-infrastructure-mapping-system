@@ -17,6 +17,16 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/((?!_next/static|_next/image|favicon.ico|images).*)',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, max-age=0, must-revalidate' },
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
+          { key: 'CDN-Cache-Control', value: 'no-store' },
+          { key: 'Cloudflare-CDN-Cache-Control', value: 'no-store' },
+        ],
+      },
     ];
   },
   eslint: {
