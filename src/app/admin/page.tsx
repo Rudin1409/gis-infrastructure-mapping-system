@@ -206,32 +206,32 @@ export default function AdminPage() {
         </div>
 
         {/* Clean 2-Tab Segmented Switcher */}
-        <div className="mx-auto w-full max-w-5xl px-4 pb-3">
+        <div className="mx-auto w-full max-w-5xl px-3 sm:px-4 pb-3">
           <div className="flex p-1 bg-slate-100/90 rounded-2xl border border-slate-200/70">
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
-              className={`flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all ${
+              className={`flex-1 inline-flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-black transition-all ${
                 activeTab === 'overview'
                   ? 'bg-white text-slate-950 shadow-xs'
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
-              <BarChart3 className="h-4 w-4" />
-              <span>Ringkasan Operasional</span>
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="truncate">Ringkasan Operasional</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('management')}
-              className={`flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all ${
+              className={`flex-1 inline-flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl text-[11px] sm:text-xs font-black transition-all ${
                 activeTab === 'management'
                   ? 'bg-white text-slate-950 shadow-xs'
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              <span>Kelola &amp; Sistem</span>
+              <SlidersHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span className="truncate">Kelola &amp; Sistem</span>
             </button>
           </div>
         </div>
@@ -370,79 +370,79 @@ export default function AdminPage() {
                 {/* 1. Kelola Provider */}
                 <Link
                   href="/providers"
-                  className="group rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs transition hover:shadow-md hover:border-blue-300 flex items-center justify-between gap-4"
+                  className="group rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs transition hover:shadow-md hover:border-blue-300 flex items-center justify-between gap-3 sm:gap-4"
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-pink-600 border border-pink-100 group-hover:scale-105 transition">
-                      <Radio className="h-6 w-6" />
+                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-50 text-pink-600 border border-pink-100 group-hover:scale-105 transition">
+                      <Radio className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-black text-slate-950 truncate">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <h3 className="text-xs sm:text-sm font-black text-slate-950 truncate">
                           Kelola Provider
                         </h3>
-                        <span className="rounded-md bg-pink-50 px-2 py-0.5 text-[10px] font-bold text-pink-700 shrink-0">
+                        <span className="rounded-md bg-pink-50 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-pink-700 shrink-0">
                           {dataSource?.counts?.providers ?? 20} Master
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500 leading-relaxed truncate">
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 leading-relaxed truncate">
                         Katalog marka, warna tiang, &amp; utilitas operator
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
                 </Link>
 
-                {/* 2. Kelola Wilayah */}
+                {/* 2. Wilayah Administrasi */}
                 <Link
                   href="/districts"
-                  className="group rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs transition hover:shadow-md hover:border-blue-300 flex items-center justify-between gap-4"
+                  className="group rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs transition hover:shadow-md hover:border-blue-300 flex items-center justify-between gap-3 sm:gap-4"
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 group-hover:scale-105 transition">
-                      <Map className="h-6 w-6" />
+                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 group-hover:scale-105 transition">
+                      <Map className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-black text-slate-950 truncate">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <h3 className="text-xs sm:text-sm font-black text-slate-950 truncate">
                           Wilayah Administrasi
                         </h3>
-                        <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 shrink-0">
+                        <span className="rounded-md bg-blue-50 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-blue-700 shrink-0">
                           8 Kec • {totalKelurahan} Kel
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500 leading-relaxed truncate">
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 leading-relaxed truncate">
                         Daftar kecamatan, kelurahan, &amp; batas wilayah
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
                 </Link>
 
                 {/* 3. Audit Penataan Kabel */}
                 <Link
                   href="/segments"
-                  className="group rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs transition hover:shadow-md hover:border-blue-300 flex items-center justify-between gap-4"
+                  className="group rounded-3xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs transition hover:shadow-md hover:border-blue-300 flex items-center justify-between gap-3 sm:gap-4"
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 group-hover:scale-105 transition">
-                      <ShieldAlert className="h-6 w-6" />
+                  <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+                    <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 group-hover:scale-105 transition">
+                      <ShieldAlert className="h-5 w-5 sm:h-6 sm:w-6" />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-black text-slate-950 truncate">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <h3 className="text-xs sm:text-sm font-black text-slate-950 truncate">
                           Audit Penataan Kabel
                         </h3>
-                        <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 shrink-0">
+                        <span className="rounded-md bg-amber-50 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-amber-700 shrink-0">
                           {stats?.totalSegments ?? 0} Segmen
                         </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-slate-500 leading-relaxed truncate">
+                      <p className="mt-0.5 text-[11px] sm:text-xs text-slate-500 leading-relaxed truncate">
                         Monitoring kabel semrawut, udara, &amp; ducting
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
                 </Link>
 
                 {/* 4. Menu Khusus Admin */}

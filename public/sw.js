@@ -1,4 +1,4 @@
-const CACHE_NAME = 'inframap-static-v2';
+const CACHE_NAME = 'inframap-static-v5';
 const OFFLINE_URLS = ['/poles/new', '/manifest.json', '/images/app-logo.png', '/icon.svg'];
 
 // Install: Cache app shell
@@ -19,7 +19,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key.startsWith('inframap-') && key !== CACHE_NAME) {
+          if (key !== CACHE_NAME) {
+            console.log('[SW] Purging old cache:', key);
             return caches.delete(key);
           }
         })
@@ -44,14 +45,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static Next.js assets (_next/static/*): Cache-First
+  // Static Next.js assets (_next/static/*): Network-First with Cache Fallback
   if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/images/')) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(request).then((networkResponse) => {
+      fetch(request)
+        .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
@@ -59,8 +57,10 @@ self.addEventListener('fetch', (event) => {
             });
           }
           return networkResponse;
-        });
-      })
+        })
+        .catch(() => {
+          return caches.match(request);
+        })
     );
     return;
   }
