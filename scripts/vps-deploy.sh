@@ -133,7 +133,7 @@ mapfile -t OLD_RELEASES < <(
 
 for OLD_RELEASE in "${OLD_RELEASES[@]}"; do
   case "$OLD_RELEASE" in
-    "${RELEASES_DIR}"/*) rm -rf -- "$OLD_RELEASE" ;;
+    "${RELEASES_DIR}"/*) rm -rf -- "$OLD_RELEASE" 2>/dev/null || true ;;
   esac
 done
 
