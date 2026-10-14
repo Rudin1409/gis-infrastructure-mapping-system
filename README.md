@@ -25,7 +25,7 @@ inventaris, peta, ringkasan dashboard, serta ekspor spasial.
 >
 > Penjelasan ini menggambarkan perilaku dan struktur kode dalam repository.
 > Ketersediaan integrasi dan status aktivasi di server mengikuti konfigurasi
-> lingkungan. Panduan aktivasi keamanan tersedia di [dokumentasi keamanan](docs/SECURITY.md).
+> lingkungan. Panduan aktivasi keamanan tersedia di [dokumentasi keamanan](docs/SECURITY.md), dan panduan instalasi/update tersedia di [panduan clone & update](docs/PANDUAN_CLONE_DAN_UPDATE.md).
 
 ## Jelajahi dokumentasi
 
