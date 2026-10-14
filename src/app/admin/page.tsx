@@ -445,10 +445,10 @@ export default function AdminPage() {
                   <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
                 </Link>
 
-                {/* 4. Gateway Kuota Peta */}
+                {/* 4. Akses Khusus Admin */}
                 <Link
                   href="/system-gateway"
-                  className="group rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs transition hover:shadow-md hover:border-blue-300 flex items-center justify-between gap-4"
+                  className="group rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-xs transition hover:shadow-md hover:border-emerald-300 flex items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 group-hover:scale-105 transition">
@@ -457,18 +457,18 @@ export default function AdminPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-black text-slate-950 truncate">
-                          Gateway Kuota Peta
+                          Akses Khusus Admin
                         </h3>
                         <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 shrink-0">
                           Khusus Admin
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500 leading-relaxed truncate">
-                        Kelola khusus admin
+                        Atur kuota GIS &amp; kelola pengguna (CRUD User)
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-blue-600 transition shrink-0" />
+                  <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-emerald-600 transition shrink-0" />
                 </Link>
               </div>
             </div>
