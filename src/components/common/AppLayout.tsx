@@ -34,17 +34,25 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Register PWA Service Worker for offline capability
+  // Register PWA Service Worker for offline capability & automatic refresh on update
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
         .then((reg) => {
-          console.log('[PWA] Service Worker registered:', reg.scope);
+          reg.update();
         })
         .catch((err) => {
           console.warn('[PWA] Service Worker registration notice:', err);
         });
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
     }
   }, []);
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'inframap-static-v5';
+const CACHE_NAME = 'inframap-static-v7';
 const OFFLINE_URLS = ['/poles/new', '/manifest.json', '/images/app-logo.png', '/icon.svg'];
 
 // Install: Cache app shell
@@ -13,16 +13,14 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate: Clean up old caches
+// Activate: Clean up ALL old caches and claim clients immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[SW] Purging old cache:', key);
-            return caches.delete(key);
-          }
+          console.log('[SW] Purging cache:', key);
+          return caches.delete(key);
         })
       );
     })
@@ -35,13 +33,17 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Bypass non-GET requests (mutations go through IndexedDB outbox queue)
+  // Bypass non-GET requests
   if (request.method !== 'GET') {
     return;
   }
 
-  // Bypass API requests so dynamic fresh data is always queried
-  if (url.pathname.startsWith('/api/')) {
+  // Bypass API requests and admin/system configuration routes
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/admin') ||
+    url.pathname.startsWith('/system')
+  ) {
     return;
   }
 
