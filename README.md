@@ -457,3 +457,4 @@ pada dukungan GitHub Code Security; required checks dikendalikan pengaturan repo
 
 Rincian kontrol, hasil pemeriksaan, dan tindak lanjut operasional tersedia pada
 [dokumentasi keamanan](docs/SECURITY.md).
+
