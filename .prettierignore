@@ -24,3 +24,4 @@ scripts/check-ssh.ts
 scripts/deploy-vps.ts
 scripts/test-key.ts
 scripts/gen-key.ts
+README.md
