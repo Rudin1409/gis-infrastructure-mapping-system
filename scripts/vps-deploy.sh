@@ -41,8 +41,12 @@ fi
 
 if [[ -e "$RELEASE_DIR" ]]; then
   if [[ "$PREVIOUS_RELEASE" == "$RELEASE_DIR" ]]; then
-    fail "release ${RELEASE_ID} is already active"
-  fi
+  echo "Release ${RELEASE_ID} is already active, restarting PM2..."
+  pm2 restart gis-app || pm2 start "${CURRENT_LINK}/ecosystem.config.cjs" --update-env
+  pm2 save
+  exit 0
+fi
+
 
   case "$RELEASE_DIR" in
     "${RELEASES_DIR}"/*) rm -rf -- "$RELEASE_DIR" ;;
