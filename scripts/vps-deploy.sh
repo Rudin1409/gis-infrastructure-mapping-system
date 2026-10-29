@@ -126,6 +126,9 @@ if [[ "$HEALTHY" != "true" ]]; then
 fi
 
 pm2 save
+# Pasang Penjaga Otomatis (Auto-Boot saat server nyala & Auto-Restart tiap 5 menit jika mati)
+(crontab -l 2>/dev/null | grep -v 'gis-app'; echo "@reboot sleep 15 && pm2 resurrect"; echo "*/5 * * * * curl -s -o /dev/null -m 5 http://127.0.0.1:3000/ || (pm2 resurrect || pm2 restart gis-app)") | crontab -
+
 rm -f "$RESOLVED_ARCHIVE"
 
 mapfile -t OLD_RELEASES < <(
