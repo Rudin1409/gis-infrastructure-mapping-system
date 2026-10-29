@@ -127,7 +127,8 @@ fi
 
 pm2 save
 # Pasang Penjaga Otomatis (Auto-Boot saat server nyala & Auto-Restart tiap 5 menit jika mati)
-(crontab -l 2>/dev/null | grep -v 'gis-app'; echo "@reboot sleep 15 && pm2 resurrect"; echo "*/5 * * * * curl -s -o /dev/null -m 5 http://127.0.0.1:3000/ || (pm2 resurrect || pm2 restart gis-app)") | crontab -
+CURRENT_CRON="$(crontab -l 2>/dev/null | grep -v 'gis-app' || true)"
+printf '%s\n@reboot sleep 15 && pm2 resurrect\n*/5 * * * * curl -s -o /dev/null -m 5 http://127.0.0.1:3000/ || (pm2 resurrect || pm2 restart gis-app)\n' "$CURRENT_CRON" | sed '/^$/d' | crontab - || true
 
 rm -f "$RESOLVED_ARCHIVE"
 
