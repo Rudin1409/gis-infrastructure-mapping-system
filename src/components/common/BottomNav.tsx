@@ -20,10 +20,12 @@ export default function BottomNav() {
     return null;
   }
 
+  const isProviderViewer = user?.role === 'PROVIDER_VIEWER';
+
   const navItems = [
     { href: '/', label: 'Beranda', icon: LayoutDashboard },
     { href: '/map', label: 'Peta GIS', icon: Map },
-    { href: '/poles/new', label: 'Survey', icon: Plus, isPrimary: true },
+    ...(!isProviderViewer ? [{ href: '/poles/new', label: 'Survey', icon: Plus, isPrimary: true }] : []),
     { href: '/poles', label: 'Katalog', icon: Database },
     {
       href: isAdmin ? '/admin' : '/profile',

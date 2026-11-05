@@ -38,7 +38,7 @@ export const dynamic = 'force-dynamic';
 import { DEFAULT_PROVIDERS, resolveProviderInfo } from '@/config/providers';
 
 export default async function PoleDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requirePageUser();
+  const user = await requirePageUser();
   const { id } = await params;
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
@@ -411,12 +411,14 @@ export default async function PoleDetailPage({ params }: { params: Promise<{ id:
             <MapPin className="w-3.5 h-3.5 text-blue-600" />
             <span>Peta Lokasi Tiang GIS</span>
           </h2>
-          <Link
-            href={`/poles/${pole.id}/edit`}
-            className="text-[10px] text-blue-600 font-bold hover:underline"
-          >
-            Atur Titik 📍
-          </Link>
+          {user.role !== 'PROVIDER_VIEWER' && (
+            <Link
+              href={`/poles/${pole.id}/edit`}
+              className="text-[10px] text-blue-600 font-bold hover:underline"
+            >
+              Atur Titik 📍
+            </Link>
+          )}
         </div>
 
         <div className="h-44 rounded-2xl overflow-hidden border border-slate-200/80 relative">
@@ -461,13 +463,19 @@ export default async function PoleDetailPage({ params }: { params: Promise<{ id:
 
       {/* Floating Bottom Quick Action Bar for Pole Detail */}
       <div className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] max-w-[406px] z-40 bg-white/95 backdrop-blur-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.18)] rounded-3xl p-2 flex gap-2">
-        <Link
-          href={`/poles/${pole.id}/edit`}
-          className="flex-1 py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-1.5 transition-all"
-        >
-          <Pencil className="w-4 h-4" />
-          <span>Edit &amp; Atur Titik Ulang</span>
-        </Link>
+        {user.role !== 'PROVIDER_VIEWER' ? (
+          <Link
+            href={`/poles/${pole.id}/edit`}
+            className="flex-1 py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold text-xs shadow-md shadow-blue-500/25 flex items-center justify-center gap-1.5 transition-all"
+          >
+            <Pencil className="w-4 h-4" />
+            <span>Edit &amp; Atur Titik Ulang</span>
+          </Link>
+        ) : (
+          <div className="flex-1 py-3 px-4 rounded-2xl bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center gap-1.5">
+            <span>📡 Mode Mitra Provider (Hanya Lihat)</span>
+          </div>
+        )}
 
         <Link
           href={`/map?search=${pole.id}`}

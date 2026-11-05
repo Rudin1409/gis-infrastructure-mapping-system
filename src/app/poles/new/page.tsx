@@ -1,13 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import PinSelectorMap from '@/components/map/PinSelectorMap';
 import SurveyForm from '@/components/survey/SurveyForm';
 import { Coordinates } from '@/types/gis';
 import { Provider } from '@/types/provider';
 import { DEFAULT_PROVIDERS } from '@/config/providers';
+import { useAuth } from '@/context/AuthContext';
 
 export default function NewPoleSurveyPage() {
+  const { user, isLoaded } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState<'MAP_PIN' | 'FORM'>('MAP_PIN');
   const [confirmedLocation, setConfirmedLocation] = useState<{
     poleCoord: Coordinates;
@@ -19,6 +23,12 @@ export default function NewPoleSurveyPage() {
   } | null>(null);
 
   const [providers, setProviders] = useState<Provider[]>(DEFAULT_PROVIDERS);
+
+  useEffect(() => {
+    if (isLoaded && user?.role === 'PROVIDER_VIEWER') {
+      router.replace('/poles');
+    }
+  }, [isLoaded, user, router]);
 
   // Fetch providers master from API
   useEffect(() => {
@@ -53,6 +63,20 @@ export default function NewPoleSurveyPage() {
   const handleBackToMap = () => {
     setStep('MAP_PIN');
   };
+
+  if (isLoaded && user?.role === 'PROVIDER_VIEWER') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
+        <div className="w-16 h-16 rounded-3xl bg-blue-50 border border-blue-200 flex items-center justify-center text-3xl mb-4">
+          📡
+        </div>
+        <h2 className="text-lg font-bold text-slate-800">Akses Terbatas: Mode Mitra Provider</h2>
+        <p className="text-xs text-slate-500 max-w-sm mt-1">
+          Akun mitra provider hanya memiliki izin akses baca (Read-Only) untuk meninjau data tiang dan peta spasial.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">

@@ -19,7 +19,7 @@ export default async function PolesListPage({
     condition?: string;
   }>;
 }) {
-  await requirePageUser();
+  const user = await requirePageUser();
   const query = await searchParams;
   const providerRepo = getProviderRepository();
 
@@ -56,13 +56,19 @@ export default async function PolesListPage({
               <Map className="w-4 h-4 text-cyan-400" />
               <span className="whitespace-nowrap">Peta GIS</span>
             </Link>
-            <Link
-              href="/poles/new"
-              className="flex-1 sm:flex-none py-2.5 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all border border-blue-400/30"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="whitespace-nowrap">Tambah Data</span>
-            </Link>
+            {user.role !== 'PROVIDER_VIEWER' ? (
+              <Link
+                href="/poles/new"
+                className="flex-1 sm:flex-none py-2.5 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all border border-blue-400/30"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span className="whitespace-nowrap">Tambah Data</span>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-900 border border-slate-700 text-xs font-bold text-cyan-300">
+                <span>📡 Mode Auditor Provider (Read-Only)</span>
+              </div>
+            )}
           </div>
         </div>
 

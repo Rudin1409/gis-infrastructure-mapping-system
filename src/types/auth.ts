@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN_KOMINFO' | 'SURVEYOR' | 'SUPER_ADMIN';
+export type UserRole = 'ADMIN_KOMINFO' | 'SURVEYOR' | 'SUPER_ADMIN' | 'PROVIDER_VIEWER';
 
 export interface AuthUser {
   id: string;

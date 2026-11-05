@@ -19,9 +19,12 @@ import {
 } from 'lucide-react';
 
 import { isAiFeatureActive } from '@/lib/ai/aiConfig';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const isProviderViewer = user?.role === 'PROVIDER_VIEWER';
   const [isAiEnabled, setIsAiEnabled] = React.useState(false);
 
   React.useEffect(() => {
@@ -36,8 +39,12 @@ export default function Sidebar() {
       ? [{ href: '/ai', label: 'Asisten INFRA-AI', icon: Sparkles, isAi: true }]
       : []),
     { href: '/segments', label: 'Penataan Kabel', icon: ShieldAlert },
-    { href: '/surveyor', label: 'Portal Surveyor HP', icon: Smartphone, isMobilePortal: true },
-    { href: '/poles/new', label: 'Input Tiang Baru', icon: PlusCircle, isHighlight: true },
+    ...(!isProviderViewer
+      ? [
+          { href: '/surveyor', label: 'Portal Surveyor HP', icon: Smartphone, isMobilePortal: true },
+          { href: '/poles/new', label: 'Input Tiang Baru', icon: PlusCircle, isHighlight: true },
+        ]
+      : []),
   ];
 
   return (
@@ -156,13 +163,20 @@ export default function Sidebar() {
           </p>
         </div>
 
-        <Link
-          href="/surveyor"
-          className="w-full py-2 px-3 bg-white hover:bg-teal-50 active:scale-95 text-teal-800 font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all"
-        >
-          <Smartphone className="w-3.5 h-3.5" />
-          <span>Buka Mode HP Surveyor</span>
-        </Link>
+        {!isProviderViewer ? (
+          <Link
+            href="/surveyor"
+            className="w-full py-2 px-3 bg-white hover:bg-teal-50 active:scale-95 text-teal-800 font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-all"
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>Buka Mode HP Surveyor</span>
+          </Link>
+        ) : (
+          <div className="bg-teal-950/60 rounded-xl p-2.5 border border-cyan-400/30 text-center">
+            <span className="text-[11px] font-bold text-cyan-200 block">📡 Mitra Provider</span>
+            <span className="text-[9px] text-teal-200/70">Akses Inspeksi &amp; Bukti Pajak</span>
+          </div>
+        )}
       </div>
     </aside>
   );

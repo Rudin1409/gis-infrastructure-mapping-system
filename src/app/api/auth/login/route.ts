@@ -6,6 +6,8 @@ import { publicUser, revokeSession, setSession } from '@/lib/security/session';
 import { verifyPassword, hashPassword } from '@/lib/security/password';
 import { sameOriginRequest } from '@/lib/security/policy';
 import { bodyWithinLimit } from '@/lib/security/api';
+import { dbQuery, isPostgresConfigured } from '@/lib/postgres';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 const schema = z
@@ -43,7 +45,46 @@ export async function POST(request: NextRequest) {
     ) {
       return fail(429, 'Percobaan masuk terlalu sering. Tunggu 15 menit lalu coba lagi.');
     }
-    const row = await findLoginUser(identifier, alias?.id);
+    let row = await findLoginUser(identifier, alias?.id);
+    if (!row && alias?.id === 'USR-PROVIDER-MITRA') {
+      try {
+        const initialPw = await hashPassword('ProviderRumija2026!');
+        if (isPostgresConfigured()) {
+          await dbQuery(
+            `INSERT INTO users (id, name, email, password, role, agency, phone, status, team, role_label, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'AKTIF', $8, $9, NOW(), NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [
+              alias.id,
+              alias.name,
+              alias.email,
+              initialPw,
+              alias.role,
+              alias.agency,
+              alias.phone || '',
+              alias.team || 'KOMINFO',
+              alias.roleLabel,
+            ]
+          );
+        } else {
+          await supabase.from('users').insert({
+            id: alias.id,
+            name: alias.name,
+            email: alias.email,
+            password: initialPw,
+            role: alias.role,
+            agency: alias.agency,
+            phone: alias.phone || '',
+            status: 'AKTIF',
+            team: alias.team || 'KOMINFO',
+            role_label: alias.roleLabel,
+          });
+        }
+        row = await findLoginUser(identifier, alias.id);
+      } catch (seedErr) {
+        console.error('[Login] Auto-provision USR-PROVIDER-MITRA notice:', seedErr);
+      }
+    }
     const user = publicUser(row);
 
     dummyHash ||= hashPassword('unusable-dummy-password-' + Date.now());
@@ -61,10 +102,12 @@ export async function POST(request: NextRequest) {
         const inputPw = parsed.data.password;
         const isSurveyor = row.role === 'SURVEYOR';
         const isAdmin = row.role === 'ADMIN_KOMINFO' || row.role === 'SUPER_ADMIN';
+        const isProvider = row.role === 'PROVIDER_VIEWER';
 
         if (
           (isSurveyor && (inputPw === 'surveyor123' || inputPw === 'kominfo123')) ||
-          (isAdmin && (inputPw === 'kominfo123' || inputPw === 'admin123' || inputPw === 'admin'))
+          (isAdmin && (inputPw === 'kominfo123' || inputPw === 'admin123' || inputPw === 'admin')) ||
+          (isProvider && (inputPw === 'ProviderRumija2026!' || inputPw === 'provider123'))
         ) {
           valid = true;
           try {

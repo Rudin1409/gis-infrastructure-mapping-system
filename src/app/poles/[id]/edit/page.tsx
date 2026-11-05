@@ -1,6 +1,6 @@
 import { requirePageUser } from '@/lib/security/session';
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getPoleRepository } from '@/repositories/PoleRepositoryFactory';
 import { getProviderRepository } from '@/repositories/GoogleSheetsProviderRepository';
 import EditPoleForm from '@/components/survey/EditPoleForm';
@@ -8,8 +8,11 @@ import EditPoleForm from '@/components/survey/EditPoleForm';
 export const dynamic = 'force-dynamic';
 
 export default async function EditPolePage({ params }: { params: Promise<{ id: string }> }) {
-  await requirePageUser();
+  const user = await requirePageUser();
   const { id } = await params;
+  if (user.role === 'PROVIDER_VIEWER') {
+    redirect(`/poles/${id}`);
+  }
   const poleRepo = getPoleRepository();
   const providerRepo = getProviderRepository();
 

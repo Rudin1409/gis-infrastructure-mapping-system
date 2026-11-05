@@ -198,4 +198,21 @@ export const DEFAULT_ACCOUNTS: (AuthUser & { alternativeEmails?: string[] })[] =
     avatar: '🧑‍💼',
     alternativeEmails: ['nanda@lubuklinggaukota.go.id', 'nanda', 'surveyor10', '081271000006'],
   },
+  {
+    id: 'USR-PROVIDER-MITRA',
+    email: 'mitra.provider@lubuklinggaukota.go.id',
+    name: 'Mitra Provider & Asosiasi Telematika',
+    role: 'PROVIDER_VIEWER',
+    roleLabel: 'Auditor Mitra Provider (Read-Only)',
+    agency: 'Asosiasi Penyelenggara Jaringan Telekomunikasi & Provider Mitra',
+    team: 'KOMINFO',
+    phone: '0812-0000-0000',
+    avatar: '📡',
+    alternativeEmails: [
+      'mitra.provider',
+      'provider',
+      'auditor',
+      'provider@lubuklinggaukota.go.id',
+    ],
+  },
 ];

@@ -379,6 +379,8 @@ export default function GISOverviewMap({
     return agencyLower.includes('kominfo') || agencyLower.includes('komunikasi');
   }, [user]);
 
+  const isProviderViewer = user?.role === 'PROVIDER_VIEWER';
+
   // Load Leaflet dynamically
   useEffect(() => {
     let isMounted = true;
@@ -2722,13 +2724,15 @@ export default function GISOverviewMap({
               <span>{isFollowMe ? 'Mode Ikuti (ON)' : 'Ikuti Saya'}</span>
             </button>
 
-            <Link
-              href={`/poles/new?lat=${userLocation.latitude}&lng=${userLocation.longitude}&locMethod=GPS_DEVICE`}
-              className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Survei di Sini</span>
-            </Link>
+            {!isProviderViewer && (
+              <Link
+                href={`/poles/new?lat=${userLocation.latitude}&lng=${userLocation.longitude}&locMethod=GPS_DEVICE`}
+                className="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/25 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Survei di Sini</span>
+              </Link>
+            )}
           </div>
         </div>
       )}

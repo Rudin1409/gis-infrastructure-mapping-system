@@ -342,7 +342,8 @@ export default function SystemGatewayPage() {
     const matchRole =
       roleFilter === 'ALL' ||
       (roleFilter === 'ADMIN' && (u.role === 'ADMIN_KOMINFO' || u.role === 'SUPER_ADMIN')) ||
-      (roleFilter === 'SURVEYOR' && u.role === 'SURVEYOR');
+      (roleFilter === 'SURVEYOR' && u.role === 'SURVEYOR') ||
+      (roleFilter === 'PROVIDER_VIEWER' && u.role === 'PROVIDER_VIEWER');
 
     const matchTeam =
       teamFilter === 'ALL' || (u.team && u.team.toUpperCase() === teamFilter.toUpperCase());
@@ -552,6 +553,7 @@ export default function SystemGatewayPage() {
                       <option value="ALL">Semua Peran (Role)</option>
                       <option value="ADMIN">Administrator (KOMINFO)</option>
                       <option value="SURVEYOR">Surveyor Lapangan</option>
+                      <option value="PROVIDER_VIEWER">Mitra Provider (Read-Only)</option>
                     </select>
                   </div>
 
@@ -613,10 +615,16 @@ export default function SystemGatewayPage() {
                                 className={`px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border ${
                                   isAdmin
                                     ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                                    : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                    : user.role === 'PROVIDER_VIEWER'
+                                      ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                                      : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                 }`}
                               >
-                                {user.role === 'ADMIN_KOMINFO' ? 'Admin' : 'Surveyor'}
+                                {user.role === 'ADMIN_KOMINFO'
+                                  ? 'Admin'
+                                  : user.role === 'PROVIDER_VIEWER'
+                                    ? 'Mitra Provider'
+                                    : 'Surveyor'}
                               </span>
                               <span
                                 className={`px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border ${
@@ -892,6 +900,7 @@ export default function SystemGatewayPage() {
                       >
                         <option value="SURVEYOR">SURVEYOR</option>
                         <option value="ADMIN_KOMINFO">ADMIN_KOMINFO</option>
+                        <option value="PROVIDER_VIEWER">PROVIDER_VIEWER (Mitra)</option>
                       </select>
                     </div>
 
@@ -1061,6 +1070,7 @@ export default function SystemGatewayPage() {
                       >
                         <option value="SURVEYOR">SURVEYOR</option>
                         <option value="ADMIN_KOMINFO">ADMIN_KOMINFO</option>
+                        <option value="PROVIDER_VIEWER">PROVIDER_VIEWER (Mitra)</option>
                       </select>
                     </div>
 

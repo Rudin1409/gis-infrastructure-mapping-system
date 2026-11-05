@@ -4,6 +4,14 @@ export function isAdmin(user: AuthUser): boolean {
   return user.role === 'ADMIN_KOMINFO' || user.role === 'SUPER_ADMIN';
 }
 
+export function isProviderViewer(user: AuthUser): boolean {
+  return user.role === 'PROVIDER_VIEWER';
+}
+
+export function canMutatePoles(user: AuthUser): boolean {
+  return user.role !== 'PROVIDER_VIEWER';
+}
+
 export function canViewSurveyors(user: AuthUser): boolean {
   return isAdmin(user) || user.team === 'KOMINFO';
 }

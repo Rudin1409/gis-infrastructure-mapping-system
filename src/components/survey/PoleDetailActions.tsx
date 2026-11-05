@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Pencil, Trash2, Map, AlertTriangle, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface PoleDetailActionsProps {
   poleId: string;
@@ -12,6 +13,8 @@ interface PoleDetailActionsProps {
 
 export default function PoleDetailActions({ poleId, poleCode }: PoleDetailActionsProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const isProviderViewer = user?.role === 'PROVIDER_VIEWER';
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [toastMessage, setToastMessage] = useState<{
@@ -86,22 +89,26 @@ export default function PoleDetailActions({ poleId, poleCode }: PoleDetailAction
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1.5">
-        <Link
-          href={`/poles/${poleId}/edit`}
-          className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 shadow-2xs transition-all active:scale-95"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-          <span>Edit</span>
-        </Link>
+        {!isProviderViewer && (
+          <>
+            <Link
+              href={`/poles/${poleId}/edit`}
+              className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 shadow-2xs transition-all active:scale-95"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Edit</span>
+            </Link>
 
-        <button
-          type="button"
-          onClick={() => setShowConfirm(true)}
-          className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-2xs transition-all active:scale-95 cursor-pointer"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          <span>Hapus</span>
-        </button>
+            <button
+              type="button"
+              onClick={() => setShowConfirm(true)}
+              className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-2xs transition-all active:scale-95 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Hapus</span>
+            </button>
+          </>
+        )}
 
         <Link
           href={`/map?search=${poleId}`}

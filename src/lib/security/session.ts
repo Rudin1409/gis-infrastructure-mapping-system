@@ -16,7 +16,7 @@ export function publicUser(row: any): AuthUser | null {
     !row ||
     String(row.id).startsWith('_') ||
     !['AKTIF', 'ACTIVE'].includes(row.status) ||
-    !['ADMIN_KOMINFO', 'SUPER_ADMIN', 'SURVEYOR'].includes(row.role)
+    !['ADMIN_KOMINFO', 'SUPER_ADMIN', 'SURVEYOR', 'PROVIDER_VIEWER'].includes(row.role)
   )
     return null;
   const team =
@@ -33,8 +33,14 @@ export function publicUser(row: any): AuthUser | null {
     phone: row.phone || '',
     roleLabel:
       row.role_label ||
-      (row.role === 'SURVEYOR' ? 'Petugas Survei Spasial' : 'Administrator DISKOMINFOTIKSAN'),
-    avatar: row.avatar || (row.role === 'SURVEYOR' ? '👨‍💼' : '🏢'),
+      (row.role === 'PROVIDER_VIEWER'
+        ? 'Mitra Provider (Auditor Read-Only)'
+        : row.role === 'SURVEYOR'
+          ? 'Petugas Survei Spasial'
+          : 'Administrator DISKOMINFOTIKSAN'),
+    avatar:
+      row.avatar ||
+      (row.role === 'PROVIDER_VIEWER' ? '📡' : row.role === 'SURVEYOR' ? '👨‍💼' : '🏢'),
   };
 }
 

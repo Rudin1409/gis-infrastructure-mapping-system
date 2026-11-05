@@ -72,17 +72,27 @@ async function handlePost(req: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = (phone || '').trim();
     const cleanRole = role.toUpperCase();
-    const cleanTeam = team || (cleanRole === 'ADMIN_KOMINFO' ? 'KOMINFO' : 'SURVEYOR');
+    const cleanTeam =
+      team ||
+      (cleanRole === 'ADMIN_KOMINFO'
+        ? 'KOMINFO'
+        : cleanRole === 'PROVIDER_VIEWER'
+          ? 'KOMINFO'
+          : 'SURVEYOR');
     const cleanAgency =
       agency ||
-      (cleanTeam === 'KOMINFO'
-        ? 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'
-        : 'Badan Pendapatan Daerah (BAPENDA) Kota Lubuklinggau');
+      (cleanRole === 'PROVIDER_VIEWER'
+        ? 'Asosiasi Penyelenggara Jaringan Telekomunikasi & Provider Mitra'
+        : cleanTeam === 'KOMINFO'
+          ? 'Dinas Komunikasi, Informatika, Statistik dan Persandian Kota Lubuklinggau'
+          : 'Badan Pendapatan Daerah (BAPENDA) Kota Lubuklinggau');
     const cleanRoleLabel =
       role_label ||
       (cleanRole === 'ADMIN_KOMINFO'
         ? 'Admin Teknis & Infrastruktur GIS'
-        : 'Petugas Survei Spasial & Pemetaan');
+        : cleanRole === 'PROVIDER_VIEWER'
+          ? 'Auditor Mitra Provider (Read-Only)'
+          : 'Petugas Survei Spasial & Pemetaan');
 
     // Cek duplikasi email
     if (isPostgresConfigured()) {
@@ -100,7 +110,11 @@ async function handlePost(req: NextRequest) {
     // Generate ID
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const newId =
-      cleanRole === 'ADMIN_KOMINFO' ? `USR-ADMIN-${randomSuffix}` : `USR-SURVEYOR-${randomSuffix}`;
+      cleanRole === 'ADMIN_KOMINFO'
+        ? `USR-ADMIN-${randomSuffix}`
+        : cleanRole === 'PROVIDER_VIEWER'
+          ? `USR-PROVIDER-${randomSuffix}`
+          : `USR-SURVEYOR-${randomSuffix}`;
 
     const hashedPassword = await hashPassword(password);
     const now = new Date().toISOString();
