@@ -1026,7 +1026,7 @@ export default function HomeDashboardClient({ stats, allPoles }: HomeDashboardCl
                 const surveyDateStr = pole.surveyDate ? String(pole.surveyDate) : '';
                 const isNewToday = Boolean(
                   (surveyDateStr && surveyDateStr === todayStr) ||
-                  (createdAtStr && createdAtStr.startsWith(todayStr))
+                    (createdAtStr && createdAtStr.startsWith(todayStr))
                 );
                 const relativeTime = formatRelativeTime(pole.createdAt, pole.surveyTime);
 
