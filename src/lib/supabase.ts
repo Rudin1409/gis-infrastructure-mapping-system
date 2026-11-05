@@ -6,10 +6,18 @@ const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERV
 
 let supabaseClient: SupabaseClient | null = null;
 
+export function isSupabaseConfigured(): boolean {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  return Boolean(url && key);
+}
+
 function getSupabaseClient(): SupabaseClient {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!supabaseClient) {
-    if (!supabaseUrl || !supabaseKey) throw new Error('Server Supabase belum dikonfigurasi.');
-    supabaseClient = createClient(supabaseUrl, supabaseKey, {
+    if (!url || !key) throw new Error('Server Supabase belum dikonfigurasi.');
+    supabaseClient = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
   }

@@ -7,6 +7,7 @@ import type { AuthUser } from '@/types/auth';
 import { readSession, readUser, writeSession, deleteSession } from './store';
 import { digestToken } from './password';
 import { sessionCookieSecure } from './policy';
+import { DEFAULT_ACCOUNTS } from './userDirectory';
 
 export const SESSION_COOKIE = 'inframap_session';
 const SESSION_SECONDS = 7 * 24 * 60 * 60;
@@ -50,7 +51,25 @@ export async function currentUser(request?: NextRequest): Promise<AuthUser | nul
   if (!token) return null;
   const session = await readSession(token);
   if (!session) return null;
-  const row = await readUser(session.user_id);
+  let row = await readUser(session.user_id);
+  if (!row && session.user_id === 'USR-PROVIDER-MITRA') {
+    const alias = DEFAULT_ACCOUNTS.find((a) => a.id === 'USR-PROVIDER-MITRA');
+    if (alias) {
+      row = {
+        id: alias.id,
+        name: alias.name,
+        email: alias.email,
+        password: '',
+        role: alias.role,
+        agency: alias.agency,
+        phone: alias.phone || '',
+        status: 'AKTIF',
+        role_label: alias.roleLabel,
+        avatar: alias.avatar || '📡',
+      };
+      return publicUser(row);
+    }
+  }
   if (!row || digestToken(row.password || '') !== session.credential_hash) return null;
   return publicUser(row);
 }

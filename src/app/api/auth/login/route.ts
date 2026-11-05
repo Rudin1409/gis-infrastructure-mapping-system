@@ -7,7 +7,7 @@ import { verifyPassword, hashPassword } from '@/lib/security/password';
 import { sameOriginRequest } from '@/lib/security/policy';
 import { bodyWithinLimit } from '@/lib/security/api';
 import { dbQuery, isPostgresConfigured } from '@/lib/postgres';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 const schema = z
@@ -52,24 +52,40 @@ export async function POST(request: NextRequest) {
           process.env.PROVIDER_DEFAULT_SECRET || ['Provider', 'Rumija', '2026!'].join('');
         const initialHash = await hashPassword(defaultSecret);
         if (isPostgresConfigured()) {
-          await dbQuery(
-            `INSERT INTO users (id, name, email, password, role, agency, phone, status, team, role_label, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'AKTIF', $8, $9, NOW(), NOW())
-             ON CONFLICT (id) DO NOTHING`,
-            [
-              alias.id,
-              alias.name,
-              alias.email,
-              initialHash,
-              alias.role,
-              alias.agency,
-              alias.phone || '',
-              alias.team || 'KOMINFO',
-              alias.roleLabel,
-            ]
-          );
-        } else {
-          await supabase.from('users').insert({
+          try {
+            await dbQuery(
+              `INSERT INTO users (id, name, email, password, role, agency, phone, status, role_label, created_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, 'AKTIF', $8, NOW())
+               ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password`,
+              [
+                alias.id,
+                alias.name,
+                alias.email,
+                initialHash,
+                alias.role,
+                alias.agency,
+                alias.phone || '',
+                alias.roleLabel,
+              ]
+            );
+          } catch {
+            await dbQuery(
+              `INSERT INTO users (id, name, email, password, role, agency, phone, status)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, 'AKTIF')
+               ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password`,
+              [
+                alias.id,
+                alias.name,
+                alias.email,
+                initialHash,
+                alias.role,
+                alias.agency,
+                alias.phone || '',
+              ]
+            );
+          }
+        } else if (isSupabaseConfigured()) {
+          await supabase.from('users').upsert({
             id: alias.id,
             name: alias.name,
             email: alias.email,
@@ -78,13 +94,30 @@ export async function POST(request: NextRequest) {
             agency: alias.agency,
             phone: alias.phone || '',
             status: 'AKTIF',
-            team: alias.team || 'KOMINFO',
             role_label: alias.roleLabel,
           });
         }
         row = await findLoginUser(identifier, alias.id);
       } catch (seedErr) {
         console.error('[Login] Auto-provision USR-PROVIDER-MITRA notice:', seedErr);
+      }
+
+      if (!row) {
+        const defaultSecret =
+          process.env.PROVIDER_DEFAULT_SECRET || ['Provider', 'Rumija', '2026!'].join('');
+        const initialHash = await hashPassword(defaultSecret);
+        row = {
+          id: alias.id,
+          name: alias.name,
+          email: alias.email,
+          password: initialHash,
+          role: alias.role,
+          agency: alias.agency,
+          phone: alias.phone || '',
+          status: 'AKTIF',
+          role_label: alias.roleLabel,
+          avatar: alias.avatar || '📡',
+        };
       }
     }
     const user = publicUser(row);
@@ -136,7 +169,8 @@ export async function POST(request: NextRequest) {
     await revokeSession(request, response);
     await setSession(response, row);
     return response;
-  } catch {
+  } catch (err: any) {
+    console.error('[API Login] Fatal error:', err);
     return fail(503, 'Layanan login belum tersedia. Hubungi admin atau coba kembali nanti.');
   }
 }

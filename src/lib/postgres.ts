@@ -19,23 +19,31 @@ function shouldUseSsl(url: string): boolean {
   return /supabase\.co|pooler\.supabase\.com|neon\.tech|render\.com|railway\.app/i.test(url);
 }
 
-export function isPostgresConfigured(): boolean {
-  return Boolean(databaseUrl);
+export function getDatabaseUrl(): string {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRESQL_URL ||
+    process.env.PG_CONNECTION_STRING ||
+    databaseUrl ||
+    ''
+  );
 }
 
-export function getDatabaseUrl(): string {
-  return databaseUrl;
+export function isPostgresConfigured(): boolean {
+  return Boolean(getDatabaseUrl());
 }
 
 export function getPostgresPool(): any {
-  if (!databaseUrl) {
+  const currentUrl = getDatabaseUrl();
+  if (!currentUrl) {
     throw new Error('DATABASE_URL belum dikonfigurasi');
   }
 
   if (!pool) {
     pool = new Pool({
-      connectionString: databaseUrl,
-      ssl: shouldUseSsl(databaseUrl)
+      connectionString: currentUrl,
+      ssl: shouldUseSsl(currentUrl)
         ? {
             rejectUnauthorized: true,
             ...(process.env.DATABASE_CA_CERT
