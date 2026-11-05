@@ -41,7 +41,12 @@ export default function Sidebar() {
     { href: '/segments', label: 'Penataan Kabel', icon: ShieldAlert },
     ...(!isProviderViewer
       ? [
-          { href: '/surveyor', label: 'Portal Surveyor HP', icon: Smartphone, isMobilePortal: true },
+          {
+            href: '/surveyor',
+            label: 'Portal Surveyor HP',
+            icon: Smartphone,
+            isMobilePortal: true,
+          },
           { href: '/poles/new', label: 'Input Tiang Baru', icon: PlusCircle, isHighlight: true },
         ]
       : []),

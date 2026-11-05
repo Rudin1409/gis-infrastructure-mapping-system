@@ -30,11 +30,7 @@ export type LampuPjuType =
   | 'TIDAK_ADA';
 
 export type LampuPjuCondition =
-  | 'MENYALA_NORMAL'
-  | 'REDUP'
-  | 'MATI_TOTAL'
-  | 'PECAH_RUSAK'
-  | 'TIDAK_ADA';
+  'MENYALA_NORMAL' | 'REDUP' | 'MATI_TOTAL' | 'PECAH_RUSAK' | 'TIDAK_ADA';
 
 export interface Pole {
   id: string; // e.g. "LL-0001" or "LLG-T1-TJ-463"

@@ -48,10 +48,7 @@ export function withAuth<C = unknown>(
       if (!user)
         return fail(401, 'Sesi berakhir. Silakan masuk kembali; antrean survei tetap tersimpan.');
       if (options.admin && !isAdmin(user)) return fail(403, 'Tindakan ini memerlukan akses admin.');
-      if (
-        user.role === 'PROVIDER_VIEWER' &&
-        !['GET', 'HEAD', 'OPTIONS'].includes(request.method)
-      ) {
+      if (user.role === 'PROVIDER_VIEWER' && !['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
         return fail(
           403,
           'Akun mitra provider hanya memiliki hak baca (Read-Only). Anda tidak diizinkan mengubah data.'

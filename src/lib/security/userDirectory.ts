@@ -208,11 +208,6 @@ export const DEFAULT_ACCOUNTS: (AuthUser & { alternativeEmails?: string[] })[] =
     team: 'KOMINFO',
     phone: '0812-0000-0000',
     avatar: '📡',
-    alternativeEmails: [
-      'mitra.provider',
-      'provider',
-      'auditor',
-      'provider@lubuklinggaukota.go.id',
-    ],
+    alternativeEmails: ['mitra.provider', 'provider', 'auditor', 'provider@lubuklinggaukota.go.id'],
   },
 ];

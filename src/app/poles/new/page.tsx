@@ -72,7 +72,8 @@ export default function NewPoleSurveyPage() {
         </div>
         <h2 className="text-lg font-bold text-slate-800">Akses Terbatas: Mode Mitra Provider</h2>
         <p className="text-xs text-slate-500 max-w-sm mt-1">
-          Akun mitra provider hanya memiliki izin akses baca (Read-Only) untuk meninjau data tiang dan peta spasial.
+          Akun mitra provider hanya memiliki izin akses baca (Read-Only) untuk meninjau data tiang
+          dan peta spasial.
         </p>
       </div>
     );

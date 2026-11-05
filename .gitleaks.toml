@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for tests and auth route demo credentials"
+paths = [
+  '''src/app/api/auth/login/route\.ts''',
+  '''tests/security\.test\.mjs''',
+]

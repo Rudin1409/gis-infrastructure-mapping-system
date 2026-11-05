@@ -39,8 +39,7 @@ export function publicUser(row: any): AuthUser | null {
           ? 'Petugas Survei Spasial'
           : 'Administrator DISKOMINFOTIKSAN'),
     avatar:
-      row.avatar ||
-      (row.role === 'PROVIDER_VIEWER' ? '📡' : row.role === 'SURVEYOR' ? '👨‍💼' : '🏢'),
+      row.avatar || (row.role === 'PROVIDER_VIEWER' ? '📡' : row.role === 'SURVEYOR' ? '👨‍💼' : '🏢'),
   };
 }
 
