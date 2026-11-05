@@ -171,6 +171,9 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (err: any) {
     console.error('[API Login] Fatal error:', err);
-    return fail(503, 'Layanan login belum tersedia. Hubungi admin atau coba kembali nanti.');
+    return fail(
+      503,
+      `Layanan login belum tersedia: ${err?.message || String(err) || 'Hubungi admin atau coba kembali nanti.'}`
+    );
   }
 }
