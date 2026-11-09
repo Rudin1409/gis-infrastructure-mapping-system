@@ -41,10 +41,24 @@ fi
 
 if [[ -e "$RELEASE_DIR" ]]; then
   if [[ "$PREVIOUS_RELEASE" == "$RELEASE_DIR" ]]; then
-  echo "Release ${RELEASE_ID} is already active, restarting PM2..."
-  pm2 restart gis-app || pm2 start "${CURRENT_LINK}/ecosystem.config.cjs" --update-env
-  pm2 save
-  exit 0
+    echo "Release ${RELEASE_ID} is already active, restarting PM2..."
+    pm2 delete gis-app || true
+    pm2 start "${CURRENT_LINK}/ecosystem.config.cjs" --update-env
+    pm2 save
+    HEALTHY=false
+    for _ in $(seq 1 30); do
+      if curl --fail --silent --show-error --max-time 5 http://127.0.0.1:3000/ >/dev/null; then
+        HEALTHY=true
+        break
+      fi
+      sleep 2
+    done
+    if [[ "$HEALTHY" != "true" ]]; then
+      fail "Restart failed: http://127.0.0.1:3000/ is not responding"
+    fi
+    echo "PM2 restart successful and healthy!"
+    exit 0
+  fi
 fi
 
 
@@ -127,8 +141,11 @@ fi
 
 pm2 save
 # Pasang Penjaga Otomatis (Auto-Boot saat server nyala & Auto-Restart tiap 5 menit jika mati)
-CURRENT_CRON="$(crontab -l 2>/dev/null | grep -v 'gis-app' || true)"
-printf '%s\n@reboot sleep 15 && pm2 resurrect\n*/5 * * * * curl -s -o /dev/null -m 5 http://127.0.0.1:3000/ || (pm2 resurrect || pm2 restart gis-app)\n' "$CURRENT_CRON" | sed '/^$/d' | crontab - || true
+CURRENT_CRON="$(crontab -l 2>/dev/null | grep -v 'gis-app' | grep -v 'pm2' | grep -v 'PATH=' || true)"
+NODE_DIR="$(dirname "$(command -v node 2>/dev/null || echo '/usr/bin')")"
+PM2_DIR="$(dirname "$(command -v pm2 2>/dev/null || echo '/usr/bin')")"
+EXTRA_PATH="${NODE_DIR}:${PM2_DIR}:/usr/local/bin:/usr/bin:/bin"
+printf 'PATH=%s\n%s\n@reboot sleep 15 && (pm2 resurrect || pm2 restart gis-app || pm2 start %s/ecosystem.config.cjs --update-env)\n*/5 * * * * curl -s -o /dev/null -m 5 http://127.0.0.1:3000/ || (pm2 resurrect || pm2 restart gis-app || pm2 start %s/ecosystem.config.cjs --update-env)\n' "$EXTRA_PATH" "$CURRENT_CRON" "$CURRENT_LINK" "$CURRENT_LINK" | sed '/^$/d' | crontab - || true
 
 rm -f "$RESOLVED_ARCHIVE"
 
