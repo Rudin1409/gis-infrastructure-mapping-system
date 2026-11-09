@@ -78,10 +78,31 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$TARGET_PORT" -H "$TARGET_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
+          echo "==> [Pre-Deploy] Memastikan PM2 aktif:"
+          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "
+            pm2 resurrect || true
+            pm2 restart gis-app || pm2 start /home/admin/gis-deploy/current/ecosystem.config.cjs --update-env || true
+            pm2 save || true
+          "
+
           ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "mkdir -p /home/admin/gis-deploy/incoming"
           scp -P "$TARGET_PORT" release.tar.gz "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz"
           scp -P "$TARGET_PORT" scripts/vps-deploy.sh "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/vps-deploy.sh"
-          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "chmod 700 /home/admin/gis-deploy/vps-deploy.sh && /home/admin/gis-deploy/vps-deploy.sh /home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz $GITHUB_SHA"
+          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "chmod 700 /home/admin/gis-deploy/vps-deploy.sh && /home/admin/gis-deploy/vps-deploy.sh /home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz $GITHUB_SHA" || {
+            echo "⚠️ vps-deploy.sh exit non-zero, memastikan PM2 tetap aktif:"
+            ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "
+              pm2 resurrect || true
+              pm2 restart gis-app || pm2 start /home/admin/gis-deploy/current/ecosystem.config.cjs --update-env || true
+              pm2 save || true
+            "
+            exit 1
+          }
+
+          echo "==> [Post-Deploy] Verifikasi PM2 dan Port 3000:"
+          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "
+            pm2 status
+            curl -I --max-time 5 http://127.0.0.1:3000/ || true
+          "
 
   deploy-old-server:
     name: Deploy to Server Lama (103.179.57.4)

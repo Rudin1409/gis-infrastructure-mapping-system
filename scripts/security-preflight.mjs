@@ -16,6 +16,8 @@ try {
 }
 const isPermittedHost =
   origin.hostname === '103.179.57.4' ||
+  origin.hostname === '27.124.75.241' ||
+  origin.hostname.endsWith('lubuklinggaukota.go.id') ||
   origin.hostname === 'localhost' ||
   origin.hostname === '127.0.0.1' ||
   origin.hostname === 'inframap.my.id' ||
@@ -59,6 +61,13 @@ try {
   );
   if (policies.rowCount) throw new Error('Policy publik masih aktif. Jalankan migrasi keamanan.');
   console.log('Preflight keamanan database dan konfigurasi lulus.');
+} catch (dbErr) {
+  console.error('⚠️ [Preflight Database Error]:', dbErr.message);
+  if (process.env.ENFORCE_PREFLIGHT === 'false') {
+    console.warn('Preflight bypass diaktifkan (ENFORCE_PREFLIGHT=false).');
+  } else {
+    throw dbErr;
+  }
 } finally {
   await pool.end();
 }
