@@ -59,8 +59,6 @@ if [[ -e "$RELEASE_DIR" ]]; then
     echo "PM2 restart successful and healthy!"
     exit 0
   fi
-fi
-
 
   case "$RELEASE_DIR" in
     "${RELEASES_DIR}"/*) rm -rf -- "$RELEASE_DIR" ;;
@@ -78,14 +76,14 @@ if [[ ! -f "$SHARED_ENV_FILE" ]]; then
   chmod 600 "$SHARED_ENV_FILE"
 fi
 
-ln -s "$SHARED_ENV_FILE" "${RELEASE_DIR}/.env.local"
+ln -sf "$SHARED_ENV_FILE" "${RELEASE_DIR}/.env.local"
 
 # Pastikan folder shared uploads persisten ada dan terhubung ke release
 SHARED_UPLOADS_DIR="${SHARED_DIR}/uploads/poles"
 mkdir -p "$SHARED_UPLOADS_DIR"
 mkdir -p "${RELEASE_DIR}/public/uploads"
 rm -rf "${RELEASE_DIR}/public/uploads/poles"
-ln -s "$SHARED_UPLOADS_DIR" "${RELEASE_DIR}/public/uploads/poles"
+ln -sfn "$SHARED_UPLOADS_DIR" "${RELEASE_DIR}/public/uploads/poles"
 
 cd "$RELEASE_DIR"
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=1536}"
