@@ -62,6 +62,7 @@ import {
   Minimize2,
   Lock,
   Users,
+  Globe,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useViewMode } from '@/context/ViewModeContext';
@@ -279,6 +280,28 @@ export default function GISOverviewMap({
   const [isMeasuring, setIsMeasuring] = useState(false);
   const [autoRouteMode, setAutoRouteMode] = useState(true); // Default to Smart Auto-Routing
   const [measuredPoles, setMeasuredPoles] = useState<Pole[]>([]);
+
+  // 🌍 MODE GOOGLE EARTH LANGSUNG (KLIK PIN TIANG BUKA TAB GOOGLE EARTH)
+  const [isGoogleEarthMode, setIsGoogleEarthMode] = useState<boolean>(false);
+  const isGoogleEarthModeRef = useRef<boolean>(false);
+  isGoogleEarthModeRef.current = isGoogleEarthMode;
+
+  const toggleGoogleEarthMode = () => {
+    if (isGoogleEarthMode) {
+      setIsGoogleEarthMode(false);
+      setCorridorResultToast('🌍 Mode Google Earth dinonaktifkan');
+      setTimeout(() => setCorridorResultToast(null), 3000);
+    } else {
+      setIsGoogleEarthMode(true);
+      setIsCorridorMode(false);
+      setIsBatchDeleteMode(false);
+      setIsMeasuring(false);
+      setCorridorResultToast(
+        '🌍 Mode Google Earth Aktif: Klik pin tiang di peta untuk langsung membuka Google Earth di tab baru'
+      );
+      setTimeout(() => setCorridorResultToast(null), 4500);
+    }
+  };
 
   // ⚡ AUTO-CORRIDOR GENERATOR (TARIK JALUR & INTERVAL OTOMATIS) STATE
   const [isCorridorMode, setIsCorridorMode] = useState(false);
@@ -1046,6 +1069,7 @@ export default function GISOverviewMap({
     } else {
       setIsCorridorMode(true);
       setIsMeasuring(false);
+      setIsGoogleEarthMode(false);
       setSelectedPole(null);
       setCorridorWaypoints([]);
     }
@@ -1144,6 +1168,7 @@ export default function GISOverviewMap({
       setIsBatchDeleteMode(true);
       setIsCorridorMode(false);
       setIsMeasuring(false);
+      setIsGoogleEarthMode(false);
       setSelectedPole(null);
       setSelectedDeleteIds([]);
     }
@@ -1235,6 +1260,7 @@ export default function GISOverviewMap({
       setIsMeasuring(true);
       setIsCorridorMode(false);
       setIsBatchDeleteMode(false);
+      setIsGoogleEarthMode(false);
       setSelectedPole(null);
       setMeasuredPoles([]);
     }
@@ -1245,6 +1271,7 @@ export default function GISOverviewMap({
     setIsMeasuring(true);
     setIsCorridorMode(false);
     setIsBatchDeleteMode(false);
+    setIsGoogleEarthMode(false);
     setMeasuredPoles([pole]);
   };
 
@@ -1558,6 +1585,10 @@ export default function GISOverviewMap({
         }
       }
     } else {
+      if (isGoogleEarthModeRef.current) {
+        const earthUrl = `https://earth.google.com/web/search/${pole.poleLatitude},${pole.poleLongitude}`;
+        window.open(earthUrl, '_blank', 'noopener,noreferrer');
+      }
       setSelectedPole(pole);
     }
   };
@@ -1925,6 +1956,24 @@ export default function GISOverviewMap({
             )}
           </button>
 
+          {/* GOOGLE EARTH MODE TOGGLE BUTTON */}
+          <button
+            type="button"
+            onClick={toggleGoogleEarthMode}
+            className={`w-10 h-10 rounded-full shadow-lg border backdrop-blur-md flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 ${
+              isGoogleEarthMode
+                ? 'bg-emerald-600 text-white border-emerald-400 ring-4 ring-emerald-500/30'
+                : 'bg-white/95 text-slate-700 hover:text-emerald-600 border-slate-200'
+            }`}
+            title={
+              isGoogleEarthMode
+                ? 'Mode Google Earth Aktif (Klik Pin Langsung Buka Tab Baru) - Klik untuk matikan'
+                : 'Aktifkan Mode Google Earth (Klik Pin Langsung Buka Google Earth)'
+            }
+          >
+            <Globe className={`w-5 h-5 ${isGoogleEarthMode ? 'text-white' : 'text-emerald-600'}`} />
+          </button>
+
           {/* 4-DOTS CIRCULAR TOGGLE BUTTON (Bisa dibuka dan disembunyikan lagi) */}
           <button
             type="button"
@@ -1950,6 +1999,7 @@ export default function GISOverviewMap({
         {(isCorridorMode ||
           isBatchDeleteMode ||
           isMeasuring ||
+          isGoogleEarthMode ||
           selectedProvider !== 'ALL' ||
           selectedCondition !== 'ALL' ||
           selectedCategory !== 'ALL' ||
@@ -2006,6 +2056,21 @@ export default function GISOverviewMap({
                   type="button"
                   onClick={toggleMeasuring}
                   className="p-0.5 hover:bg-white/20 rounded-md ml-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {isGoogleEarthMode && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white font-bold text-[11px] rounded-xl shadow-md border border-emerald-400/40 animate-in fade-in">
+                <Globe className="w-3.5 h-3.5" />
+                <span>Mode Google Earth (Klik Pin)</span>
+                <button
+                  type="button"
+                  onClick={toggleGoogleEarthMode}
+                  className="p-0.5 hover:bg-white/20 rounded-md ml-1 cursor-pointer"
+                  title="Matikan Mode Google Earth"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -2099,6 +2164,29 @@ export default function GISOverviewMap({
                 title="Ukur Jarak Spasial"
               >
                 <Ruler className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Bulat: Mode Google Earth */}
+            <div className="flex items-center gap-2 group">
+              <span className="px-2.5 py-1 bg-slate-900/90 text-white font-bold text-[11px] rounded-xl shadow-lg border border-white/10 whitespace-nowrap backdrop-blur-md">
+                🌍{' '}
+                {isGoogleEarthMode ? 'Mode Google Earth (Aktif)' : 'Mode Google Earth (Klik Pin)'}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowGoogleToolsMenu(false);
+                  toggleGoogleEarthMode();
+                }}
+                className={`w-10 h-10 rounded-full shadow-xl border flex items-center justify-center transition-all cursor-pointer hover:scale-110 active:scale-95 ${
+                  isGoogleEarthMode
+                    ? 'bg-emerald-600 text-white border-emerald-400 ring-4 ring-emerald-500/30'
+                    : 'bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50'
+                }`}
+                title="Mode Google Earth: Klik pin tiang di peta untuk langsung membuka tab baru Google Earth"
+              >
+                <Globe className="w-4 h-4" />
               </button>
             </div>
 
@@ -3578,16 +3666,28 @@ export default function GISOverviewMap({
                 )}
               </span>
             </div>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${selectedPole.poleLatitude},${selectedPole.poleLongitude}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] font-bold text-blue-600 hover:text-blue-800 whitespace-nowrap flex items-center gap-0.5 flex-shrink-0 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg border border-blue-200 transition-all"
-              title="Buka rute navigasi di Google Maps"
-            >
-              <span>G-Maps</span>
-              <ExternalLink className="w-2.5 h-2.5" />
-            </a>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${selectedPole.poleLatitude},${selectedPole.poleLongitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-blue-600 hover:text-blue-800 whitespace-nowrap flex items-center gap-0.5 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg border border-blue-200 transition-all"
+                title="Buka rute navigasi di Google Maps"
+              >
+                <span>G-Maps</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+              <a
+                href={`https://earth.google.com/web/search/${selectedPole.poleLatitude},${selectedPole.poleLongitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 whitespace-nowrap flex items-center gap-0.5 bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-200 transition-all"
+                title="Buka titik koordinat tiang ini di Google Earth 3D"
+              >
+                <span>G-Earth</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
           </div>
 
           <div className="flex gap-2">

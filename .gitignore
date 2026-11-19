@@ -17,6 +17,7 @@
 # misc
 .DS_Store
 *.pem
+.vscode/
 
 # debug
 npm-debug.log*
@@ -24,6 +25,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local deployment artifacts and one-off credential helpers
+RIWAYAT_LENGKAP_PERCAKAPAN_LAMA.md
 /*.tar
 /scripts/check-ssh.ts
 /scripts/deploy-vps.ts
