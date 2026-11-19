@@ -76,18 +76,50 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+
+          cat << 'EOF' > ~/.ssh/config
+          Host *
+            IdentityFile ~/.ssh/id_ed25519
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+            TCPKeepAlive yes
+            ControlMaster auto
+            ControlPath ~/.ssh/cm-%r@%h:%p
+            ControlPersist 10m
+            StrictHostKeyChecking accept-new
+          EOF
+          chmod 600 ~/.ssh/config
+
           ssh-keyscan -p "$TARGET_PORT" -H "$TARGET_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
+          retry() {
+            local n=1
+            local max=4
+            local delay=4
+            while true; do
+              "$@" && break || {
+                if [[ $n -lt $max ]]; then
+                  ((n++))
+                  echo "⚠️ Operasi gagal, mencoba ulang $n/$max dalam ${delay}s..."
+                  sleep $delay
+                else
+                  echo "❌ Gagal setelah $n percobaan."
+                  return 1
+                fi
+              }
+            done
+          }
+
           echo "==> [Pre-Deploy] Memastikan PM2 aktif:"
-          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "
+          retry ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "
             pm2 resurrect || true
             pm2 restart gis-app || pm2 start /home/admin/gis-deploy/current/ecosystem.config.cjs --update-env || true
             pm2 save || true
           "
 
-          ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "mkdir -p /home/admin/gis-deploy/incoming"
-          scp -P "$TARGET_PORT" release.tar.gz "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz"
-          scp -P "$TARGET_PORT" scripts/vps-deploy.sh "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/vps-deploy.sh"
+          retry ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "mkdir -p /home/admin/gis-deploy/incoming"
+          retry scp -P "$TARGET_PORT" release.tar.gz "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz"
+          retry scp -P "$TARGET_PORT" scripts/vps-deploy.sh "$TARGET_USER@$TARGET_HOST:/home/admin/gis-deploy/vps-deploy.sh"
           ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "chmod 700 /home/admin/gis-deploy/vps-deploy.sh && /home/admin/gis-deploy/vps-deploy.sh /home/admin/gis-deploy/incoming/$GITHUB_SHA.tar.gz $GITHUB_SHA" || {
             echo "⚠️ vps-deploy.sh exit non-zero, memastikan PM2 tetap aktif:"
             ssh -p "$TARGET_PORT" "$TARGET_USER@$TARGET_HOST" "
