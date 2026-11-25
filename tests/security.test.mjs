@@ -117,7 +117,7 @@ const request = (url, method = 'GET', body, token, origin = process.env.APP_ORIG
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
-let adminToken, surveyorToken, secondToken;
+let adminToken, surveyorToken, secondToken, providerToken;
 const password = 'test-only-long-passphrase-2026';
 const login = () => load('src/app/api/auth/login/route.ts').POST;
 
@@ -133,6 +133,7 @@ test('security regression suite', async (t) => {
     ['admin', 'ADMIN_KOMINFO', 'KOMINFO'],
     ['one', 'SURVEYOR', 'KOMINFO'],
     ['two', 'SURVEYOR', 'BAPENDA'],
+    ['prov', 'PROVIDER_VIEWER', 'PROVIDER'],
   ]) {
     await database.query(
       "INSERT INTO users(id,name,email,password,role,agency,status) VALUES($1,$1,$2,$3,$4,$5,'AKTIF')",
@@ -152,6 +153,7 @@ test('security regression suite', async (t) => {
       ['admin', (value) => (adminToken = value)],
       ['one', (value) => (surveyorToken = value)],
       ['two', (value) => (secondToken = value)],
+      ['prov', (value) => (providerToken = value)],
     ]) {
       const res = await login()(
         request('/api/auth/login', 'POST', { email: `${id}@example.test`, password })
@@ -208,9 +210,14 @@ test('security regression suite', async (t) => {
     'cross-origin mutations and non-admin administrative operations are denied',
     async () => {
       const batch = load('src/app/api/poles/batch-delete/route.ts').POST;
+      const fixCodes = load('src/app/api/poles/fix-codes/route.ts').POST;
       assert.equal(
-        (await batch(request('/api/poles/batch-delete', 'POST', { ids: ['x'] }, surveyorToken)))
+        (await batch(request('/api/poles/batch-delete', 'POST', { ids: ['x'] }, providerToken)))
           .status,
+        403
+      );
+      assert.equal(
+        (await fixCodes(request('/api/poles/fix-codes', 'POST', {}, surveyorToken))).status,
         403
       );
       assert.equal(
